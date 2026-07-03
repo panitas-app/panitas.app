@@ -71,7 +71,7 @@
   --chart-3: #184BBF;
   --chart-4: #64748B;
   --chart-5: #F5F7FA;
-  --radius: 0.75rem;
+  --radius: 0;
   --sidebar: #102A43;
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: #FFB92E;
@@ -225,6 +225,11 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ── Square redesign: eliminate all rounded corners ── */
+.rounded-full {
+  border-radius: 0 !important;
 }
 
 /* ── Icon hover animations ── */
