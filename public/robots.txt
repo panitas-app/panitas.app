@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://panitas.app/sitemap.xml
