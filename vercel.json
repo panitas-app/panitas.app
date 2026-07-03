@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/update-bcv",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

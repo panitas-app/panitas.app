@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+  <defs>
+    <clipPath id="r">
+      <rect width="96" height="96" rx="16" ry="16"/>
+    </clipPath>
+  </defs>
+  <image href="/favicon.jpg" width="96" height="96" clip-path="url(#r)"/>
+</svg>
