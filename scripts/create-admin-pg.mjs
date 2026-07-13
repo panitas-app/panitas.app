@@ -1,11 +1,14 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-import { Pool } from "pg"
+import { Pool, neonConfig } from "@neondatabase/serverless"
+import { PrismaNeon } from "@prisma/adapter-neon"
+import ws from "ws"
 import bcrypt from "bcryptjs"
+
+neonConfig.webSocketConstructor = ws
 
 const dbUrl = process.env.DATABASE_URL ?? "postgresql://panitas_user:changeme@localhost:5432/panitas_db?schema=public"
 const pool = new Pool({ connectionString: dbUrl })
-const adapter = new PrismaPg(pool)
+const adapter = new PrismaNeon(pool)
 const prisma = new PrismaClient({ adapter })
 
 async function run() {
