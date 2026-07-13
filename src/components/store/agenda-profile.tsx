@@ -27,7 +27,7 @@ export default function AgendaProfile({ slug }: { slug: string }) {
         if (!res.ok) throw new Error()
         const json = await res.json()
         setData(json)
-      } catch {} finally {
+      } catch (e) { console.error("[unhandled error]", e) } finally {
         setLoading(false)
       }
     }

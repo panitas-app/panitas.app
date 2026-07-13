@@ -979,7 +979,7 @@ function PresentacionesSection({ productId }: { productId: string }) {
       try {
         const res = await fetch(`/api/products/${productId}/presentations`)
         if (res.ok) setPresentations(await res.json())
-      } catch { /* ignore */ }
+      } catch (e) { console.error("[unhandled error]", e) }
       finally { setLoading(false) }
     }
     loadPresentations()

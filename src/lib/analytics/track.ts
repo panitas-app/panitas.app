@@ -9,5 +9,5 @@ export function track(event: string, properties?: Record<string, unknown>) {
       body: JSON.stringify({ event, properties, timestamp: new Date().toISOString() }),
       keepalive: true,
     }).catch(() => {})
-  } catch {}
+  } catch (e) { console.error("[unhandled error]", e) }
 }

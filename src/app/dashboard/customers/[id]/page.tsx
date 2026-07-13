@@ -73,7 +73,7 @@ export default function CustomerDetailPage() {
         if (cRes.ok) setCustomer(await cRes.json())
         if (nRes.ok) setNotes(await nRes.json())
         if (fRes.ok) setFollowUps(await fRes.json())
-      } catch {} finally { setLoading(false) }
+      } catch (e) { console.error("[unhandled error]", e) } finally { setLoading(false) }
     }
     load()
   }, [id])

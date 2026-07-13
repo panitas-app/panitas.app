@@ -431,7 +431,7 @@ function HoursDisplay({ storeHours }: { storeHours: string }) {
         isOpen = true
       }
     }
-  } catch {}
+  } catch (e) { console.error("[unhandled error]", e) }
   return hoursDisplay ? (
     <span className="flex items-center gap-1">
       <Clock className="size-3" />

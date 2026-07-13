@@ -40,7 +40,7 @@ export default function BookingPage() {
           const svcs = await servicesRes.json()
           setServices(Array.isArray(svcs) ? svcs : [])
         }
-      } catch {} finally { setLoading(false) }
+      } catch (e) { console.error("[unhandled error]", e) } finally { setLoading(false) }
     }
     init()
   }, [slug])

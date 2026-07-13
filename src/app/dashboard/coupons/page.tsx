@@ -54,7 +54,7 @@ export default function CouponsPage() {
     try {
       const res = await fetch("/api/coupons")
       if (res.ok) setCoupons(await res.json())
-    } catch {} finally {
+    } catch (e) { console.error("[unhandled error]", e) } finally {
       setLoading(false)
     }
   }, [])

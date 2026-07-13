@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
                 foundScale = true
               }
             }
-          } catch { /* ignore parse error */ }
+          } catch (e) { console.error("[unhandled error]", e) }
         }
         if (!foundScale && product.wholesalePrice && qty >= 5) {
           unitPrice = product.wholesalePrice

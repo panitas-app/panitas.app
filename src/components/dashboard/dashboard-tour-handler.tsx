@@ -26,7 +26,7 @@ export function TourAutoStarter({ planType }: { planType: string }) {
       const res = await fetch("/api/tour/status")
       const data = await res.json()
       if (data.completed) return
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
 
     // Small delay for DOM to be ready
     setTimeout(() => tour.start(planType), 500)

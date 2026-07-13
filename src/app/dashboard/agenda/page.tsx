@@ -91,7 +91,7 @@ export default function AgendaPage() {
           cancelled: arr.filter((a: Appointment) => a.status === "cancelled").length,
         })
       }
-    } catch {} finally { setLoading(false) }
+    } catch (e) { console.error("[unhandled error]", e) } finally { setLoading(false) }
   }, [date, statusFilter, employeeFilter, serviceFilter])
 
   useEffect(() => { fetchAgenda() }, [fetchAgenda])
@@ -104,7 +104,7 @@ export default function AgendaPage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (res.ok) fetchAgenda()
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   const changeDate = (delta: number) => {

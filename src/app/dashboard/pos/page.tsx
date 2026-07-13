@@ -121,7 +121,7 @@ export default function POSPage() {
         setDailyOrders(data.orders || [])
         setDailySummary(data)
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
     setDailyLoading(false)
   }
 
@@ -147,7 +147,7 @@ export default function POSPage() {
         const list = (data.data || data || []).filter((o: any) => new Date(o.createdAt) >= today)
         setTodaySales(list)
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   // SKU Scanner: auto-detect barcode input via rapid Enter key behavior
@@ -168,7 +168,7 @@ export default function POSPage() {
     try {
       const res = await fetch(`/api/customers?q=${encodeURIComponent(q)}&limit=10`)
       if (res.ok) { const data = await res.json(); setCustomerResults(data.data || []) }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   function selectCustomer(c: CustomerResult) {
@@ -187,7 +187,7 @@ export default function POSPage() {
           const match = sorted.find((s: any) => qty >= (s.quantity || 0))
           if (match && match.price > 0) return { price: match.price, wholesale: true }
         }
-      } catch {}
+      } catch (e) { console.error("[unhandled error]", e) }
     }
     if (product.wholesalePrice && qty >= 5) return { price: product.wholesalePrice, wholesale: true }
     return { price: product.price, wholesale: false }

@@ -192,7 +192,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
         prevCountRef.current = newCount
         setPendingCount(newCount)
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }, [lastViewed])
 
   useEffect(() => {

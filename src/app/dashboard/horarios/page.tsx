@@ -115,7 +115,7 @@ function parseSchedule(raw: string | null): WeekSchedule {
       }
       return normalized
     }
-  } catch {}
+  } catch (e) { console.error("[unhandled error]", e) }
   return {}
 }
 
