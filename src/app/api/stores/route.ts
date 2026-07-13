@@ -100,17 +100,27 @@ export async function PUT(request: NextRequest) {
     if (!name) return NextResponse.json({ error: "Nombre inválido" }, { status: 400 })
     data.name = name
     data.slug = slugify(name)
+    // Also update Negocio name
+    if (storeInfo.store.negocioId) {
+      await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: { nombre: name, slug: slugify(name) } }).catch(() => {})
+    }
   }
 
   if (body.description !== undefined) {
     const d = safeStr(body.description, LIMITS.MAX_DESCRIPTION)
     if (d === null) return NextResponse.json({ error: "Descripción inválida" }, { status: 400 })
     data.description = d || null
+    if (storeInfo.store.negocioId) {
+      await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: { descripcion: d || null } }).catch(() => {})
+    }
   }
   if (body.logo !== undefined) {
     const v = body.logo ? safeUrl(body.logo) : null
     if (body.logo && !v) return NextResponse.json({ error: "Logo inválido" }, { status: 400 })
     data.logo = v
+    if (storeInfo.store.negocioId) {
+      await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: { logo: v } }).catch(() => {})
+    }
   }
   if (body.banner !== undefined) {
     const v = body.banner ? safeUrl(body.banner) : null

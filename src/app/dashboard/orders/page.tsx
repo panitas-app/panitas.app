@@ -53,13 +53,13 @@ export default async function OrdersPage({
   searchParams: Promise<{ status?: string; page?: string }>
 }) {
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const params = await searchParams
   const { status } = params
   const page = Math.max(1, parseInt(params.page || "1"))
 
-  const where: any = { storeId: current.store.id }
+  const where: any = { storeId: current.store.id, creditTerm: null }
   if (status && status !== "all") where.status = status
 
   const [orders, total] = await Promise.all([
@@ -86,15 +86,15 @@ export default async function OrdersPage({
             <ShoppingCart className="size-7 text-primary" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-base font-semibold">Registrar venta manual</h2>
+            <h2 className="text-base font-semibold">Vender en tienda</h2>
             <p className="text-xs text-muted-foreground max-w-md">
-              Crea un pedido directamente desde el panel para ventas presenciales, transferencias manuales o pedidos por WhatsApp
+              Usa el POS para ventas presenciales, con envío, o a crédito
             </p>
           </div>
-          <Link data-tour="btn-nueva-venta" href="/dashboard/orders/create">
+          <Link href="/dashboard/pos">
             <Button className="gap-2 mt-1">
               <Plus className="size-4" />
-              Crear orden manual
+              Ir al POS
             </Button>
           </Link>
         </CardContent>

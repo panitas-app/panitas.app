@@ -6,28 +6,31 @@ import { csrfGuard } from "@/lib/csrf"
 import { rateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
-  const csrf = csrfGuard(request)
-  if (csrf) return csrf
-
-  const rl = await rateLimit("create-category", 20, 60 * 1000)
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: `Demasiadas solicitudes. Intenta en ${Math.ceil(rl.resetIn / 1000)}s` },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.resetIn / 1000)) } }
-    )
-  }
-
-  const current = await requireRole(["admin", "manager"])
-
   try {
+    const csrf = csrfGuard(request)
+    if (csrf) return csrf
+
+    const rl = await rateLimit("create-category", 20, 60 * 1000)
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: `Demasiadas solicitudes. Intenta en ${Math.ceil(rl.resetIn / 1000)}s` },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.resetIn / 1000)) } }
+      )
+    }
+
+    const current = await requireRole(["admin", "manager"])
+
     const body = await request.json()
     const { name } = body
 
     if (!name || !name.trim()) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 })
+      return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 })
     }
 
     const slug = slugify(name.trim())
+    if (!slug) {
+      return NextResponse.json({ error: "El nombre no genera un slug válido" }, { status: 400 })
+    }
 
     const existing = await prisma.category.findUnique({
       where: {
@@ -51,8 +54,9 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(category, { status: 201 })
-  } catch (error) {
-    console.error("Error creating category:", error)
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 })
+  } catch (error: any) {
+    const msg = error?.message || "Error al crear la categoría"
+    console.error("Error creating category:", msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

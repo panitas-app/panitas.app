@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
+import { sendEmail } from "@/lib/email"
+import { templateOrderShipped } from "@/lib/email-templates"
 import { createAuditEntry } from "@/lib/audit"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -56,11 +58,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         payments: {
           include: { paymentAccount: { select: { bankName: true, accountNumber: true, accountHolder: true } } },
         },
-        store: { select: { whatsapp: true } },
+        store: { select: { name: true, whatsapp: true } },
       },
     })
 
     await createAuditEntry({ action: "order.status_changed", entity: "Order", entityId: id, metadata: { oldStatus: existing.status, newStatus: status }, storeId: store.id, userId })
+
+    // Send "dispatched" email to customer when status changes to shipped
+    if (status === "shipped" && updated.customerEmail) {
+      sendEmail(
+        updated.customerEmail,
+        `¡Tu pedido #${updated.orderNumber} ha sido despachado! — ${updated.store?.name || "Tu tienda"}`,
+        templateOrderShipped(updated.customerName, updated.orderNumber, updated.store?.name || "Tu tienda"),
+        "order_shipped"
+      ).catch(e => console.error("[shipped email error]", e))
+    }
 
     return NextResponse.json(updated)
   } catch (error) {

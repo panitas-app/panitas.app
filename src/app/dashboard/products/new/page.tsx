@@ -6,7 +6,7 @@ import { ProductForm } from "@/components/dashboard/product-form"
 
 export default async function NewProductPage() {
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const categories = await prisma.category.findMany({
     where: { storeId: current.store.id },

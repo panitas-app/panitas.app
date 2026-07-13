@@ -4,7 +4,7 @@ import { EditProfileForm } from "@/components/dashboard/edit-profile-form"
 
 export default async function EditProfilePage() {
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const planType = current.store.planType || current.store.plan || "tienda"
 

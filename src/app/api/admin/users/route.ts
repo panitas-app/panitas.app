@@ -30,7 +30,12 @@ export async function GET(req: NextRequest) {
       select: {
         id: true, name: true, email: true, image: true, role: true, createdAt: true,
         suspendedAt: true, suspensionReason: true,
-        store: { select: { id: true, name: true, slug: true, plan: true, planType: true, planStatus: true } },
+        store: {
+          select: {
+            id: true, name: true, slug: true, plan: true, planType: true, planStatus: true,
+            subscriptions: { select: { status: true }, orderBy: { createdAt: "desc" }, take: 1 },
+          },
+        },
         negocio: { select: { id: true, planId: true, modalidad: true, planEstado: true } },
         _count: { select: { orders: true } },
       },

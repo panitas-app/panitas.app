@@ -12,15 +12,19 @@ function validateEmail(email: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null
 }
 
+const googleProvider = Google({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  allowDangerousEmailAccountLinking: true,
+})
+// Force property onto provider in case @auth/core merge doesn't propagate it
+googleProvider.allowDangerousEmailAccountLinking = true
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
+    googleProvider,
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },

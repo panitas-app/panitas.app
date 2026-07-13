@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, X, Store as StoreIcon, MapPin, MessageCircle, Globe, Sparkles, Plus } from "lucide-react"
+import { Upload, X, Store as StoreIcon, MapPin, MessageCircle, Globe, Plus } from "lucide-react"
 import type { Store } from "@prisma/client"
-import { AiBusinessImprove } from "@/components/dashboard/ai-business-improve"
 import { TemplateSelector } from "@/components/dashboard/template-selector"
 
 interface SocialEntry {
@@ -176,16 +175,6 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Descripción</Label>
-            <div className="flex justify-end -mt-6 mb-1">
-              <AiBusinessImprove
-                businessName={name}
-                currentDescription={description}
-                currentColors={primaryColor}
-                onApply={(data) => {
-                  if (data.improvedDescription) setDescription(data.improvedDescription)
-                }}
-              />
-            </div>
             <Textarea
               id="description"
               value={description}
@@ -220,7 +209,7 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
                     {uploadingLogo ? "Subiendo..." : logo ? "Cambiar" : "Subir"}
                   </Button>
                   {logo && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setLogo("")} className="rounded-lg text-xs h-8 text-red-500 hover:bg-red-50 hover:text-red-600">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setLogo("")} className="rounded-lg text-xs h-8 text-red-400 hover:bg-red-500/10 hover:text-red-300">
                       Eliminar
                     </Button>
                   )}
@@ -385,27 +374,27 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
       <div className="w-full lg:w-[360px] shrink-0">
         <div className="sticky top-8">
           <p className="text-xs text-muted-foreground text-center mb-3 font-medium uppercase tracking-wider">Vista previa</p>
-          <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${isDark ? "bg-gray-950" : "bg-white"}`}>
-            <div className={`mx-auto max-w-full ${isDark ? "bg-gray-950" : "bg-white"}`}>
-              <div className={`h-20 sm:h-28 relative overflow-hidden ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"}`}>
+          <div className={`rounded-2xl border border-border overflow-hidden shadow-sm ${isDark ? "bg-gray-950" : "bg-card"}`}>
+            <div className={`mx-auto max-w-full ${isDark ? "bg-gray-950" : "bg-card"}`}>
+              <div className={`h-20 sm:h-28 relative overflow-hidden ${isDark ? "bg-gray-900" : "bg-card"}`}>
                 {banner && <img src={banner} alt="" className="w-full h-full object-cover" />}
               </div>
               <div className="px-4 -mt-8 relative z-10 pb-4">
-                <div className="size-16 rounded-full p-0.5 shadow-md mx-auto" style={{ backgroundColor: isDark ? "#1f2937" : "white" }}>
-                  <div className={`size-full rounded-full overflow-hidden ${isDark ? "bg-gray-800" : "bg-gray-100"}`}>
+                <div className="size-16 rounded-full p-0.5 shadow-md mx-auto bg-card">
+                  <div className={`size-full rounded-full overflow-hidden ${isDark ? "bg-gray-800" : "bg-muted"}`}>
                     {logo ? (
                       <img src={logo} alt={name} className="size-full object-cover" />
                     ) : (
-                      <div className={`size-full flex items-center justify-center ${isDark ? "bg-gradient-to-br from-gray-700 to-gray-800" : "bg-gradient-to-br from-gray-100 to-gray-200"}`}>
-                        <StoreIcon className={`size-6 ${isDark ? "text-gray-500" : "text-gray-400"}`} />
+                      <div className={`size-full flex items-center justify-center ${isDark ? "bg-gradient-to-br from-gray-700 to-gray-800" : "bg-muted"}`}>
+                        <StoreIcon className={`size-6 ${isDark ? "text-gray-500" : "text-muted-foreground"}`} />
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="text-center mt-2">
-                  <h3 className={`text-sm font-bold truncate ${isDark ? "text-gray-100" : "text-gray-900"}`}>{name || "Nombre de la tienda"}</h3>
-                  {description && <p className={`text-[10px] mt-0.5 line-clamp-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>{description}</p>}
-                  <div className={`flex items-center justify-center gap-3 mt-1.5 text-[10px] ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                  <h3 className={`text-sm font-bold truncate ${isDark ? "text-gray-100" : "text-foreground"}`}>{name || "Nombre de la tienda"}</h3>
+                  {description && <p className={`text-[10px] mt-0.5 line-clamp-2 ${isDark ? "text-gray-400" : "text-muted-foreground"}`}>{description}</p>}
+                  <div className={`flex items-center justify-center gap-3 mt-1.5 text-[10px] ${isDark ? "text-gray-500" : "text-muted-foreground"}`}>
                     {address && (
                       <span className="flex items-center gap-1"><MapPin className="size-3" />{address}</span>
                     )}
@@ -420,7 +409,7 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
                   </button>
                 </div>
                 {socials.length > 0 && (
-                  <div className={`flex items-center justify-center gap-3 mt-3 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                  <div className={`flex items-center justify-center gap-3 mt-3 ${isDark ? "text-gray-500" : "text-muted-foreground"}`}>
                     {socials.map((s) => (
                       <a
                         key={s.network}
@@ -436,11 +425,11 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
                   </div>
                 )}
                 {isAgenda && (phone || whatsapp) && (
-                  <div className={`flex items-center justify-center gap-2 mt-2 text-[10px] ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                  <div className={`flex items-center justify-center gap-2 mt-2 text-[10px] ${isDark ? "text-gray-500" : "text-muted-foreground"}`}>
                     {phone && <span><MessageCircle className="size-3 inline mr-0.5" />{phone}</span>}
                   </div>
                 )}
-                <p className={`text-center text-[8px] mt-3 ${isDark ? "text-gray-700" : "text-gray-300"}`}>Powered by Panitas</p>
+                <p className={`text-center text-[8px] mt-3 ${isDark ? "text-gray-700" : "text-foreground/70"}`}>Powered by Panitas</p>
               </div>
             </div>
           </div>

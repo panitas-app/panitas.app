@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateOrderNumber } from "@/lib/utils"
-import { enviarAlertaNuevoPedido } from "@/lib/resend-email"
+import { enviarAlertaNuevoPedido, sendEmail } from "@/lib/email"
+import { templateOrderConfirmation } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
@@ -250,6 +251,20 @@ export async function POST(request: NextRequest) {
         order.orderNumber,
         order.total
       ).catch(e => console.error("[checkout email error]", e))
+    }
+
+    // Send confirmation to customer
+    if (order.customerEmail) {
+      const itemsHtml = order.items.map(i =>
+        `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
+      ).join("")
+      const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
+      sendEmail(
+        order.customerEmail,
+        `Confirmación de tu pedido #${order.orderNumber} — ${storeExists.name}`,
+        templateOrderConfirmation(order.customerName, order.orderNumber, storeExists.name, itemsTable, order.total),
+        "order_confirmation"
+      ).catch(e => console.error("[checkout confirmation email error]", e))
     }
 
     return NextResponse.json(order, { status: 201 })

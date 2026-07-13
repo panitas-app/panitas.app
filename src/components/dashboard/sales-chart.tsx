@@ -132,17 +132,17 @@ export function SalesChart({ orders, bcvRate }: Props) {
   }, [today])
 
   return (
-    <Card className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-4 pt-7 px-6 border-b border-slate-100 dark:border-slate-800">
+    <Card className="rounded-3xl bg-card shadow-xs overflow-hidden">
+      <CardHeader className="flex flex-row items-start justify-between gap-4 pb-4 pt-7 px-6">
         <div className="space-y-1">
           <CardTitle className="font-heading text-lg font-bold text-accent flex items-center gap-2">
             <TrendingUp className="size-5 text-primary" />
             Ventas {period === "day" ? "del día" : period === "week" ? "semanales" : period === "month" ? "del mes" : "mensuales"}
           </CardTitle>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{barLabel}</p>
+          <p className="text-xs text-muted-foreground">{barLabel}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-800">
+          <div className="flex rounded-xl bg-muted p-0.5">
             {(["day", "week", "month", "custom"] as Period[]).map((p) => (
               <button
                 key={p}
@@ -150,8 +150,8 @@ export function SalesChart({ orders, bcvRate }: Props) {
                 className={cn(
                   "px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all",
                     period === p
-                      ? "bg-white dark:bg-slate-700 text-accent shadow-xs"
-                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300",
+                      ? "bg-muted text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground/80",
                 )}
               >
                 {p === "day" ? "Día" : p === "week" ? "Semana" : p === "month" ? "Mes" : "Personalizado"}
@@ -186,21 +186,21 @@ export function SalesChart({ orders, bcvRate }: Props) {
       </CardHeader>
       <CardContent className="p-6">
         {/* Totals bar */}
-        <div className="flex items-center gap-6 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-6 mb-6 pb-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total USD</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total USD</p>
             <p className="text-xl font-black text-accent">${totalUsd.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Bs</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Bs</p>
             <p className="text-xl font-black text-accent">Bs. {totalVes.toFixed(2)}</p>
           </div>
         </div>
 
         {/* Chart */}
         {bars.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-slate-400 dark:text-slate-500">
-            <CalendarDays className="size-8 text-slate-300 dark:text-slate-600" />
+          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+            <CalendarDays className="size-8 text-muted-foreground/70" />
             <p className="text-sm font-semibold">Sin datos para este período</p>
           </div>
         ) : (
@@ -219,7 +219,7 @@ export function SalesChart({ orders, bcvRate }: Props) {
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold text-center leading-tight">
+                  <span className="text-[10px] text-muted-foreground font-semibold text-center leading-tight">
                     {bar.label}
                   </span>
                 </div>

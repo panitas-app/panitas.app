@@ -21,7 +21,7 @@ export function TourResetButton() {
     <button
       onClick={handleRestart}
       disabled={loading}
-      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 hover:border-primary/30 hover:text-primary transition-all cursor-pointer disabled:opacity-50"
+      className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm font-semibold text-foreground/80 shadow-xs hover:bg-muted hover:text-primary transition-all cursor-pointer disabled:opacity-50"
     >
       <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 4v6h6" />

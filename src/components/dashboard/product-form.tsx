@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { AiProductButton } from "@/components/dashboard/ai-product-button"
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -237,7 +236,6 @@ export function ProductForm({
         const newCat = await res.json()
         setCategories((prev) => [...prev, newCat].sort((a, b) => a.name.localeCompare(b.name)))
         
-        // Esperamos un tick para que la nueva categoría se monte en la lista antes de seleccionarla
         setTimeout(() => {
           setSelectedCategory(newCat.id)
         }, 50)
@@ -246,11 +244,16 @@ export function ProductForm({
         setShowNewCategoryInput(false)
         toast.success(`Categoría "${newCat.name}" guardada con éxito`)
       } else {
-        const errData = await res.json()
-        toast.error(errData.error || "Error al crear la categoría")
+        try {
+          const errData = await res.json()
+          toast.error(errData.error || "Error al crear la categoría")
+        } catch {
+          const text = await res.text()
+          toast.error(text?.slice(0, 200) || `Error ${res.status} al crear la categoría`)
+        }
       }
-    } catch {
-      toast.error("Error de conexión al crear categoría")
+    } catch (e: any) {
+      toast.error(e?.message || "Error de conexión al crear categoría")
     } finally {
       setSavingCategory(false)
     }
@@ -327,12 +330,12 @@ export function ProductForm({
 
   return (
     <div className="w-full flex justify-center py-6">
-      <div className="w-full max-w-2xl bg-white/80 p-8 rounded-3xl border border-white/60 shadow-2xl backdrop-blur-md">
+      <div className="w-full max-w-2xl bg-background/80 backdrop-blur-md p-8 rounded-3xl shadow-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Nombre Field */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Nombre*
             </Label>
             <Input
@@ -347,36 +350,31 @@ export function ProductForm({
               onBlur={(e) => {
                 e.target.placeholder = "Franela de manga corta."
               }}
-              className="rounded-xl border-slate-200 bg-white placeholder:opacity-50 placeholder:text-slate-400 focus-visible:ring-primary h-11"
+              className="rounded-xl bg-muted placeholder:opacity-50 placeholder:text-muted-foreground/40 focus-visible:ring-primary h-11"
             />
-          </div>
-
-          {/* AI Autocomplete Button */}
-          <div className="flex justify-end -mt-2">
-            <AiProductButton editorRef={editorRef} onCategorySuggested={handleCategorySuggested} />
           </div>
 
           {/* Description Word-like Rich Editor */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Descripción
               </Label>
-              <span className={`text-[10px] font-bold ${charCount > 4800 ? "text-rose-500" : "text-slate-400"}`}>
+              <span className={`text-[10px] font-bold ${charCount > 4800 ? "text-rose-500" : "text-muted-foreground"}`}>
                 {charCount} / 5000 caracteres
               </span>
             </div>
             
             {/* WYSIWYG Editor Container */}
-            <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary transition-all">
+            <div className="rounded-2xl bg-muted overflow-hidden focus-within:ring-2 focus-within:ring-primary/40 transition-all">
               {/* Word Toolbar */}
-              <div className="flex items-center gap-1 bg-slate-50 border-b border-slate-200 p-2 text-slate-500 shrink-0">
+              <div className="flex items-center gap-1 bg-muted p-2 text-muted-foreground shrink-0">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => applyFormatting("bold")}
-                  className="size-8 rounded-lg hover:bg-slate-200 hover:text-slate-900 active:scale-95"
+                  className="size-8 rounded-lg hover:bg-muted hover:text-foreground active:scale-95"
                   title="Negrita"
                 >
                   <Bold className="size-4" />
@@ -386,7 +384,7 @@ export function ProductForm({
                   variant="ghost"
                   size="icon"
                   onClick={() => applyFormatting("formatBlock", "<h3>")}
-                  className="size-8 rounded-lg hover:bg-slate-200 hover:text-slate-900 active:scale-95"
+                  className="size-8 rounded-lg hover:bg-muted hover:text-foreground active:scale-95"
                   title="Título"
                 >
                   <Heading3 className="size-4" />
@@ -396,7 +394,7 @@ export function ProductForm({
                   variant="ghost"
                   size="icon"
                   onClick={() => applyFormatting("formatBlock", "<h4>")}
-                  className="size-8 rounded-lg hover:bg-slate-200 hover:text-slate-900 active:scale-95"
+                  className="size-8 rounded-lg hover:bg-muted hover:text-foreground active:scale-95"
                   title="Subtítulo"
                 >
                   <Heading4 className="size-4" />
@@ -406,7 +404,7 @@ export function ProductForm({
                   variant="ghost"
                   size="icon"
                   onClick={insertLink}
-                  className="size-8 rounded-lg hover:bg-slate-200 hover:text-slate-900 active:scale-95"
+                  className="size-8 rounded-lg hover:bg-muted hover:text-foreground active:scale-95"
                   title="Insertar Enlace"
                 >
                   <Link2 className="size-4" />
@@ -419,7 +417,7 @@ export function ProductForm({
                 contentEditable
                 onInput={handleEditorChange}
                 {...{ placeholder: "Escribe la descripción de tu producto..." } as any}
-                className="p-4 min-h-[140px] max-h-[300px] overflow-y-auto text-sm focus:outline-hidden prose prose-sm max-w-none text-slate-800"
+                className="p-4 min-h-[140px] max-h-[300px] overflow-y-auto text-sm focus:outline-hidden prose prose-sm max-w-none text-foreground/80"
                 style={{ outline: "none" }}
               />
             </div>
@@ -428,7 +426,7 @@ export function ProductForm({
           {/* Pricing Row */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="price" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Label htmlFor="price" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Precio (USD) *
               </Label>
               <Input
@@ -440,11 +438,11 @@ export function ProductForm({
                 defaultValue={product?.price}
                 placeholder="0.00"
                 required
-                className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11"
+                className="rounded-xl bg-muted focus-visible:ring-primary h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="costPrice" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Label htmlFor="costPrice" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Precio de costo (USD)
               </Label>
               <Input
@@ -455,7 +453,7 @@ export function ProductForm({
                 min="0"
                 defaultValue={product?.costPrice || ""}
                 placeholder="0.00 (Opcional)"
-                className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11"
+                className="rounded-xl bg-muted focus-visible:ring-primary h-11"
               />
             </div>
           </div>
@@ -463,7 +461,7 @@ export function ProductForm({
           {/* Inventory and Dynamic Categories Row */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="stock" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Label htmlFor="stock" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Stock / Cantidad
               </Label>
               <Input
@@ -472,13 +470,13 @@ export function ProductForm({
                 type="number"
                 min="0"
                 defaultValue={product?.stock || 0}
-                className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11"
+                className="rounded-xl bg-muted focus-visible:ring-primary h-11"
               />
             </div>
             
             {/* Category Select + Inline creator */}
             <div className="space-y-2">
-              <Label htmlFor="categoryId" className="text-xs font-bold uppercase tracking-wider text-slate-500 flex justify-between items-center">
+              <Label htmlFor="categoryId" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex justify-between items-center">
                 Categoría
                 <button
                   type="button"
@@ -503,7 +501,7 @@ export function ProductForm({
                       placeholder="Ej. Accesorios"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11 flex-1 text-sm"
+                      className="rounded-xl bg-muted focus-visible:ring-primary h-11 flex-1 text-sm"
                     />
                     <Button
                       type="button"
@@ -524,7 +522,7 @@ export function ProductForm({
                   >
                     {categories.length === 0 ? (
                       /* Fallback when no categories exist */
-                      <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs text-slate-400">
+                      <div className="flex h-11 items-center justify-between rounded-xl bg-muted px-3.5 text-xs text-muted-foreground">
                         <span>Sin categorías registradas</span>
                         <button
                           type="button"
@@ -539,7 +537,7 @@ export function ProductForm({
                         <select
                           value={selectedCategory || "empty"}
                           onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-white h-11 text-slate-700 px-3.5 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary text-sm appearance-none cursor-pointer font-medium"
+                          className="w-full rounded-xl bg-muted h-11 text-foreground/80 px-3.5 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary text-sm appearance-none cursor-pointer font-medium"
                           style={{
                             backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
                             backgroundRepeat: "no-repeat",
@@ -563,52 +561,52 @@ export function ProductForm({
           </div>
 
           {/* SKU / Identification Section */}
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 space-y-3">
+          <div className="rounded-2xl  bg-muted p-4 space-y-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-extrabold text-accent uppercase tracking-wider">Identificación</span>
-              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Código único de inventario</span>
+              <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Código único de inventario</span>
             </div>
             
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="sku" className="text-xs font-bold text-slate-500">
-                  SKU <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span>
+                <Label htmlFor="sku" className="text-xs font-bold text-muted-foreground">
+                  SKU <span className="text-[10px] text-muted-foreground font-normal">(Opcional)</span>
                 </Label>
                 <Input
                   id="sku"
                   name="sku"
                   defaultValue={product?.sku || ""}
                   placeholder="Ej: CALZ-DEPO-42-01"
-                  className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11 uppercase text-sm font-bold tracking-wider"
+                  className="rounded-xl bg-muted focus-visible:ring-primary h-11 uppercase text-sm font-bold tracking-wider"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="unidadBase" className="text-xs font-bold text-slate-500">
-                  Unidad base <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span>
+                <Label htmlFor="unidadBase" className="text-xs font-bold text-muted-foreground">
+                  Unidad base <span className="text-[10px] text-muted-foreground font-normal">(Opcional)</span>
                 </Label>
                 <Input
                   id="unidadBase"
                   name="unidadBase"
                   defaultValue={product?.unidadBase || "Unidad"}
                   placeholder="Ej: Unidad, Kilo, Litro"
-                  className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11 text-sm font-bold"
+                  className="rounded-xl bg-muted focus-visible:ring-primary h-11 text-sm font-bold"
                 />
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
               Código único y unidad base para identificar el producto en inventario.
             </p>
           </div>
 
           {/* Premium Image Upload Area */}
           <div className="space-y-2.5">
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
               Imágenes del Producto
             </Label>
             
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group flex flex-col items-center justify-center gap-2 bg-white"
+              className="border-2 border-dashed border-border/20 hover:border-primary hover:bg-primary/5 rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group flex flex-col items-center justify-center gap-2 bg-muted"
             >
               <input
                 type="file"
@@ -619,24 +617,24 @@ export function ProductForm({
                 onChange={handleFileUpload}
                 disabled={uploading}
               />
-              <div className="flex size-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-400 group-hover:scale-105 group-hover:bg-white group-hover:text-primary transition-all duration-300">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground group-hover:scale-105 group-hover:bg-muted group-hover:text-primary transition-all duration-300">
                 <Upload className="size-5" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-700">Haz clic para cargar imágenes</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP (Hasta 5MB por archivo)</p>
+                <p className="text-xs font-bold text-foreground/80">Haz clic para cargar imágenes</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">PNG, JPG, WEBP (Hasta 5MB por archivo)</p>
               </div>
             </div>
 
             {images.length > 0 && (
               <div className="grid grid-cols-4 gap-3.5 pt-2 sm:grid-cols-5">
                 {images.map((imgUrl, index) => (
-                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 shadow-xs group">
+                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden  shadow-xs group">
                     <img src={imgUrl} alt={`Product Thumbnail ${index}`} className="size-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 size-5.5 rounded-full bg-slate-900/60 hover:bg-red-500 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer"
+                      className="absolute top-1 right-1 size-5.5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer"
                     >
                       <X className="size-3" />
                     </button>
@@ -646,24 +644,24 @@ export function ProductForm({
             )}
           </div>
 
-          <div className="h-px bg-slate-100/80 my-1 w-full" />
+          <div className="h-px bg-border my-1 w-full" />
 
           {/* Wholesale Toggle Section */}
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 space-y-4">
+          <div className="rounded-2xl  bg-muted p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-extrabold text-accent">Venta al Mayor</span>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Descuentos por volumen</span>
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Descuentos por volumen</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsWholesale(!isWholesale)}
                 className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
-                  isWholesale ? "bg-primary" : "bg-slate-200"
+                  isWholesale ? "bg-primary" : "bg-muted-foreground/20"
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block size-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block size-5.5 transform rounded-full bg-muted shadow-md ring-0 transition duration-200 ease-in-out ${
                     isWholesale ? "translate-x-5.5" : "translate-x-0"
                   }`}
                 />
@@ -677,7 +675,7 @@ export function ProductForm({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-4 overflow-hidden pt-2 border-t border-slate-100"
+                  className="space-y-4 overflow-hidden pt-2 "
                 >
                   {/* Banner descriptor */}
                   <div className="flex gap-2 bg-primary/10 border border-primary/20 rounded-xl p-3 text-xs text-primary leading-relaxed font-semibold">
@@ -688,27 +686,27 @@ export function ProductForm({
                   {/* Wholesale Pricing Row */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="wholesaleLabel" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <Label htmlFor="wholesaleLabel" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Etiqueta*
                       </Label>
                       <div className="relative">
-                        <Tag className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                        <Tag className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           id="wholesaleLabel"
                           value={wholesaleLabel}
                           onChange={(e) => setWholesaleLabel(e.target.value)}
                           placeholder="A partir de 30 piezas"
-                          className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11 pl-10 text-sm"
+                          className="rounded-xl bg-muted focus-visible:ring-primary h-11 pl-10 text-sm"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="wholesalePrice" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      <Label htmlFor="wholesalePrice" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         Precio unitario al mayor*
                       </Label>
                       <div className="relative">
-                        <BadgeDollarSign className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                        <BadgeDollarSign className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           id="wholesalePrice"
                           type="number"
@@ -717,7 +715,7 @@ export function ProductForm({
                           value={wholesalePrice}
                           onChange={(e) => setWholesalePrice(e.target.value)}
                           placeholder="$ 0.00"
-                          className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-11 pl-10 text-sm"
+                          className="rounded-xl bg-muted focus-visible:ring-primary h-11 pl-10 text-sm"
                         />
                       </div>
                     </div>
@@ -726,7 +724,7 @@ export function ProductForm({
                   {/* Price Scale Builder */}
                   <div className="space-y-3.5 pt-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                         Escala de Precios Adicional
                       </span>
                       <button
@@ -741,7 +739,7 @@ export function ProductForm({
                     {/* Scale items */}
                     <AnimatePresence>
                       {priceScales.length > 0 && (
-                        <div className="space-y-2 bg-white border border-slate-100 rounded-2xl p-3.5 shadow-inner">
+                        <div className="space-y-2 bg-muted rounded-2xl p-3.5 shadow-inner">
                           {priceScales.map((scale, index) => (
                             <motion.div
                               key={index}
@@ -751,34 +749,34 @@ export function ProductForm({
                               className="flex items-center gap-3.5"
                             >
                               <div className="flex-1 flex items-center gap-2">
-                                <span className="text-xs text-slate-400 shrink-0">Cant:</span>
+                                <span className="text-xs text-muted-foreground shrink-0">Cant:</span>
                                 <Input
                                   type="text"
                                   value={scale.quantity}
                                   onChange={(e) => handleUpdateScale(index, "quantity", e.target.value)}
                                   placeholder="50"
-                                  className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-9.5 text-xs text-center font-bold"
+                                  className="rounded-xl bg-muted focus-visible:ring-primary h-9.5 text-xs text-center font-bold"
                                 />
                               </div>
                               <div className="flex-1 flex items-center gap-2">
-                                <span className="text-xs text-slate-400 shrink-0">Precio:</span>
+                                <span className="text-xs text-muted-foreground shrink-0">Precio:</span>
                                 <div className="relative flex-1">
-                                  <span className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-xs text-slate-400">$</span>
+                                  <span className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                                   <Input
                                     type="text"
                                     value={scale.price}
                                     onChange={(e) => handleUpdateScale(index, "price", e.target.value)}
                                     placeholder="0.00"
-                                    className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-9.5 pl-5.5 text-xs font-bold text-center"
+                                    className="rounded-xl bg-muted focus-visible:ring-primary h-9.5 pl-5.5 text-xs font-bold text-center"
                                   />
                                 </div>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveScale(index)}
-                                className="size-8.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                                className="size-8.5 rounded-xl bg-muted hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                               >
-                                <Trash2 className="size-3.5 text-slate-400 hover:text-red-500" />
+                                <Trash2 className="size-3.5 text-muted-foreground hover:text-red-500" />
                               </button>
                             </motion.div>
                           ))}
@@ -786,7 +784,7 @@ export function ProductForm({
                       )}
                     </AnimatePresence>
 
-                    <p className="text-[10px] text-slate-400 leading-relaxed">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
                       * Activa esta opción si vendes este producto por cantidades.
                     </p>
                   </div>
@@ -796,7 +794,7 @@ export function ProductForm({
           </div>
 
           {/* Sizes Toggle Section */}
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 space-y-4">
+          <div className="rounded-2xl  bg-muted p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
@@ -805,17 +803,17 @@ export function ProductForm({
                     Nuevo
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Activa esta opción si tu producto viene en diferentes tallas o tamaños</span>
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Activa esta opción si tu producto viene en diferentes tallas o tamaños</span>
               </div>
               <button
                 type="button"
                 onClick={() => setHasSizes(!hasSizes)}
                 className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
-                  hasSizes ? "bg-primary" : "bg-slate-200"
+                  hasSizes ? "bg-primary" : "bg-muted-foreground/20"
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block size-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block size-5.5 transform rounded-full bg-muted shadow-md ring-0 transition duration-200 ease-in-out ${
                     hasSizes ? "translate-x-5.5" : "translate-x-0"
                   }`}
                 />
@@ -829,7 +827,7 @@ export function ProductForm({
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-4 overflow-hidden pt-2 border-t border-slate-100"
+                  className="space-y-4 overflow-hidden pt-2 "
                 >
                   {/* Banner descriptor */}
                   <div className="flex gap-2 bg-primary/10 border border-primary/20 rounded-xl p-3 text-xs text-primary leading-relaxed font-semibold">
@@ -840,7 +838,7 @@ export function ProductForm({
                   {/* Sizes Builder */}
                   <div className="space-y-3.5 pt-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                         Lista de Tallas / Tamaños
                       </span>
                       <button
@@ -855,7 +853,7 @@ export function ProductForm({
                     {/* Size list items */}
                     <AnimatePresence>
                       {sizes.length > 0 && (
-                        <div className="space-y-3 bg-white border border-slate-100 rounded-2xl p-3.5 shadow-inner">
+                        <div className="space-y-3 bg-muted rounded-2xl p-3.5 shadow-inner">
                           {sizes.map((item, index) => (
                             <motion.div
                               key={index}
@@ -866,7 +864,7 @@ export function ProductForm({
                             >
                               {/* Talla / Tamaño */}
                               <div className="flex-1 flex flex-col gap-1.5">
-                                <Label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                <Label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
                                   Talla / Tamaño*
                                 </Label>
                                 <Input
@@ -875,13 +873,13 @@ export function ProductForm({
                                   onChange={(e) => handleUpdateSize(index, "size", e.target.value)}
                                   placeholder="Ej: S, M, L, 42"
                                   required
-                                  className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-9.5 text-xs font-bold"
+                                  className="rounded-xl bg-muted focus-visible:ring-primary h-9.5 text-xs font-bold"
                                 />
                               </div>
 
                               {/* Stock (opcional) / Sin límite */}
                               <div className="flex-1 flex flex-col gap-1.5">
-                                <Label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                <Label className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
                                   Stock (opcional)
                                 </Label>
                                 <Input
@@ -893,7 +891,7 @@ export function ProductForm({
                                     handleUpdateSize(index, "stock", val === "" ? null : parseInt(val) || 0)
                                   }}
                                   placeholder="Sin límite"
-                                  className="rounded-xl border-slate-200 bg-white focus-visible:ring-primary h-9.5 text-xs font-bold"
+                                  className="rounded-xl bg-muted focus-visible:ring-primary h-9.5 text-xs font-bold"
                                 />
                               </div>
 
@@ -901,9 +899,9 @@ export function ProductForm({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSize(index)}
-                                className="size-8.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer shrink-0 mb-0.5"
+                                className="size-8.5 rounded-xl bg-muted hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer shrink-0 mb-0.5"
                               >
-                                <Trash2 className="size-3.5 text-slate-400 hover:text-red-500" />
+                                <Trash2 className="size-3.5 text-muted-foreground hover:text-red-500" />
                               </button>
                             </motion.div>
                           ))}
@@ -912,8 +910,8 @@ export function ProductForm({
                     </AnimatePresence>
 
                     {sizes.length === 0 && (
-                      <div className="text-center py-6 border border-dashed border-slate-200 rounded-2xl bg-white/50">
-                        <p className="text-xs font-bold text-slate-400">No has agregado ninguna talla aún.</p>
+                      <div className="text-center py-6 border border-dashed border-border/20 rounded-2xl bg-muted">
+                        <p className="text-xs font-bold text-muted-foreground">No has agregado ninguna talla aún.</p>
                         <button
                           type="button"
                           onClick={handleAddSize}
@@ -939,13 +937,13 @@ export function ProductForm({
           {/* Active Toggle Option */}
           <div className="flex items-center gap-2 py-1 px-1">
             <Checkbox id="isActive" name="isActive" defaultChecked={product ? product.isActive : true} />
-            <Label htmlFor="isActive" className="text-xs font-bold text-slate-600 select-none cursor-pointer">
+            <Label htmlFor="isActive" className="text-xs font-bold text-foreground/70 select-none cursor-pointer">
               Producto disponible para la venta
             </Label>
           </div>
 
           {/* Form Actions */}
-          <div className="flex gap-3.5 pt-4 border-t border-slate-100">
+          <div className="flex gap-3.5 pt-4 ">
             <Button
               type="submit"
               disabled={loading || uploading || (isWholesale && (!wholesaleLabel.trim() || !wholesalePrice)) || (hasSizes && (sizes.length === 0 || sizes.some(s => !s.size.trim())))}
@@ -957,7 +955,7 @@ export function ProductForm({
               type="button"
               variant="outline"
               onClick={() => router.push("/dashboard/products")}
-              className="rounded-xl border-slate-200 bg-white font-bold h-11 px-5"
+              className="rounded-xl bg-muted font-bold h-11 px-5"
             >
               Cancelar
             </Button>
@@ -1019,11 +1017,11 @@ function PresentacionesSection({ productId }: { productId: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 space-y-4">
+    <div className="rounded-2xl  bg-muted p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-extrabold text-accent">Presentaciones</span>
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+          <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
             Unidad, Pack, Caja — multiplicadores de precio
           </span>
         </div>
@@ -1039,23 +1037,23 @@ function PresentacionesSection({ productId }: { productId: string }) {
       {showForm && (
         <div className="flex gap-2 items-end">
           <div className="space-y-1 flex-1">
-            <Label className="text-[10px] font-bold text-slate-500">Nombre</Label>
+            <Label className="text-[10px] font-bold text-muted-foreground">Nombre</Label>
             <Input
               value={newLabel}
               onChange={e => setNewLabel(e.target.value)}
               placeholder="Ej: Pack x6"
-              className="rounded-xl border-slate-200 h-9 text-sm"
+              className="rounded-xl bg-muted h-9 text-sm"
               onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleAdd())}
             />
           </div>
           <div className="space-y-1 w-24">
-            <Label className="text-[10px] font-bold text-slate-500">Multiplicador</Label>
+            <Label className="text-[10px] font-bold text-muted-foreground">Multiplicador</Label>
             <Input
               type="number"
               min="1"
               value={newMultiplier}
               onChange={e => setNewMultiplier(e.target.value)}
-              className="rounded-xl border-slate-200 h-9 text-sm"
+              className="rounded-xl bg-muted h-9 text-sm"
             />
           </div>
           <Button type="button" size="sm" onClick={handleAdd} className="h-9 rounded-xl">
@@ -1073,7 +1071,7 @@ function PresentacionesSection({ productId }: { productId: string }) {
       ) : (
         <div className="flex flex-wrap gap-2">
           {presentations.map(p => (
-            <div key={p.id} className="inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs dark:bg-gray-800">
+            <div key={p.id} className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs ">
               <span className="font-semibold text-accent">{p.label}</span>
               <span className="text-muted-foreground">×{p.multiplier}</span>
               <button
@@ -1088,7 +1086,7 @@ function PresentacionesSection({ productId }: { productId: string }) {
         </div>
       )}
 
-      <p className="text-[10px] text-slate-400 leading-relaxed">
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
         Las presentaciones permiten vender el mismo producto en diferentes formatos (unidad, pack, caja). El precio se calcula como Precio base × Multiplicador.
       </p>
     </div>

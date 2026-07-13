@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# DB backups (large, auto-generated)
+/backups/*
+!/backups/.gitkeep
+
+# Prisma safety wrappers
+prisma.cmd
+prisma.ps1
+
+# Playwright browsers (large binaries)
+/test-results/
+/playwright-report/
+/playwright/.cache/

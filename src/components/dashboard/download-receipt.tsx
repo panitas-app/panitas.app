@@ -215,7 +215,7 @@ export function DownloadReceipt({ order }: { order: ReceiptOrder }) {
       doc.text("Información de pago", pageWidth / 2 + 5, payY + 6)
       doc.setFont("helvetica", "normal")
       doc.setTextColor(80)
-      const methodLabel = paidPayment.method === "bank_transfer" ? "Transferencia" : paidPayment.method === "pago_movil" ? "Pago Móvil" : paidPayment.method
+      const methodLabel = paidPayment.method === "bank_transfer" ? "Transferencia" : paidPayment.method === "pago_movil" ? "Pago Móvil" : paidPayment.method === "binancepay" ? "Binance Pay" : paidPayment.method
       doc.text(`Método: ${methodLabel}`, pageWidth / 2 + 5, payY + 12)
       if (paidPayment.reference) doc.text(`Referencia: ${paidPayment.reference}`, pageWidth / 2 + 5, payY + 17)
       if (paidPayment.bankOrigin) doc.text(`Banco origen: ${paidPayment.bankOrigin}`, pageWidth / 2 + 5, payY + 22)

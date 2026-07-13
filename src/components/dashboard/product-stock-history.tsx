@@ -34,18 +34,18 @@ export function ProductStockHistory({ productId }: { productId: string }) {
   }, [productId])
 
   const typeConfig: Record<string, { label: string; color: string; icon: any }> = {
-    increase: { label: "Entrada", color: "text-green-600 border-green-200 bg-green-50", icon: ArrowUp },
-    decrease: { label: "Salida", color: "text-red-600 border-red-200 bg-red-50", icon: ArrowDown },
-    adjustment: { label: "Ajuste", color: "text-amber-600 border-amber-200 bg-amber-50", icon: AlertTriangle },
-    sale: { label: "Venta", color: "text-blue-600 border-blue-200 bg-blue-50", icon: ArrowDown },
-    purchase: { label: "Compra", color: "text-green-600 border-green-200 bg-green-50", icon: ArrowUp },
-    return: { label: "Devolución", color: "text-purple-600 border-purple-200 bg-purple-50", icon: ArrowUp },
-    transfer: { label: "Transferencia", color: "text-gray-600 border-gray-200 bg-gray-50", icon: ArrowUp },
+    increase: { label: "Entrada", color: "text-green-400 bg-green-500/10", icon: ArrowUp },
+    decrease: { label: "Salida", color: "text-red-400 bg-red-500/10", icon: ArrowDown },
+    adjustment: { label: "Ajuste", color: "text-amber-400 bg-amber-500/10", icon: AlertTriangle },
+    sale: { label: "Venta", color: "text-blue-400 bg-blue-500/10", icon: ArrowDown },
+    purchase: { label: "Compra", color: "text-green-400 bg-green-500/10", icon: ArrowUp },
+    return: { label: "Devolución", color: "text-purple-400 bg-purple-500/10", icon: ArrowUp },
+    transfer: { label: "Transferencia", color: "text-gray-400 bg-gray-500/10", icon: ArrowUp },
   }
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border/50 p-6 animate-pulse">
+      <div className="rounded-2xl p-6 animate-pulse">
         <div className="h-6 bg-muted rounded w-48 mb-4" />
         <div className="space-y-2">
           {[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted rounded-xl" />)}
@@ -55,7 +55,7 @@ export function ProductStockHistory({ productId }: { productId: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-white dark:bg-gray-900 p-6">
+    <div className="rounded-2xl bg-muted p-6">
       <div className="flex items-center gap-2 mb-4">
         <Package className="size-5 text-muted-foreground" />
         <h3 className="font-semibold text-accent">Historial de movimientos de stock</h3>
@@ -71,7 +71,7 @@ export function ProductStockHistory({ productId }: { productId: string }) {
             const cfg = typeConfig[m.type] || typeConfig.adjustment
             const Icon = cfg.icon
             return (
-              <div key={m.id} className="flex items-center gap-3 rounded-xl border border-border/50 p-3 text-sm">
+              <div key={m.id} className="flex items-center gap-3 rounded-xl bg-muted p-3 text-sm">
                 <div className={`flex h-8 w-8 items-center justify-center rounded-full ${cfg.color}`}>
                   <Icon className="size-4" />
                 </div>

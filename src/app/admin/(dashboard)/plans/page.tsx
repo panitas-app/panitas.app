@@ -93,7 +93,7 @@ export default function AdminPlansPage() {
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         {(Object.entries(PLANS) as [PlanType, typeof PLANS[PlanType]][]).map(([key, plan]) => (
-          <Card key={key} className={cn("border-l-4", key === "basico" ? "border-l-slate-400" : key === "negocio" ? "border-l-blue-400" : "border-l-amber-400")}>
+          <Card key={key} className={cn("border-l-4", key === "agenda" ? "border-l-slate-400" : key === "comercio" ? "border-l-blue-400" : "border-l-amber-400")}>
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{plan.label}</p>
               <p className="text-2xl font-bold mt-1">{counts[key]}</p>

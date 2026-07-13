@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { FileText } from "lucide-react"
 
 const sections = [
   {
@@ -58,7 +59,7 @@ const sections = [
     title: "Exoneración Total de Responsabilidad Comercial y Logística",
     content: (
       <>
-        <p className="mb-4 text-amber-300 font-semibold">
+        <p className="mb-4 text-[#0066FF] font-semibold">
           Este es el núcleo de nuestra relación: Panitas es una herramienta tecnológica, no un
           intermediario comercial.
         </p>
@@ -121,8 +122,8 @@ const sections = [
               desc: "Venta de animales exóticos o protegidos por la Ley de Diversidad Biológica de Venezuela.",
             },
           ].map((item) => (
-            <li key={item.title} className="border-l-2 border-amber-500/40 pl-4">
-              <strong className="text-amber-300">{item.title}:</strong>{" "}
+            <li key={item.title} className="border-l-2 border-[#0066FF]/30 pl-4">
+              <strong className="text-[#0066FF]">{item.title}:</strong>{" "}
               <span>{item.desc}</span>
             </li>
           ))}
@@ -147,7 +148,7 @@ const sections = [
       <p>
         Si experimentas problemas técnicos, caídas del sistema o errores en tu panel de
         administración, nuestro canal oficial y exclusivo de atención es:{": "}
-        <a href="mailto:supportpanitas@gmail.com" className="text-amber-300 hover:text-amber-200 underline">
+        <a href="mailto:supportpanitas@gmail.com" className="text-primary hover:text-primary/80 underline">
           supportpanitas@gmail.com
         </a>
         . No atendemos disputas comerciales de tus clientes finales, solo soporte técnico directo
@@ -159,23 +160,26 @@ const sections = [
 
 export default function TerminosPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0A1628] via-[#0F2240] to-[#102A43] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-foreground">
       <div className="mx-auto max-w-4xl px-4 py-20">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-3">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+            <FileText className="size-6 text-primary" />
+          </div>
+          <h1 className="font-heading text-3xl font-bold mb-2">
             Términos y Condiciones de Uso
           </h1>
-          <p className="text-sm text-slate-400">Última actualización: Julio de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: Julio de 2026</p>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10">
-          <p className="text-slate-300 leading-relaxed">
+        <div className="mb-10 rounded-2xl bg-white/70 backdrop-blur-xl p-6 md:p-8 ring-1 ring-border/20 shadow-sm">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             ¡Te damos la bienvenida a Panitas! Antes de que empieces a crear tu tienda online o a
             gestionar tu agenda con nosotros, es fundamental que leas y comprendas estos Términos
             y Condiciones de Uso. Al registrarte y utilizar nuestra plataforma, estás aceptando
             este acuerdo legal de manera automática.
           </p>
-          <p className="text-slate-300 leading-relaxed mt-3">
+          <p className="text-sm text-muted-foreground leading-relaxed mt-3">
             Panitas es una plataforma SaaS (Software como Servicio) que pone a tu disposición las
             herramientas tecnológicas necesarias para que diseñes, gestiones y publiques tu propia
             tienda virtual y sistema de agendas. Nosotros te damos la infraestructura, pero tú
@@ -183,21 +187,21 @@ export default function TerminosPage() {
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {sections.map((section) => (
             <div
               key={section.number}
-              className="bg-white/5 border border-white/10 rounded-2xl p-6"
+              className="rounded-2xl bg-white/70 backdrop-blur-xl p-6 md:p-8 ring-1 ring-border/20 shadow-sm transition-all hover:shadow-md hover:ring-border/30"
             >
               <div className="flex items-start gap-4 mb-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300 font-bold text-sm">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm ring-1 ring-primary/20">
                   {section.number}
                 </span>
-                <h2 className="text-xl font-bold text-amber-300 pt-1">
+                <h2 className="font-heading text-lg font-bold text-foreground pt-0.5">
                   {section.title}
                 </h2>
               </div>
-              <div className="text-slate-300 leading-relaxed text-[15px] ml-14">
+              <div className="text-sm text-muted-foreground leading-relaxed ml-[3.25rem]">
                 {section.content}
               </div>
             </div>
@@ -207,7 +211,7 @@ export default function TerminosPage() {
         <div className="mt-12 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Volver al inicio
           </Link>

@@ -26,6 +26,7 @@ model User {
 
   // Trust & suspension
   trustScore       Int      @default(50)
+  phone            String?  // verified phone number
   phoneVerified    Boolean  @default(false)
   suspendedAt      DateTime?
   suspensionReason String?
@@ -43,6 +44,7 @@ model User {
   employees Employee[]
   supportTickets SupportTicket[]
   supportMessages SupportMessage[]
+  cashRegisterSessions CashRegisterSession[] // opened sessions
 }
 
 model Plan {
@@ -303,6 +305,7 @@ model Store {
   employees   Employee[]
   sellers     Seller[]
   stockMovements StockMovement[]
+  cashRegisterSessions CashRegisterSession[]
 }
 
 model StoreVisit {
@@ -401,16 +404,16 @@ model Product {
 
 model PaymentAccount {
   id        String   @id @default(cuid())
-  type      String   @default("bank") // bank, mobile, paypal, zelle, divisas
+  type      String   @default("bank") // bank, mobile, binancepay
   bankName  String?
   bankCode  String?
-  accountType String? // corriente, ahorro
+  accountType String?
   accountNumber String?
   accountHolder String?
-  documentId String? // cedula/rif
-  phone     String? // for pago movil
-  phoneBank String? // banco for pago movil
-  email     String? // for paypal/zelle
+  documentId String?
+  phone     String?
+  phoneBank String?
+  email     String? // for binancepay
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -516,24 +519,31 @@ model Order {
   shippingAgencyAddress String?
   shippingAddress String? // delivery address
 
-  // POS — Plan Empresarial
+  // POS
   sellerId   String?
   sellerName String?
   posPin     Boolean  @default(false)
+  cashRegisterSessionId String?
+  cashRegisterSession   CashRegisterSession? @relation(fields: [cashRegisterSessionId], references: [id], onDelete: SetNull)
 
-  // Crédito
-  creditDays Int?      // días de crédito otorgados
-  dueDate    DateTime? // fecha de vencimiento del crédito
+  // Crédito en cuotas
+  downPayment  Float?       // monto inicial pagado (si aplica)
+  creditTerm   String?      // "3_cuotas_15d" — tipo de crédito
+  totalCredito Float?       // monto total diferido a crédito
+  creditDays   Int?         // días de crédito otorgados (legacy)
+  dueDate      DateTime?    // fecha de vencimiento del crédito (legacy)
 
   seller Seller? @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: SetNull)
 
-  items       OrderItem[]
-  payments    OrderPayment[]
-  commissions SellerCommission[]
+  items        OrderItem[]
+  payments     OrderPayment[]
+  commissions  SellerCommission[]
+  installments Installment[]
 
   @@index([storeId, status, createdAt])
   @@index([storeId, paymentStatus])
   @@index([updatedAt])
+  @@index([cashRegisterSessionId])
 }
 
 model OrderItem {
@@ -557,7 +567,7 @@ model OrderItem {
 
 model OrderPayment {
   id            String   @id @default(cuid())
-  method        String   // bank_transfer, pago_movil, paypal, zelle, divisas, cash
+  method        String   // bank_transfer, pago_movil, cash
   amount        Float
   reference     String?
   bankOrigin    String?  // banco emisor del cliente
@@ -572,6 +582,63 @@ model OrderPayment {
 
   paymentAccountId String?
   paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id], onDelete: SetNull)
+}
+
+// POS — Cuotas / Crédito
+model Installment {
+  id        String   @id @default(cuid())
+  number    Int      // 1, 2, 3
+  amount    Float    // monto de esta cuota
+  dueDate   DateTime // fecha de vencimiento
+  status    String   @default("pending") // pending, paid, late
+  paidAt    DateTime?
+  paidAmount Float?
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+}
+
+// POS — Caja / Sesión de caja
+model CashRegisterSession {
+  id             String   @id @default(cuid())
+  status         String   @default("open") // open, closed
+
+  openingBalance Float    @default(0)
+
+  closingBalance Float?
+  closedAt       DateTime?
+  closedBy       String?
+  notes          String?
+
+  // Totals auto-calculated at close time
+  totalCash      Float    @default(0)
+  totalTransfer  Float    @default(0)
+  totalPagoMovil Float    @default(0)
+  totalDivisas   Float    @default(0)
+  totalCard      Float    @default(0)
+  totalCredit    Float    @default(0)
+  totalSales     Float    @default(0)
+  totalOrders    Int      @default(0)
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  openedBy String
+  opener   User @relation(fields: [openedBy], references: [id], onDelete: Cascade)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId, status])
+  @@index([storeId, createdAt])
 }
 
 model BcvRate {
@@ -615,7 +682,7 @@ model Expense {
   category      String   @default("otros")
   subcategory   String   @default("")
   date          DateTime @default(now())
-  paymentMethod String   @default("cash") // cash, bank_transfer, pago_movil, credit_card, debit_card, zelle, paypal, divisas
+  paymentMethod String   @default("cash") // cash, bank_transfer, pago_movil
   vendor        String   @default("")
   documentRef   String   @default("") // factura, control number, receipt
   isDeductible  Boolean  @default(false) // tax deductible
@@ -659,12 +726,22 @@ model StoreSubscription {
   updatedAt DateTime @updatedAt
 
   // Payment info (manual verification)
-  paymentMethod String?  // bank_transfer, pago_movil, zelle, paypal, divisas
+  paymentMethod String?  // bank_transfer, pago_movil, binancepay, cash
   reference     String?
   bankOrigin    String?
   paidAt        DateTime?
   receiptImage  String?
   paymentProofHash String?  // SHA-256 del comprobante para detectar duplicados
+
+  // 2-cuotas installment mode
+  paymentMode             String?    // "single" | "installment"
+  installmentAmount       Float?     // monto de cada cuota (ej: 9.00)
+  secondPaymentDue        DateTime?  // fecha tope del 2do pago (createdAt + 15 días)
+  secondPaymentPaid       Boolean    @default(false)
+  secondPaymentPaidAt     DateTime?
+  secondPaymentReference  String?
+  secondPaymentBankOrigin String?
+  secondPaymentReceipt    String?
 
   verifiedAt   DateTime?
   verifiedById String?
@@ -736,7 +813,7 @@ model AdminSetting {
 
 model AdminPaymentAccount {
   id        String   @id @default(cuid())
-  type      String   @default("bank") // bank, mobile, paypal, zelle, divisas
+  type      String   @default("bank") // bank, mobile, binancepay
   bankName  String?
   bankCode  String?
   accountType   String? // corriente, ahorro
@@ -745,7 +822,7 @@ model AdminPaymentAccount {
   documentId    String? // cedula/rif del titular
   phone     String? // for pago movil
   phoneBank String? // banco for pago movil
-  email     String? // for paypal/zelle
+  email     String? // for binancepay
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -155,7 +155,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-slate-400" />
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -164,7 +164,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
     <div className="space-y-8">
       {/* Current members */}
       <div>
-        <h3 className="mb-4 text-sm font-bold text-slate-800">Miembros actuales ({members.length})</h3>
+        <h3 className="mb-4 text-sm font-bold text-foreground/80">Miembros actuales ({members.length})</h3>
         <Table>
           <TableHeader>
             <TableRow>
@@ -180,13 +180,13 @@ export function TeamSettings({ storeId }: { storeId: string }) {
                   <div className="flex items-center gap-3">
                     <Avatar size="sm" className="size-8">
                       <AvatarImage src={m.user.image || undefined} />
-                      <AvatarFallback className="bg-slate-100 text-xs text-slate-600">
+                      <AvatarFallback className="bg-muted text-xs text-foreground/70">
                         {(m.user.name || m.user.email || "??").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-slate-800">{m.user.name || "Sin nombre"}</span>
-                      <span className="text-xs text-slate-400">{m.user.email}</span>
+                      <span className="text-sm font-semibold text-foreground/80">{m.user.name || "Sin nombre"}</span>
+                      <span className="text-xs text-muted-foreground">{m.user.email}</span>
                     </div>
                   </div>
                 </TableCell>
@@ -211,7 +211,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8 text-slate-400 hover:text-red-500"
+                    className="size-8 text-muted-foreground hover:text-red-400"
                     onClick={() => setConfirmRemove(m.id)}
                     title="Eliminar miembro"
                   >
@@ -227,18 +227,18 @@ export function TeamSettings({ storeId }: { storeId: string }) {
       {/* Pending invitations */}
       {invitations.length > 0 && (
         <div>
-          <h3 className="mb-4 text-sm font-bold text-slate-800">Invitaciones pendientes ({invitations.length})</h3>
+          <h3 className="mb-4 text-sm font-bold text-foreground/80">Invitaciones pendientes ({invitations.length})</h3>
           <div className="space-y-2">
             {invitations.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div key={inv.id} className="flex items-center justify-between rounded-xl bg-muted px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <Clock className="size-4 text-slate-400" />
+                  <Clock className="size-4 text-muted-foreground" />
                   <div>
-                    <span className="text-sm font-medium text-slate-700">{inv.email}</span>
+                      <span className="text-sm font-medium text-foreground/80">{inv.email}</span>
                     <Badge className={cn("ml-2 text-[10px] font-bold", roleColors[inv.role as Role])}>{roleLabels[inv.role as Role]}</Badge>
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-400">Pendiente</span>
+                <span className="text-[10px] text-muted-foreground">Pendiente</span>
               </div>
             ))}
           </div>
@@ -265,10 +265,10 @@ export function TeamSettings({ storeId }: { storeId: string }) {
 
           {inviteLink ? (
             <div className="space-y-4 py-4">
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
-                <Check className="mx-auto mb-2 size-8 text-emerald-500" />
-                <p className="text-sm font-semibold text-emerald-800">Invitación creada</p>
-                <p className="mt-1 text-xs text-emerald-600">
+              <div className="rounded-lg bg-emerald-500/10 p-4 text-center">
+                <Check className="mx-auto mb-2 size-8 text-emerald-400" />
+                <p className="text-sm font-semibold text-emerald-300">Invitación creada</p>
+                <p className="mt-1 text-xs text-emerald-400">
                   Comparte este enlace con {inviteEmail}
                 </p>
               </div>
@@ -308,7 +308,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 El enlace de invitación expirará en 7 días.
               </p>
               <DialogFooter>

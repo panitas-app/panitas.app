@@ -39,34 +39,34 @@ export default function SellerLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0A1628] to-[#1A2D4A] p-4">
-      <Card className="w-full max-w-sm border-white/10 bg-white/5 backdrop-blur shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
+      <Card className="w-full max-w-sm glass-dark shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-primary/20">
+          <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-2xl bg-primary/10">
             <Store className="size-7 text-primary" />
           </div>
-          <CardTitle className="text-white text-xl">Panel de Vendedor</CardTitle>
-          <p className="text-sm text-slate-400">Ingresa con tus credenciales</p>
+          <CardTitle className="text-[#050505] text-xl">Panel de Vendedor</CardTitle>
+          <p className="text-sm text-muted-foreground">Ingresa con tus credenciales</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-slate-300">Usuario</Label>
+              <Label className="text-foreground/70">Usuario</Label>
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Tu usuario"
-                className="bg-white/10 border-white/10 text-white placeholder:text-slate-500"
+                className="bg-white border-gray-200 text-[#050505] placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-300">Contraseña</Label>
+              <Label className="text-foreground/70">Contraseña</Label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tu contraseña"
-                className="bg-white/10 border-white/10 text-white placeholder:text-slate-500"
+                className="bg-white border-gray-200 text-[#050505] placeholder:text-muted-foreground"
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>

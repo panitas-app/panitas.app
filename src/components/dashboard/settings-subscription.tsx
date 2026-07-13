@@ -223,9 +223,7 @@ export function SettingsSubscription({ storeId, storePlan }: SettingsSubscriptio
                 <SelectContent>
                   <SelectItem value="bank_transfer">Transferencia bancaria</SelectItem>
                   <SelectItem value="pago_movil">Pago Móvil</SelectItem>
-                  <SelectItem value="zelle">Zelle</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                  <SelectItem value="divisas">Divisas (efectivo)</SelectItem>
+                  <SelectItem value="binancepay">Binance Pay</SelectItem>
                 </SelectContent>
               </Select>
             </div>

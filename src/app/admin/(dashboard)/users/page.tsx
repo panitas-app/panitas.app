@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Search, ExternalLink, UserX, UserCheck, Shield, Lock, ShieldAlert } from "lucide-react"
+import { Search, ExternalLink, Lock } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -25,7 +25,7 @@ interface UserItem {
   createdAt: string
   suspendedAt: string | null
   suspensionReason: string | null
-  store: { id: string; name: string; slug: string; plan: string; planType: string; planStatus: string } | null
+  store: { id: string; name: string; slug: string; plan: string; planType: string; planStatus: string; subscriptions: { status: string }[] } | null
   negocio: { id: string; planId: string; modalidad: string | null; planEstado: string } | null
   _count: { orders: number }
 }
@@ -38,10 +38,11 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [activateOpen, setActivateOpen] = useState(false)
-  const [activateUser, setActivateUser] = useState<UserItem | null>(null)
+  const [toggleOpen, setToggleOpen] = useState(false)
+  const [toggleUser, setToggleUser] = useState<UserItem | null>(null)
+  const [toggleTarget, setToggleTarget] = useState(false)
   const [adminPassword, setAdminPassword] = useState("")
-  const [activating, setActivating] = useState(false)
+  const [toggling, setToggling] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -57,28 +58,25 @@ export default function AdminUsersPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  function isPlanPending(u: UserItem): boolean {
-    if (u.store && u.store.planStatus !== "activo") return true
-    if (u.negocio && u.negocio.planEstado !== "activo") return true
-    if (!u.store && !u.negocio) return false
-    return false
+  function isActive(u: UserItem): boolean {
+    return (u.store?.planStatus === "activo" || u.negocio?.planEstado === "activo") && !u.suspendedAt
   }
 
-  async function handleActivatePlan() {
-    if (!activateUser || !adminPassword.trim()) { toast.error("Escribe la contraseña"); return }
-    setActivating(true)
-    const res = await fetch(`/api/admin/users/${activateUser.id}/activate-plan`, {
+  async function handleToggle() {
+    if (!toggleUser || !adminPassword.trim()) { toast.error("Escribe la contraseña"); return }
+    setToggling(true)
+    const res = await fetch(`/api/admin/users/${toggleUser.id}/toggle-activation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: adminPassword }),
+      body: JSON.stringify({ active: toggleTarget, secret: adminPassword }),
     })
-    setActivating(false)
+    setToggling(false)
     const json = await res.json()
-    if (!res.ok) { toast.error(json.error || "Error al activar plan"); return }
-    toast.success("Plan activado correctamente")
-    setActivateOpen(false)
+    if (!res.ok) { toast.error(json.error || "Error al cambiar estado"); return }
+    toast.success(toggleTarget ? "Cuenta activada" : "Cuenta desactivada")
+    setToggleOpen(false)
     setAdminPassword("")
-    setActivateUser(null)
+    setToggleUser(null)
     fetchData()
   }
 
@@ -89,6 +87,19 @@ export default function AdminUsersPage() {
       free: "Gratis", basic: "Básico", advanced: "Avanzado",
     }
     return map[planType] || planType
+  }
+
+  function getStatusInfo(u: UserItem): { label: string; color: string } {
+    if (u.suspendedAt) return { label: "Suspendido", color: "bg-red-100 text-red-700" }
+
+    const planStatus = u.store?.planStatus || u.negocio?.planEstado || null
+    const hasPendingSub = u.store?.subscriptions?.some(s => s.status === "pending") ?? false
+
+    if (planStatus === "activo") return { label: "Activo", color: "bg-green-100 text-green-700" }
+    if (hasPendingSub) return { label: "Suscripción Pendiente", color: "bg-amber-100 text-amber-700" }
+
+    if (planStatus) return { label: "Pendiente", color: "bg-gray-100 text-gray-500" }
+    return { label: "Pendiente", color: "bg-gray-100 text-gray-500" }
   }
 
   function getPlanColor(planType: string): string {
@@ -173,23 +184,40 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-sm">{u._count.orders}</TableCell>
                     <TableCell>
-                      {u.suspendedAt ? (
-                        <Badge variant="destructive" className="text-xs">Suspendido</Badge>
-                      ) : (
-                        <Badge className="bg-green-100 text-green-700 text-xs">Activo</Badge>
-                      )}
+                      <Badge className={cn("font-medium text-xs", getStatusInfo(u).color)}>
+                        {getStatusInfo(u).label}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(u.createdAt), "dd/MM/yyyy", { locale: es })}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {isPlanPending(u) && (
-                          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"
-                            onClick={() => { setActivateUser(u); setAdminPassword(""); setActivateOpen(true) }}>
-                            <ShieldAlert className="size-3.5" /> Activar
-                          </Button>
-                        )}
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isActive(u)}
+                          disabled={!!u.suspendedAt}
+                          onClick={() => {
+                            setToggleUser(u)
+                            setToggleTarget(!isActive(u))
+                            setAdminPassword("")
+                            setToggleOpen(true)
+                          }}
+                          className={cn(
+                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            isActive(u) ? "bg-green-500" : "bg-gray-300",
+                            u.suspendedAt && "opacity-40 cursor-not-allowed"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "pointer-events-none block size-3.5 rounded-full bg-white shadow-sm ring-0 transition-transform",
+                              isActive(u) ? "translate-x-[18px]" : "translate-x-[3px]"
+                            )}
+                          />
+                        </button>
                         <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/users/${u.id}`)}>
                           <ExternalLink className="size-4" />
                         </Button>
@@ -203,23 +231,23 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={activateOpen} onOpenChange={setActivateOpen}>
+      <Dialog open={toggleOpen} onOpenChange={setToggleOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Lock className="size-4" /> Activar plan sin pago</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Lock className="size-4" /> Confirmar cambio</DialogTitle>
             <DialogDescription>
-              Ingresa tu contraseña de Super Admin para activar el plan de <strong>{activateUser?.name || activateUser?.email}</strong> sin necesidad de pago.
+              Ingresa tu contraseña de Super Admin para {toggleTarget ? "activar" : "desactivar"} la cuenta de <strong>{toggleUser?.name || toggleUser?.email}</strong>.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <Input type="password" placeholder="Contraseña del Super Admin..." value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleActivatePlan()} />
+              onKeyDown={(e) => e.key === "Enter" && handleToggle()} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setActivateOpen(false); setAdminPassword("") }}>Cancelar</Button>
-            <Button onClick={handleActivatePlan} disabled={activating || !adminPassword.trim()}>
-              {activating ? "Activando..." : "Activar plan"}
+            <Button variant="outline" onClick={() => { setToggleOpen(false); setAdminPassword("") }}>Cancelar</Button>
+            <Button onClick={handleToggle} disabled={toggling || !adminPassword.trim()}>
+              {toggling ? "Procesando..." : toggleTarget ? "Activar" : "Desactivar"}
             </Button>
           </DialogFooter>
         </DialogContent>

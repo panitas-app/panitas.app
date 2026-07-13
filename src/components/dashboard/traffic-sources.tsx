@@ -23,7 +23,7 @@ const COLORS: Record<string, { cls: string; stroke: string }> = {
   email: { cls: "bg-purple-500", stroke: "#a855f7" },
 }
 
-const DEFAULT_COLOR = { cls: "bg-slate-400", stroke: "#94a3b8" }
+const DEFAULT_COLOR = { cls: "bg-muted-foreground/20", stroke: "#94a3b8" }
 
 export function TrafficSources({ sources = [] }: Props) {
   const sorted = useMemo(
@@ -35,13 +35,13 @@ export function TrafficSources({ sources = [] }: Props) {
   const hasData = sources.length > 0 && totalPct > 0
 
   return (
-    <Card className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-      <CardHeader className="pb-4 pt-7 px-6 border-b border-slate-100 dark:border-slate-800">
+    <Card className="rounded-3xl bg-card shadow-xs overflow-hidden">
+      <CardHeader className="pb-4 pt-7 px-6">
         <CardTitle className="font-heading text-lg font-bold text-accent flex items-center gap-2">
           <Globe className="size-5 text-primary" />
           Tráfico Web
         </CardTitle>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Origen de visitas a tu tienda</p>
+        <p className="text-xs text-muted-foreground">Origen de visitas a tu tienda</p>
       </CardHeader>
       <CardContent className="p-6">
         <div className="flex items-center justify-center mb-6 relative">

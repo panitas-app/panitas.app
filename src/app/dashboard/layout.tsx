@@ -9,7 +9,12 @@ import { UpgradeBannerWrapper } from "@/components/dashboard/upgrade-banner-wrap
 import { getEffectiveRate } from "@/lib/bcv"
 import { DashboardTourHandler } from "@/components/dashboard/dashboard-tour-handler"
 import { BcvRateProvider } from "@/lib/bcv-context"
-import { PanaIaFloating } from "@/components/dashboard/pana-ia-floating"
+import { InstallmentOverdueBanner } from "@/components/dashboard/installment-overdue-banner"
+import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
+}
 
 export default async function DashboardLayout({
   children,
@@ -19,8 +24,44 @@ export default async function DashboardLayout({
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
 
-  const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  let current = await getCurrentStore()
+
+  // Auto-create Negocio + Store if missing (e.g. Google OAuth first time)
+  if (!current) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } })
+    const name = user?.name || "Mi Tienda"
+    const slug = slugify(name) + "-" + session.user.id.slice(0, 6)
+
+    await prisma.plan.upsert({
+      where: { id: "comercio" },
+      update: {},
+      create: {
+        id: "comercio", nombre: "comercio", label: "Comercio",
+        descripcion: "", precioUsd: 25, precioUsdAnual: 250,
+        activo: true, sortOrder: 2,
+      },
+    })
+
+    const negocio = await prisma.negocio.create({
+      data: {
+        nombre: name, slug, planId: "comercio",
+        modalidad: null, planEstado: "pendiente",
+        planVencimiento: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        userId: session.user.id,
+      },
+    })
+
+    await prisma.store.create({
+      data: {
+        name, slug, userId: session.user.id, negocioId: negocio.id,
+        plan: "free", planType: "tienda", planStatus: "pendiente",
+        members: { create: { userId: session.user.id, role: "admin" } },
+      },
+    })
+
+    current = await getCurrentStore()
+    if (!current) redirect("/login")
+  }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
 
@@ -29,27 +70,46 @@ export default async function DashboardLayout({
     select: { planId: true, modalidad: true },
   })
 
+  // Check for overdue second installment
+  const activeSubscription = await prisma.storeSubscription.findFirst({
+    where: {
+      storeId: current.store.id,
+      status: "active",
+      paymentMode: "installment",
+      secondPaymentPaid: false,
+      secondPaymentDue: { lte: new Date() },
+    },
+    select: { id: true, secondPaymentDue: true, installmentAmount: true },
+  })
+
   const bcvRate = await getEffectiveRate()
 
-  // Map to planType used by tour registry
   const planType = current.store.planType || "tienda"
 
   return (
     <DashboardTourHandler planType={planType}>
       <NewOrdersProvider>
         <BcvRateProvider initialRate={bcvRate}>
-          <div className="flex min-h-screen bg-background text-foreground">
-            <PanaIaFloating businessName={current.store.name} storeType={planType} />
-            <DashboardSidebar store={current.store} role={current.role} />
-            <div className="flex flex-1 flex-col lg:pl-64">
-              <DashboardTopbar store={current.store} user={user} role={current.role} />
-              <main className="flex-1 p-4 md:p-6">
-                <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
-                  {children}
-                </UpgradeBannerWrapper>
-              </main>
+          <SetupWizardProvider
+            storeId={current.store.id}
+            negocioId={current.store.negocioId}
+            planId={negocio?.planId || "comercio"}
+            planType={planType}
+            storeSetupComplete={!!current.store.description && !!current.store.name}
+          >
+            <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
+              <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
+              <div className="flex flex-1 flex-col lg:pl-64">
+                <DashboardTopbar store={current.store} user={user} role={current.role} />
+                <main className="flex-1 p-4 md:p-6">
+                  {activeSubscription && <InstallmentOverdueBanner subscriptionId={activeSubscription.id} dueDate={activeSubscription.secondPaymentDue!} amount={activeSubscription.installmentAmount!} />}
+                  <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
+                    {children}
+                  </UpgradeBannerWrapper>
+                </main>
+              </div>
             </div>
-          </div>
+          </SetupWizardProvider>
         </BcvRateProvider>
       </NewOrdersProvider>
     </DashboardTourHandler>

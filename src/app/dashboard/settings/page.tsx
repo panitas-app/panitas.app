@@ -8,6 +8,7 @@ import { SettingsPayments } from "@/components/dashboard/settings-payments"
 import { TeamSettings } from "@/components/dashboard/team-settings"
 import { SettingsSubscription } from "@/components/dashboard/settings-subscription"
 import { SettingsCredit } from "@/components/dashboard/settings-credit"
+import { SettingsPhone } from "@/components/dashboard/settings-phone"
 import { getCurrentStore } from "@/lib/permissions"
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
 
 export default async function SettingsPage(props: Props) {
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const searchParams = await props.searchParams
 
@@ -25,7 +26,7 @@ export default async function SettingsPage(props: Props) {
   const isEnterprise = planType === "empresa" || planType === "empresarial"
   const isAdmin = current.role === "admin"
 
-  const validTabs = ["general", "payments", ...(isAdmin ? ["subscription"] : []), ...(isNegocio && isAdmin ? ["team"] : []), ...(isEnterprise ? ["credit"] : [])]
+  const validTabs = ["general", "payments", "phone", ...(isAdmin ? ["subscription"] : []), ...(isNegocio && isAdmin ? ["team"] : []), ...(isEnterprise ? ["credit"] : [])]
   const defaultTab = validTabs.includes(searchParams?.tab || "") ? searchParams!.tab! : "general"
 
   const paymentAccounts = await prisma.paymentAccount.findMany({
@@ -33,6 +34,11 @@ export default async function SettingsPage(props: Props) {
   })
 
   const storeWithAccounts = { ...current.store, paymentAccounts }
+
+  const userData = current.userId ? await prisma.user.findUnique({
+    where: { id: current.userId },
+    select: { phone: true, phoneVerified: true },
+  }) : null
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -42,6 +48,7 @@ export default async function SettingsPage(props: Props) {
         <TabsList className="w-full justify-start flex-nowrap overflow-x-auto scrollbar-none">
           <TabsTrigger value="general">Envío</TabsTrigger>
           <TabsTrigger value="payments">Cuentas de pago</TabsTrigger>
+          <TabsTrigger value="phone">Teléfono</TabsTrigger>
           {isNegocio && isAdmin && <TabsTrigger value="team">Equipo</TabsTrigger>}
           {isAdmin && <TabsTrigger value="subscription">Suscripción</TabsTrigger>}
           {isEnterprise && <TabsTrigger value="credit">Crédito</TabsTrigger>}
@@ -74,6 +81,20 @@ export default async function SettingsPage(props: Props) {
             </CardHeader>
             <CardContent>
               <SettingsPayments store={storeWithAccounts} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="phone" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Verificación de Teléfono</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SettingsPhone
+                initialPhone={userData?.phone}
+                initialVerified={userData?.phoneVerified || false}
+              />
             </CardContent>
           </Card>
         </TabsContent>

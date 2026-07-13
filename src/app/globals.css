@@ -2,13 +2,40 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@font-face {
+  font-family: "Systemia";
+  src: url("/fonts/Systemia-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Systemia";
+  src: url("/fonts/Systemia-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Systemia";
+  src: url("/fonts/Systemia-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Polymath Display";
+  src: url("/fonts/PolymathDisp-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-body: var(--font-body);
-  --font-heading: var(--font-heading);
+  --font-body: "Systemia", "Inter", sans-serif;
+  --font-heading: "Polymath Display", Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -47,104 +74,65 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ── v3 Light Theme (default, liquid glass) ── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: #102A43;
-  --card: oklch(1 0 0);
-  --card-foreground: #102A43;
-  --popover: oklch(1 0 0);
-  --popover-foreground: #102A43;
-  --primary: #FFB92E;
-  --primary-foreground: #102A43;
-  --secondary: #F5F7FA;
-  --secondary-foreground: #102A43;
-  --muted: #F5F7FA;
-  --muted-foreground: #64748B;
-  --accent: #102A43;
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #FFB92E;
-  --chart-1: #FFB92E;
-  --chart-2: #102A43;
-  --chart-3: #184BBF;
-  --chart-4: #64748B;
-  --chart-5: #F5F7FA;
-  --radius: 0;
-  --sidebar: #102A43;
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: #FFB92E;
-  --sidebar-primary-foreground: #102A43;
-  --sidebar-accent: #1E3A8A;
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #FFB92E;
-}
+  --background: #FFFFFF;
+  --foreground: #050505;
+  --card: #FFFFFF;
+  --card-foreground: #050505;
+  --popover: #FFFFFF;
+  --popover-foreground: #050505;
+  --primary: #0066FF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F4FF;
+  --secondary-foreground: #050505;
+  --muted: #F5F5F5;
+  --muted-foreground: #6B7280;
+  --accent: #FFD600;
+  --accent-foreground: #050505;
+  --destructive: #EF4444;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #0066FF;
+  --chart-1: #0066FF;
+  --chart-2: #050505;
+  --chart-3: #FFD600;
+  --chart-4: #6B7280;
+  --chart-5: #F0F4FF;
+  --radius: 0.75rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #050505;
+  --sidebar-primary: #0066FF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0F4FF;
+  --sidebar-accent-foreground: #050505;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #0066FF;
 
-.dark {
-  --background: #0b1120;
-  --foreground: #e2e8f0;
-  --card: #121a2e;
-  --card-foreground: #e2e8f0;
-  --popover: #121a2e;
-  --popover-foreground: #e2e8f0;
-  --primary: #FFB92E;
-  --primary-foreground: #0b1120;
-  --secondary: #1a2540;
-  --secondary-foreground: #e2e8f0;
-  --muted: #0f172a;
-  --muted-foreground: #8899b4;
-  --accent: #f1f5f9;
-  --accent-foreground: #0b1120;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #1e2a45;
-  --input: #1e2a45;
-  --ring: #FFB92E;
-  --chart-1: #FFB92E;
-  --chart-2: #60a5fa;
-  --chart-3: #f472b6;
-  --chart-4: #a78bfa;
-  --chart-5: #1e2a45;
-  --sidebar: #0b1120;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #FFB92E;
-  --sidebar-primary-foreground: #0b1120;
-  --sidebar-accent: #1a2540;
-  --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-ring: #FFB92E;
-}
+  /* v3 swatch */
+  --swatch--light-base: #FFFFFF;
+  --swatch--dark-base: #071A33;
+  --swatch--dark-card: #051026;
+  --swatch--blue: #0066FF;
+  --swatch--blue-light: #E0EDFF;
+  --swatch--yellow: #FFD600;
+  --swatch--yellow-light: #FFF5CC;
+  --swatch--black: #050505;
+  --swatch--gray: #6B7280;
 
-.dark .glass {
-  background: rgba(18, 26, 46, 0.6);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-
-.dark .glass-card {
-  background: rgba(18, 26, 46, 0.7);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: #0b1120;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #1e2a45;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  /* glass — light version */
+  --glass-blur: blur(16px);
+  --glass-radius: 1.5rem;
+  --glass-bg: rgba(255,255,255,0.7);
+  --glass-dark-bg: rgba(240,244,255,0.85);
+  --glass-border: rgba(0,0,0,0.05);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.8);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.04);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+    @apply outline-ring/50;
   }
   html {
     @apply font-body scroll-smooth;
@@ -154,52 +142,65 @@
   }
   ::selection {
     background-color: #FFB92E;
-    color: #102A43;
+    color: #071A33;
   }
   ::-webkit-scrollbar {
     width: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #F5F7FA;
+    background: #0F2240;
   }
   ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
+    background: #1E3A5F;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
+    background: #2E4A6F;
   }
 }
 
 @utility glass {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--glass-bg, rgba(255,255,255,0.7));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  border: 1px solid var(--glass-border, rgba(0,0,0,0.05));
 }
 
 @utility glass-dark {
-  background: rgba(16, 42, 67, 0.6);
+  background: var(--glass-dark-bg, rgba(240,244,255,0.85));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--glass-shadow, 0 8px 32px rgba(0,0,0,0.04));
 }
 
 @utility glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px 0 rgba(16, 42, 67, 0.04);
+  background: var(--glass-bg, rgba(255,255,255,0.75));
+  backdrop-filter: var(--glass-blur, blur(14px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(14px));
+  box-shadow: var(--glass-shadow, 0 8px 32px rgba(0,0,0,0.04));
+}
+
+@utility glass-glow-accent {
+  box-shadow: 0 0 30px 0 rgba(0,102,255,0.08), inset 0 0 12px 0 rgba(255,255,255,0.8);
 }
 
 @utility text-glow {
-  text-shadow: 0 0 20px rgba(255, 185, 46, 0.35);
+  text-shadow: 0 0 20px rgba(0, 102, 255, 0.35);
 }
 
 @utility glass-glow {
-  box-shadow: 0 0 30px 0 rgba(255, 185, 46, 0.12), inset 0 0 12px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 30px 0 rgba(0, 102, 255, 0.12), inset 0 0 12px 0 rgba(255, 255, 255, 0.2);
 }
+
+@utility scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Animations ── */
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(35px); }
@@ -219,22 +220,8 @@
   animation: fade-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@utility scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* ── Square redesign: eliminate all rounded corners ── */
-.rounded-full {
-  border-radius: 0 !important;
-}
-
 /* ── Icon hover animations ── */
 
-/* Subtle wobble for EVERY lucide icon inside interactive elements */
 button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
   transition: transform 0.2s ease;
 }
@@ -264,7 +251,6 @@ button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, l
   50% { transform: scale(1.15); }
 }
 
-/* Override individual icons with specific animations */
 .icon-hover-spin,
 .icon-hover-bounce,
 .icon-hover-pulse {
