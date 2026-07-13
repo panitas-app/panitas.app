@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        destination: "/landing.html",
+      },
+    ]
+  },
   async headers() {
     return [
       {
