@@ -54,3 +54,9 @@ prisma.ps1
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Root videos/ is a duplicate of public/videos/plans/
+/videos/
+
+# User uploads (not source code)
+/public/uploads/
