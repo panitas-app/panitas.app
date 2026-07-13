@@ -60,3 +60,5 @@ prisma.ps1
 
 # User uploads (not source code)
 /public/uploads/
+
+.vercel

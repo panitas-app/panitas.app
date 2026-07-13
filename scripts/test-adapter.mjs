@@ -1,11 +1,13 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
-import pg from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import ws from 'ws'
 
-const { Pool } = pg
+neonConfig.webSocketConstructor = ws
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-const adapter = new PrismaPg(pool)
+const adapter = new PrismaNeon(pool)
 const prisma = new PrismaClient({ adapter, log: ['error'] })
 
 // Test what the adapter would find
