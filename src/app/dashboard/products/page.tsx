@@ -29,7 +29,7 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; category?: string; page?: string }>
 }) {
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const searchParamsResolved = await searchParams
   const { q, category } = searchParamsResolved

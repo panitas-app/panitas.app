@@ -12,43 +12,41 @@ import { Pagination } from "@/components/ui/pagination"
 import { toast } from "sonner"
 import {
   Receipt, Plus, Search, Filter, Download, TrendingUp,
-  Building2, CreditCard, Banknote, Smartphone, Landmark,
+  Building2, Banknote, Smartphone, Landmark,
   PiggyBank, ShoppingBag, Home, Car, Utensils, Wifi,
   Package, Shirt, Heart, GraduationCap, MoreHorizontal, X,
+  Users, Zap, Paperclip, Truck, Megaphone, ClipboardList,
+  BarChart3, Scale, Wrench, Monitor, RefreshCw, Wallet,
 } from "lucide-react"
 
 const EXPENSE_CATEGORIES = [
-  { value: "nomina", label: "Nómina", icon: "👥" },
-  { value: "alquiler", label: "Alquiler / Sede", icon: "🏠" },
-  { value: "servicios", label: "Servicios (agua, luz, internet)", icon: "💡" },
-  { value: "suministros", label: "Suministros de oficina", icon: "📎" },
-  { value: "inventario", label: "Compra de inventario", icon: "📦" },
-  { value: "envio", label: "Envíos / Logística", icon: "🚚" },
-  { value: "marketing", label: "Marketing / Publicidad", icon: "📢" },
-  { value: "comisiones", label: "Comisiones", icon: "💰" },
-  { value: "transporte", label: "Transporte / Gasolina", icon: "🚗" },
-  { value: "empaque", label: "Empaque / Embalaje", icon: "📋" },
-  { value: "alimentacion", label: "Alimentación", icon: "🍽️" },
-  { value: "salud", label: "Salud / Seguro", icon: "🏥" },
-  { value: "educacion", label: "Educación / Capacitación", icon: "🎓" },
-  { value: "impuestos", label: "Impuestos / Tasas", icon: "📊" },
-  { value: "legal", label: "Honorarios legales / Contables", icon: "⚖️" },
-  { value: "mantenimiento", label: "Mantenimiento / Reparaciones", icon: "🔧" },
-  { value: "tecnologia", label: "Tecnología / Software", icon: "💻" },
-  { value: "publicidad", label: "Pauta digital / Redes sociales", icon: "📱" },
-  { value: "suscripciones", label: "Suscripciones", icon: "🔄" },
-  { value: "otros", label: "Otros", icon: "📌" },
+  { value: "nomina", label: "Nómina", icon: Users },
+  { value: "alquiler", label: "Alquiler / Sede", icon: Home },
+  { value: "servicios", label: "Servicios (agua, luz, internet)", icon: Zap },
+  { value: "suministros", label: "Suministros de oficina", icon: Paperclip },
+  { value: "inventario", label: "Compra de inventario", icon: Package },
+  { value: "envio", label: "Envíos / Logística", icon: Truck },
+  { value: "marketing", label: "Marketing / Publicidad", icon: Megaphone },
+  { value: "comisiones", label: "Comisiones", icon: PiggyBank },
+  { value: "transporte", label: "Transporte / Gasolina", icon: Car },
+  { value: "empaque", label: "Empaque / Embalaje", icon: ClipboardList },
+  { value: "alimentacion", label: "Alimentación", icon: Utensils },
+  { value: "salud", label: "Salud / Seguro", icon: Heart },
+  { value: "educacion", label: "Educación / Capacitación", icon: GraduationCap },
+  { value: "impuestos", label: "Impuestos / Tasas", icon: BarChart3 },
+  { value: "legal", label: "Honorarios legales / Contables", icon: Scale },
+  { value: "mantenimiento", label: "Mantenimiento / Reparaciones", icon: Wrench },
+  { value: "tecnologia", label: "Tecnología / Software", icon: Monitor },
+  { value: "publicidad", label: "Pauta digital / Redes sociales", icon: Smartphone },
+  { value: "suscripciones", label: "Suscripciones", icon: RefreshCw },
+  { value: "otros", label: "Otros", icon: MoreHorizontal },
 ]
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "Efectivo", icon: Banknote },
   { value: "bank_transfer", label: "Transferencia bancaria", icon: Landmark },
   { value: "pago_movil", label: "Pago Móvil", icon: Smartphone },
-  { value: "credit_card", label: "Tarjeta de crédito", icon: CreditCard },
-  { value: "debit_card", label: "Tarjeta de débito", icon: CreditCard },
-  { value: "zelle", label: "Zelle", icon: Building2 },
-  { value: "paypal", label: "PayPal", icon: Building2 },
-  { value: "divisas", label: "Divisas / Efectivo USD", icon: Banknote },
+  { value: "binancepay", label: "Binance Pay", icon: Wallet },
 ]
 
 const MONTHS = [
@@ -314,7 +312,6 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [vendor, setVendor] = useState("")
   const [documentRef, setDocumentRef] = useState("")
-  const [isDeductible, setIsDeductible] = useState(false)
   const [isRecurring, setIsRecurring] = useState(false)
   const [notes, setNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -341,12 +338,12 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description, amount: parseFloat(amount), category, date, paymentMethod,
-          vendor, documentRef, isDeductible, isRecurring, notes: notes || null,
+          vendor, documentRef, isRecurring, notes: notes || null,
         }),
       })
       if (!res.ok) throw new Error("Error")
       toast.success("Gasto registrado exitosamente")
-      setDescription(""); setAmount(""); setCategory("otros"); setVendor(""); setDocumentRef(""); setNotes(""); setIsDeductible(false); setIsRecurring(false)
+      setDescription(""); setAmount(""); setCategory("otros"); setVendor(""); setDocumentRef(""); setNotes(""); setIsRecurring(false)
       onSuccess()
     } catch { toast.error("Error al registrar el gasto") }
     finally { setSubmitting(false) }
@@ -411,11 +408,14 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
                 <Select value={category} onValueChange={(v) => v !== null && setCategory(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {EXPENSE_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        <span>{c.icon}</span> {c.label}
-                      </SelectItem>
-                    ))}
+                    {EXPENSE_CATEGORIES.map((c) => {
+                      const CatIcon = c.icon
+                      return (
+                        <SelectItem key={c.value} value={c.value}>
+                          <CatIcon className="size-3.5 shrink-0" /> {c.label}
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -448,11 +448,7 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={isDeductible} onChange={(e) => setIsDeductible(e.target.checked)} className="rounded" />
-                <span className="text-sm">Deducible de ISLR</span>
-              </label>
+              <div className="flex items-center gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={isRecurring} onChange={(e) => setIsRecurring(e.target.checked)} className="rounded" />
                 <span className="text-sm">Gasto recurrente</span>
@@ -505,9 +501,14 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
                 <Select value={budgetCategory} onValueChange={(v) => v !== null && setBudgetCategory(v)}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {EXPENSE_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
-                    ))}
+                    {EXPENSE_CATEGORIES.map((c) => {
+                      const BudgetIcon = c.icon
+                      return (
+                        <SelectItem key={c.value} value={c.value}>
+                          <BudgetIcon className="size-3.5 shrink-0" /> {c.label}
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -607,9 +608,14 @@ function ExpenseList() {
                 <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   <SelectItem value="todas">Todas las categorías</SelectItem>
-                  {EXPENSE_CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
-                  ))}
+                  {EXPENSE_CATEGORIES.map((c) => {
+                    const FilterIcon = c.icon
+                    return (
+                      <SelectItem key={c.value} value={c.value}>
+                        <FilterIcon className="size-3.5 shrink-0" /> {c.label}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -676,7 +682,6 @@ function ExpenseList() {
                         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
                           {catLabels[e.category] || e.category}
                         </span>
-                        {e.isDeductible && <span className="ml-1 text-[9px] text-green-600 font-semibold">D</span>}
                         {e.isRecurring && <span className="ml-1 text-[9px] text-blue-600 font-semibold">R</span>}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{e.vendor || "—"}</td>

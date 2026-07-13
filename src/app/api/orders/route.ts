@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { getCurrentStore, requireRole } from "@/lib/permissions"
 import { generateOrderNumber } from "@/lib/utils"
 import { getPaginationParams, paginatedResponse } from "@/lib/pagination"
-import { enviarAlertaNuevoPedido } from "@/lib/resend-email"
+import { enviarAlertaNuevoPedido, sendEmail } from "@/lib/email"
+import { templateOrderConfirmation } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 import { rateLimit } from "@/lib/rate-limit"
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     const productIds = body.items.map((i: any) => i.productId)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, stock: true, name: true, price: true },
+      select: { id: true, stock: true, name: true, price: true, costPrice: true, isWholesale: true, wholesalePrice: true, wholesaleScales: true },
     })
     const productMap = new Map(products.map((p) => [p.id, p]))
 
@@ -80,8 +81,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check stock & build items with DB prices
-    const itemsData: Array<{ productId: string; quantity: number; price: number; subtotal: number; productName: string }> = []
+    // Check stock & build items with server-validated prices
+    const itemsData: Array<{ productId: string; quantity: number; price: number; subtotal: number; productName: string; lineDiscount?: number }> = []
     for (const item of body.items) {
       const product = productMap.get(item.productId)!
       const qty = parseInt(item.quantity)
@@ -91,13 +92,46 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      // Use DB price, ignore client-supplied price
-      const dbPrice = product.price
+
+      // Determine price: wholesale, client-supplied, or default
+      let unitPrice = product.price
+
+      // Wholesale pricing
+      const useWholesale = item.useWholesale !== false
+      if (useWholesale && product.isWholesale) {
+        let foundScale = false
+        if (product.wholesaleScales) {
+          try {
+            const scales = typeof product.wholesaleScales === "string" ? JSON.parse(product.wholesaleScales) : product.wholesaleScales
+            if (Array.isArray(scales)) {
+              const sorted = [...scales].sort((a: any, b: any) => (b.quantity || 0) - (a.quantity || 0))
+              const match = sorted.find((s: any) => qty >= (s.quantity || 0))
+              if (match && match.price > 0) {
+                unitPrice = match.price
+                foundScale = true
+              }
+            }
+          } catch { /* ignore parse error */ }
+        }
+        if (!foundScale && product.wholesalePrice && qty >= 5) {
+          unitPrice = product.wholesalePrice
+        }
+      }
+
+      // Client-supplied price with validation (POS discounts etc.)
+      if (item.price !== undefined && item.price !== null) {
+        const clientPrice = parseFloat(item.price)
+        const minPrice = Math.max(product.costPrice || 0, product.price * 0.5)
+        if (clientPrice >= minPrice && clientPrice <= product.price) {
+          unitPrice = clientPrice
+        }
+      }
+
       itemsData.push({
         productId: product.id,
         quantity: qty,
-        price: dbPrice,
-        subtotal: qty * dbPrice,
+        price: unitPrice,
+        subtotal: qty * unitPrice,
         productName: product.name,
       })
     }
@@ -152,6 +186,7 @@ export async function POST(request: NextRequest) {
             storeId,
             name: body.customerName || "Cliente",
             phone: customerPhone,
+            documentId: body.customerDocumentId || null,
             email: body.customerEmail || null,
             address: body.customerAddress || null,
             city: body.customerCity || null,
@@ -176,7 +211,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ─── Credit days ───
+    // ─── Credit / Installments ───
     let dueDate: Date | undefined
     const creditDays = body.creditDays ? parseInt(body.creditDays) : null
     if (creditDays && creditDays > 0) {
@@ -184,11 +219,49 @@ export async function POST(request: NextRequest) {
       dueDate.setDate(dueDate.getDate() + creditDays)
     }
 
+    // Parse payments array or single payment
+    let paymentsInput = body.payments as Array<{ method: string; amount: number; reference?: string; bankOrigin?: string; status?: string }> | undefined
+    if (!paymentsInput && body.payment) {
+      paymentsInput = [body.payment]
+    }
+
+    const downPayment = body.downPayment ? parseFloat(body.downPayment) : 0
+    const creditTerm = body.creditTerm || null
+
+    // Parse dynamic cuotas: "cuotas_N_15d"
+    let cuotasCount = 0
+    if (creditTerm?.startsWith("cuotas_")) {
+      cuotasCount = parseInt(creditTerm.split("_")[1]) || 0
+    }
+    const totalCredito = cuotasCount > 0 ? total - downPayment : 0
+
+    // Build installment data for credit sales
+    let installmentsCreate: Array<{ number: number; amount: number; dueDate: Date; status: string }> | undefined
+    if (cuotasCount > 0 && totalCredito > 0) {
+      const eachAmount = totalCredito / cuotasCount
+      const now = new Date()
+      installmentsCreate = Array.from({ length: cuotasCount }, (_, i) => {
+        const d = new Date(now)
+        d.setDate(d.getDate() + (i + 1) * 15)
+        return { number: i + 1, amount: eachAmount, dueDate: d, status: "pending" }
+      })
+    }
+
+    // Determine paymentStatus
+    let paymentStatus = "pending"
+    if (cuotasCount > 0) {
+      paymentStatus = downPayment > 0 ? "partial" : "credit"
+    } else if (paymentsInput && paymentsInput.length > 0) {
+      const allVerified = paymentsInput.every((p: any) => p.status === "verified" || p.method !== "credit")
+      paymentStatus = allVerified ? "paid" : "pending"
+    }
+
     // ─── Create order ───
     const order = await prisma.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         status: "pending",
+        paymentStatus,
         subtotal,
         discount,
         shippingCost,
@@ -203,6 +276,7 @@ export async function POST(request: NextRequest) {
         customerState: body.customerState || null,
         customerId,
         couponId,
+        cashRegisterSessionId: body.cashRegisterSessionId || null,
         shippingMethod: body.shippingMethod || "pickup_agency",
         shippingAgency: body.shippingAgency || null,
         shippingAgencyAddress: body.shippingAgencyAddress || null,
@@ -212,6 +286,9 @@ export async function POST(request: NextRequest) {
         storeId: storeId,
         creditDays,
         dueDate,
+        downPayment: downPayment > 0 ? downPayment : null,
+        creditTerm,
+        totalCredito: totalCredito > 0 ? totalCredito : null,
         items: {
           create: itemsData.map((i) => ({
             productId: i.productId,
@@ -221,22 +298,24 @@ export async function POST(request: NextRequest) {
             productName: i.productName,
           })),
         },
-        payments: body.payment ? {
-          create: {
-            method: body.payment.method,
-            amount: parseFloat(body.payment.amount),
-            reference: body.payment.reference || null,
-            bankOrigin: body.payment.bankOrigin || null,
-            paidAt: body.payment.paidAt ? new Date(body.payment.paidAt) : null,
-            receiptImage: body.payment.receiptImage || null,
-            paymentAccountId: body.payment.paymentAccountId || null,
-            status: body.payment.method === "credit" ? "verified" : "pending",
-          },
+        payments: paymentsInput && paymentsInput.length > 0 ? {
+          create: paymentsInput.map((p: any) => ({
+            method: p.method,
+            amount: parseFloat(p.amount),
+            reference: p.reference || null,
+            bankOrigin: p.bankOrigin || null,
+            paidAt: p.paidAt ? new Date(p.paidAt) : null,
+            receiptImage: p.receiptImage || null,
+            paymentAccountId: p.paymentAccountId || null,
+            status: p.status || (p.method === "credit" ? "verified" : "pending"),
+          })),
         } : undefined,
+        installments: installmentsCreate ? { create: installmentsCreate } : undefined,
       },
       include: {
         items: { include: { product: true } },
         payments: true,
+        installments: true,
       },
     })
 
@@ -319,6 +398,20 @@ export async function POST(request: NextRequest) {
         order.orderNumber,
         order.total
       ).catch(e => console.error("[order email error]", e))
+    }
+
+    // Send confirmation to customer
+    if (order.customerEmail) {
+      const itemsHtml = order.items.map(i =>
+        `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
+      ).join("")
+      const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
+      sendEmail(
+        order.customerEmail,
+        `Confirmación de tu pedido #${order.orderNumber} — ${current.store.name}`,
+        templateOrderConfirmation(order.customerName, order.orderNumber, current.store.name, itemsTable, order.total),
+        "order_confirmation"
+      ).catch(e => console.error("[order confirmation email error]", e))
     }
 
     return NextResponse.json(order, { status: 201 })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Pencil, Plus, Trash2, Banknote, Smartphone, Globe, DollarSign, HandCoins } from "lucide-react"
+import { Pencil, Plus, Trash2, Banknote, Smartphone, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,17 +30,13 @@ type PaymentMethod = {
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   bank: <Banknote className="size-4" />,
   mobile: <Smartphone className="size-4" />,
-  paypal: <Globe className="size-4" />,
-  zelle: <DollarSign className="size-4" />,
-  divisas: <HandCoins className="size-4" />,
+  binancepay: <Wallet className="size-4" />,
 }
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Cuenta Bancaria",
   mobile: "Pago Móvil",
-  paypal: "PayPal",
-  zelle: "Zelle",
-  divisas: "Divisas",
+  binancepay: "Binance Pay",
 }
 
 const ACCOUNT_TYPES = [
@@ -155,9 +151,7 @@ export default function AdminPaymentMethodsPage() {
                     <SelectContent>
                       <SelectItem value="bank"><div className="flex items-center gap-2"><Banknote className="size-4" /> Bancaria</div></SelectItem>
                       <SelectItem value="mobile"><div className="flex items-center gap-2"><Smartphone className="size-4" /> Pago Móvil</div></SelectItem>
-                      <SelectItem value="paypal"><div className="flex items-center gap-2"><Globe className="size-4" /> PayPal</div></SelectItem>
-                      <SelectItem value="zelle"><div className="flex items-center gap-2"><DollarSign className="size-4" /> Zelle</div></SelectItem>
-                      <SelectItem value="divisas"><div className="flex items-center gap-2"><HandCoins className="size-4" /> Divisas</div></SelectItem>
+                      <SelectItem value="binancepay"><div className="flex items-center gap-2"><Wallet className="size-4" /> Binance Pay</div></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -231,17 +225,10 @@ export default function AdminPaymentMethodsPage() {
                   </>
                 )}
 
-                {(form.type === "paypal" || form.type === "zelle") && (
+                {form.type === "binancepay" && (
                   <div className="space-y-1 md:col-span-2">
-                    <Label>Email</Label>
+                    <Label>Email / ID de Binance</Label>
                     <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@ejemplo.com" />
-                  </div>
-                )}
-
-                {form.type === "divisas" && (
-                  <div className="space-y-1 md:col-span-2">
-                    <Label>Instrucciones / Referencia</Label>
-                    <Input value={form.bankName || ""} onChange={(e) => setForm({ ...form, bankName: e.target.value })} placeholder="Ej: Transferencia en USD a cuenta bancaria en USA" />
                   </div>
                 )}
               </div>
@@ -270,9 +257,7 @@ export default function AdminPaymentMethodsPage() {
                   <p className="text-xs text-muted-foreground">
                     {m.type === "bank" && `${m.bankName} - ${m.accountType} - ${m.accountNumber}`}
                     {m.type === "mobile" && `${m.phoneBank} - ${m.phone}`}
-                    {m.type === "paypal" && m.email}
-                    {m.type === "zelle" && m.email}
-                    {m.type === "divisas" && (m.bankName || "Divisas")}
+                    {m.type === "binancepay" && m.email}
                   </p>
                   {m.accountHolder && <p className="text-xs text-muted-foreground">Titular: {m.accountHolder}</p>}
                 </div>

@@ -2,10 +2,20 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
-import { enviarBienvenida } from "@/lib/resend-email"
+import { enviarBienvenida } from "@/lib/email"
 
 const PASSWORD_MIN_LENGTH = 8
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=<>?/]).{8,}$/
+
+const planDefaults: Record<string, { planId: string; modalidad: string | null; planType: string; hasAgenda: boolean }> = {
+  agenda: { planId: "agenda", modalidad: "agenda", planType: "agenda", hasAgenda: true },
+  comercio: { planId: "comercio", modalidad: null, planType: "tienda", hasAgenda: true },
+  mayorista: { planId: "mayorista", modalidad: null, planType: "empresa", hasAgenda: false },
+}
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
+}
 
 export async function POST(req: Request) {
   try {
@@ -18,7 +28,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { name, email, password } = await req.json()
+    const { name, email, password, plan } = await req.json()
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
@@ -57,11 +67,70 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name: trimmedName,
         email: trimmedEmail,
         password: hashedPassword,
+      },
+    })
+
+    // Auto-create Negocio + Store + Agenda if plan is provided
+    const planKey = plan && planDefaults[plan] ? plan : "comercio"
+    const cfg = planDefaults[planKey]
+    const planSlug = slugify(trimmedName)
+
+    // Ensure Plan record exists in DB
+    await prisma.plan.upsert({
+      where: { id: cfg.planId },
+      update: {},
+      create: {
+        id: cfg.planId,
+        nombre: cfg.planId,
+        label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
+        descripcion: "",
+        precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
+        precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
+        activo: true,
+        sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+      },
+    })
+
+    const negocio = await prisma.negocio.create({
+      data: {
+        nombre: trimmedName,
+        slug: planSlug,
+        planId: cfg.planId,
+        modalidad: cfg.modalidad,
+        planEstado: "pendiente",
+        planVencimiento: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        userId: user.id,
+      },
+    })
+
+    if (cfg.hasAgenda) {
+      await prisma.agenda.create({
+        data: {
+          nombre: "Mi Agenda",
+          slug: planSlug + "-agenda",
+          negocioId: negocio.id,
+        },
+      })
+    }
+
+    // Create Store
+    await prisma.store.create({
+      data: {
+        name: trimmedName,
+        slug: planSlug,
+        plan: "free",
+        planStatus: "pendiente",
+        planType: cfg.planType,
+        userId: user.id,
+        negocioId: negocio.id,
+        members: {
+          create: { userId: user.id, role: "admin" },
+        },
       },
     })
 

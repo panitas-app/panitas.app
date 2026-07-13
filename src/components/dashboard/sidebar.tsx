@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useTheme } from "next-themes"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -23,6 +23,7 @@ import {
   Users,
   Tag,
   Calendar,
+  CalendarPlus,
   MessageCircle,
   Zap,
   Layers,
@@ -33,12 +34,12 @@ import {
   DollarSign,
   FileBarChart,
   Receipt,
-  Sun,
-  Moon,
+  CalendarCheck,
+  Banknote,
 } from "lucide-react"
 import type { Store as PrismaStore } from "@prisma/client"
 import type { Role } from "@/lib/roles"
-import { getPlanLabel } from "@/lib/plans"
+import { PLAN_DEFINITIONS } from "@/lib/plans"
 
 interface SidebarItem {
   href: string
@@ -57,6 +58,7 @@ function getNavItems(planType: string): SidebarItem[] {
   if (planType === "agenda" || planType === "reservas") {
     baseItems.push(
       { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: ["admin", "manager", "seller", "viewer"] },
+      { href: "/dashboard/agenda/nueva", label: "Nueva cita", icon: CalendarPlus, roles: ["admin", "manager"] },
       { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
       { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
     )
@@ -85,6 +87,9 @@ function getNavItems(planType: string): SidebarItem[] {
 
   if (planType === "negocio") {
     baseItems.push(
+      { href: "/dashboard/pos", label: "Vender", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] },
     )
   }
@@ -93,6 +98,8 @@ function getNavItems(planType: string): SidebarItem[] {
   if (planType === "empresa" || planType === "empresarial") {
     baseItems.push(
       { href: "/dashboard/nueva-venta", label: "Nueva Venta", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/sellers", label: "Vendedores", icon: Users, roles: ["admin", "manager"] },
       { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"] },
     )
@@ -100,6 +107,9 @@ function getNavItems(planType: string): SidebarItem[] {
 
   if (planType === "emprendedor" || planType === "tienda") {
     baseItems.push(
+      { href: "/dashboard/pos", label: "Vender", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] },
     )
   }
@@ -144,18 +154,26 @@ function getNavItems(planType: string): SidebarItem[] {
 interface SidebarContentProps {
   store: PrismaStore
   role: Role
+  planId?: string
+  modalidad?: string | null
 }
 
-function SidebarContent({ store, role }: SidebarContentProps) {
+function sidebarPlanLabel(planId: string, modalidad: string | null | undefined): string {
+  if (modalidad === "agenda") return "Agenda"
+  if (planId === "negocio") return "Negocio"
+  if (planId === "empresarial") return "Empresarial"
+  return PLAN_DEFINITIONS[planId as keyof typeof PLAN_DEFINITIONS]?.label || "Emprendedor"
+}
+
+function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps) {
   const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
   const [pendingCount, setPendingCount] = useState(0)
   const [lastViewed, setLastViewed] = useState<string | null>(null)
   const prevCountRef = useRef(0)
   const soundCooldownRef = useRef(false)
 
-  const planType = store.planType || store.plan || "tienda"
-  const isEnterprise = planType === "empresa" || planType === "empresarial"
+  const legacyPlanType = store.planType || store.plan || "tienda"
+  const isEnterprise = legacyPlanType === "empresa" || legacyPlanType === "empresarial"
   const isOnOrders = pathname === "/dashboard/orders" || pathname.startsWith("/dashboard/orders/")
 
   const fetchPendingCount = useCallback(async () => {
@@ -190,8 +208,8 @@ function SidebarContent({ store, role }: SidebarContentProps) {
     }
   }, [isOnOrders])
 
-  const planLabel = getPlanLabel(planType)
-  const navItems = getNavItems(planType)
+  const planLabel = sidebarPlanLabel(planId || legacyPlanType, modalidad)
+  const navItems = getNavItems(legacyPlanType)
 
   const visibleItems = navItems.filter((item) => {
     if (item.roles && !item.roles.includes(role)) return false
@@ -199,7 +217,7 @@ function SidebarContent({ store, role }: SidebarContentProps) {
   })
 
   return (
-    <div className="flex h-full flex-col bg-[#102A43] text-white">
+    <div className="flex h-full flex-col glass-dark text-foreground">
       <div className="px-5 pt-5 pb-0 shrink-0">
         <div data-tour="store-info" className="flex items-center gap-3 px-2 py-1.5 mt-2">
           <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/10 overflow-hidden">
@@ -210,11 +228,11 @@ function SidebarContent({ store, role }: SidebarContentProps) {
             )}
           </div>
           <div className="flex flex-col truncate">
-            <span className="font-heading text-sm font-extrabold truncate text-white leading-tight">{store.name}</span>
-            <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Plan {planLabel}</span>
+            <span className="font-heading text-sm font-extrabold truncate text-foreground leading-tight">{store.name}</span>
+            <span className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase">Plan {planLabel}</span>
           </div>
         </div>
-        <Separator className="bg-white/5 mt-4" />
+        <Separator className="bg-muted mt-4" />
       </div>
 
       <nav className="flex-1 overflow-y-auto min-h-0 px-5 py-4 space-y-2">
@@ -229,7 +247,7 @@ function SidebarContent({ store, role }: SidebarContentProps) {
               <Button
                 variant="ghost"
                 className={cn(
-                  "relative w-full justify-start gap-3 rounded-xl py-5 text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200",
+                  "relative w-full justify-start gap-3 rounded-xl py-5 text-foreground/70 hover:text-foreground hover:bg-accent transition-all duration-200",
                   isActive && "text-accent hover:text-accent font-bold"
                 )}
               >
@@ -241,13 +259,13 @@ function SidebarContent({ store, role }: SidebarContentProps) {
                   />
                 )}
                 
-                <Icon className={cn("size-4.5 z-10 icon-hover-bounce", isActive ? "text-accent" : "text-slate-400")} />
+                <Icon className={cn("size-4.5 z-10 icon-hover-bounce", isActive ? "text-accent" : "text-muted-foreground")} />
                 <span className="z-10">{item.label}</span>
                 {item.badge && pendingCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm"
+                    className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm"
                   >
                     {pendingCount > 99 ? "99+" : pendingCount}
                   </motion.span>
@@ -259,22 +277,13 @@ function SidebarContent({ store, role }: SidebarContentProps) {
       </nav>
 
       <div className="mt-auto shrink-0 px-5 pb-5">
-        <Separator className="bg-white/5 mb-4" />
-
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-inner mb-3"
-          aria-label="Cambiar modo oscuro"
-        >
-          {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-          {theme === "dark" ? "Modo claro" : "Modo oscuro"}
-        </button>
+        <Separator className="bg-muted mb-4" />
         
         {!isEnterprise && (
           <Link data-tour="view-store" href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer">
             <Button
-              variant="outline"
-              className="w-full justify-center gap-2 rounded-xl border-white/10 bg-white/5 py-5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-white/10 hover:text-white transition-all shadow-inner"
+              variant="ghost"
+              className="w-full justify-center gap-2 rounded-xl bg-muted py-5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-accent hover:text-foreground transition-all"
             >
               Ver mi tienda
               <ExternalLink className="size-3.5" />
@@ -286,22 +295,22 @@ function SidebarContent({ store, role }: SidebarContentProps) {
   )
 }
 
-export function DashboardSidebar({ store, role }: { store: PrismaStore; role: Role }) {
+export function DashboardSidebar({ store, role, planId, modalidad }: { store: PrismaStore; role: Role; planId?: string; modalidad?: string | null }) {
   return (
     <>
       <aside data-tour="sidebar" className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
-        <div className="flex flex-1 flex-col bg-[#102A43] min-h-0">
-          <SidebarContent store={store} role={role} />
+        <div className="flex flex-1 flex-col glass-dark min-h-0">
+          <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
         </div>
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#102A43] to-transparent z-10" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10" />
       </aside>
       
       <Sheet>
-        <SheetTrigger render={<Button variant="outline" size="icon" className="fixed top-3.5 left-3.5 z-40 lg:hidden rounded-xl border-slate-200 bg-white shadow-xs" />}>
+        <SheetTrigger render={<Button variant="outline" size="icon" className="fixed top-3.5 left-3.5 z-40 lg:hidden rounded-xl border-border bg-muted backdrop-blur-md text-foreground shadow-xs hover:bg-white/20" />}>
           <Menu className="size-4 text-slate-700" />
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0 border-r-0">
-          <SidebarContent store={store} role={role} />
+          <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
         </SheetContent>
       </Sheet>
     </>

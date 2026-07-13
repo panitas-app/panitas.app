@@ -155,6 +155,8 @@ export default function CheckoutPage() {
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(undefined)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
+  const [binanceAccountName, setBinanceAccountName] = useState("")
+  const [binanceEmailId, setBinanceEmailId] = useState("")
 
   const [submitted, setSubmitted] = useState(false)
   const [orderNumber, setOrderNumber] = useState("")
@@ -303,6 +305,7 @@ export default function CheckoutPage() {
     : null
 
   const isPagoMovil = selectedAccount?.type === "mobile"
+  const isBinancePay = selectedAccount?.type === "binancepay"
 
   function handleReceiptFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] || null
@@ -363,18 +366,17 @@ export default function CheckoutPage() {
         const account = store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)
         let method = "bank_transfer"
         if (account?.type === "mobile") method = "pago_movil"
-        else if (account?.type === "paypal") method = "paypal"
-        else if (account?.type === "zelle") method = "zelle"
-        else if (account?.type === "divisas") method = "divisas"
+        else if (account?.type === "binancepay") method = "binancepay"
 
         paymentData = {
           paymentAccountId: selectedPaymentAccount,
           method,
           amount: total,
           reference: referenceNumber,
-          bankOrigin: originBank,
+          bankOrigin: isBinancePay ? binanceAccountName : originBank,
           paidAt: paymentDate ? paymentDate.toISOString() : new Date().toISOString(),
           receiptImage: receiptImageUrl,
+          binanceEmailId: isBinancePay ? binanceEmailId : null,
         }
       }
 
@@ -465,12 +467,8 @@ export default function CheckoutPage() {
       const paymentMethodText = selectedPaymentAccount
         ? store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)?.type === "mobile"
           ? "Pago Móvil"
-          : store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)?.type === "zelle"
-          ? "Zelle"
-          : store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)?.type === "paypal"
-          ? "PayPal"
-          : store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)?.type === "divisas"
-          ? "Efectivo/Divisas"
+          : store.paymentAccounts.find((a) => a.id === selectedPaymentAccount)?.type === "binancepay"
+          ? "Binance Pay"
           : "Transferencia Bancaria"
         : "Acordar con vendedor"
 
@@ -495,6 +493,7 @@ ${bcvRate > 0 ? `*Tasa BCV:* Bs. ${bcvRate.toFixed(2)}\n*Total en Bs:* Bs. ${(to
 
 *Método de Pago:* ${paymentMethodText}
 ${referenceNumber ? `*Referencia:* ${referenceNumber}` : ""}
+${paymentMethodText === "Binance Pay" ? `*Cuenta origen:* ${binanceAccountName}\n*Email/ID:* ${binanceEmailId}` : ""}
 
 _¡Muchas gracias por su compra!_`
 
@@ -1220,43 +1219,72 @@ _¡Muchas gracias por su compra!_`
                   >
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <CreditCard className="size-4 text-primary" />
-                      Detalles de la transferencia
+                      {isBinancePay ? "Detalles del pago Binance Pay" : "Detalles de la transferencia"}
                     </h3>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Banco de origen</Label>
-                        <Select value={originBank} onValueChange={(v) => v !== null && setOriginBank(v)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu banco" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[260px] overflow-y-auto">
-                            {BANKS_VENEZUELA.map((b) => (
-                              <SelectItem key={b.code} value={b.code}>
-                                <span className="font-mono text-muted-foreground">{b.code}</span> {b.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    {isBinancePay ? (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>ID de la orden (referencia)</Label>
+                          <Input
+                            value={referenceNumber}
+                            onChange={(e) => setReferenceNumber(e.target.value)}
+                            placeholder="ID de la orden"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nombre de la cuenta (pagaste desde)</Label>
+                          <Input
+                            value={binanceAccountName}
+                            onChange={(e) => setBinanceAccountName(e.target.value)}
+                            placeholder="Nombre de tu cuenta Binance"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Correo o ID de Binance</Label>
+                          <Input
+                            value={binanceEmailId}
+                            onChange={(e) => setBinanceEmailId(e.target.value)}
+                            placeholder="email@ejemplo.com"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="reference">Número de referencia</Label>
-                        <Input
-                          id="reference"
-                          placeholder="Ej: 1234567890 (mín. 6 dígitos)"
-                          value={referenceNumber}
-                          onChange={(e) => {
-                            setReferenceNumber(e.target.value)
-                            const v = validateReference(e.target.value)
-                            e.target.setCustomValidity(v.valid ? "" : v.error || "")
-                          }}
-                          inputMode="numeric"
-                        />
-                        {referenceNumber && !validateReference(referenceNumber).valid && (
-                          <p className="text-[10px] text-destructive">{validateReference(referenceNumber).error}</p>
-                        )}
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Banco de origen</Label>
+                          <Select value={originBank} onValueChange={(v) => v !== null && setOriginBank(v)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona tu banco" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[260px] overflow-y-auto">
+                              {BANKS_VENEZUELA.map((b) => (
+                                <SelectItem key={b.code} value={b.code}>
+                                  <span className="font-mono text-muted-foreground">{b.code}</span> {b.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="reference">Número de referencia</Label>
+                          <Input
+                            id="reference"
+                            placeholder="Ej: 1234567890 (mín. 6 dígitos)"
+                            value={referenceNumber}
+                            onChange={(e) => {
+                              setReferenceNumber(e.target.value)
+                              const v = validateReference(e.target.value)
+                              e.target.setCustomValidity(v.valid ? "" : v.error || "")
+                            }}
+                            inputMode="numeric"
+                          />
+                          {referenceNumber && !validateReference(referenceNumber).valid && (
+                            <p className="text-[10px] text-destructive">{validateReference(referenceNumber).error}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4 text-center space-y-1">
                       <p className="text-xs text-muted-foreground">Monto a pagar</p>
@@ -1337,7 +1365,7 @@ _¡Muchas gracias por su compra!_`
 
                 <Button
                   className="w-full h-12 text-base gap-2"
-                  disabled={!selectedPaymentAccount || !originBank || !referenceNumber || !paymentDate || submitting}
+                  disabled={!selectedPaymentAccount || !referenceNumber || !paymentDate || submitting || (isBinancePay ? (!binanceAccountName || !binanceEmailId) : !originBank)}
                   onClick={handleSubmit}
                 >
                   {submitting ? (

@@ -1,6 +1,4 @@
-import type { OnboardingEvent } from "@/lib/onboarding/types"
-
-export function track(event: OnboardingEvent, properties?: Record<string, unknown>) {
+export function track(event: string, properties?: Record<string, unknown>) {
   if (process.env.NODE_ENV === "development") {
     console.log(`[analytics] ${event}`, properties ?? "")
   }

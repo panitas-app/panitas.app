@@ -12,7 +12,7 @@ export default async function EditProductPage({
 }) {
   const { id } = await params
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
 
   const product = await prisma.product.findUnique({ where: { id } })
   if (!product || product.storeId !== current.store.id) notFound()

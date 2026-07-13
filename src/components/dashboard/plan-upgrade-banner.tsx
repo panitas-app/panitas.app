@@ -64,7 +64,7 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                   {modalidad === "tienda" ? "Solo Tienda" : "Solo Agenda"}
                 </Badge>
               </div>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 Desbloquea <span className="font-semibold text-accent">{moduloNuevo}</span> y todos los módulos combinados por solo <span className="font-semibold text-primary">$25/mes</span>.
               </p>
             </div>
@@ -97,7 +97,7 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md"
             >
-              <Card className="rounded-3xl border border-white/60 bg-white/90 shadow-2xl backdrop-blur-xl overflow-hidden">
+              <Card className="rounded-3xl bg-background/80 backdrop-blur-xl shadow-2xl overflow-hidden">
                 <CardContent className="p-6 space-y-5">
                   <div className="text-center">
                     <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
@@ -106,17 +106,17 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                     <h3 className="font-heading text-xl font-extrabold text-accent">
                       ¿Mejorar a Negocio?
                     </h3>
-                    <p className="mt-1.5 text-sm text-slate-500">
+                    <p className="mt-1.5 text-sm text-muted-foreground">
                       Pasa de <strong className="text-accent">$15/mes</strong> a <strong className="text-primary">$25/mes</strong> y obtén todos los módulos combinados.
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 space-y-2">
+                  <div className="rounded-2xl bg-muted p-4 space-y-2">
                     <div className="flex items-start gap-2.5">
                       <Check className="size-4 text-emerald-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-xs font-semibold text-accent">Conservas todo tu contenido</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-muted-foreground">
                           Tus {modalidad === "tienda" ? "productos, pedidos y clientes" : "servicios, horarios y citas"} se mantienen intactos.
                         </p>
                       </div>
@@ -125,7 +125,7 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                       <Sparkles className="size-4 text-primary mt-0.5 shrink-0" />
                       <div>
                         <p className="text-xs font-semibold text-accent">Se desbloquea {moduloNuevo}</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-muted-foreground">
                           Tu nuevo módulo empezará sin datos, listo para que lo configures.
                         </p>
                       </div>
@@ -134,14 +134,14 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                       <ArrowRight className="size-4 text-blue-500 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-xs font-semibold text-accent">Switch libre entre módulos</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-muted-foreground">
                           Cambia entre Tienda y Agenda desde el dashboard cuando quieras.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                  <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
                     El cambio es inmediato. Se registrará en tu historial de facturación.
                     {modalidad && ` Tu modalidad actual "${modalidad}" ya no aplica, tendrás ambos módulos activos.`}
                   </p>
@@ -149,7 +149,7 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      className="flex-1 rounded-xl h-11 text-xs font-bold border-slate-200"
+                      className="flex-1 rounded-xl h-11 text-xs font-bold"
                       onClick={() => setShowConfirm(false)}
                       disabled={loading}
                     >

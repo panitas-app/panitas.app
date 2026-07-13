@@ -97,7 +97,7 @@ export function PhoneInput({ value, onChange, placeholder, autoFocus, onEnter }:
           ref={buttonRef}
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex h-14 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium hover:border-primary/50 transition-colors"
+          className="flex h-14 items-center gap-1.5 rounded-xl border border-input bg-background px-3 text-sm font-medium text-foreground hover:border-primary/50 transition-colors"
         >
           <span className="text-lg leading-none">{selectedCode.flag}</span>
           <span className="text-foreground">{selectedCode.dial}</span>
@@ -117,7 +117,7 @@ export function PhoneInput({ value, onChange, placeholder, autoFocus, onEnter }:
           onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
           placeholder={placeholder || "412 123 4567"}
           autoFocus={autoFocus}
-          className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-lg outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="h-14 w-full rounded-xl border border-input bg-background pl-11 pr-4 text-lg text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
         />
       </div>
 
@@ -131,7 +131,7 @@ export function PhoneInput({ value, onChange, placeholder, autoFocus, onEnter }:
               left: menuLeft,
               zIndex: 9999,
             }}
-            className="w-[280px] rounded-xl border bg-white shadow-2xl"
+            className="w-[280px] rounded-xl border border-border bg-popover shadow-lg"
           >
             <div className="max-h-[260px] overflow-y-auto p-1">
               {COUNTRY_CODES.map((c) => (
@@ -139,7 +139,7 @@ export function PhoneInput({ value, onChange, placeholder, autoFocus, onEnter }:
                   key={c.code}
                   type="button"
                   onClick={() => handleCodeSelect(c)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted ${
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted ${
                     c.code === selectedCode.code ? "bg-primary/5 font-medium" : ""
                   }`}
                 >

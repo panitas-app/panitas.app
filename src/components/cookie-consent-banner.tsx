@@ -32,18 +32,18 @@ export function CookieConsentBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 200, damping: 25 }}
-          className="fixed bottom-0 left-0 right-0 z-[100] border-t border-white/10 bg-[#0A1628]/95 backdrop-blur-xl"
+          className="fixed bottom-0 left-0 right-0 z-[100] border-t border-border bg-background/95 backdrop-blur-xl"
         >
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:px-6">
             <div className="flex items-start gap-3 sm:flex-1">
-              <Cookie className="mt-0.5 size-5 shrink-0 text-amber-300" />
+              <Cookie className="mt-0.5 size-5 shrink-0 text-primary" />
               <p className="text-sm text-slate-300 leading-relaxed">
                 Usamos cookies técnicas para que puedas iniciar sesión y gestionar tu tienda, y
                 cookies de rendimiento (Google Analytics) para mejorar la plataforma. Al hacer clic
                 en &quot;Aceptar&quot;, autorizas su uso. Puedes consultar nuestra{" "}
                 <Link
                   href="/privacidad"
-                  className="text-amber-300 underline hover:text-amber-200 transition-colors"
+                  className="text-primary underline hover:text-primary/80 transition-colors"
                 >
                   Política de Privacidad y Cookies
                 </Link>

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, TrendingDown, Minus, Package, Receipt, Download } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { BarChart3, TrendingUp, TrendingDown, Minus, Package, Receipt, Download, CalendarCheck, Banknote, ChevronRight, Phone, Search, Store, ShoppingCart } from "lucide-react"
 import { downloadCsv } from "@/lib/export-csv"
 import GastosPage from "@/components/dashboard/gastos-page"
 
@@ -12,6 +13,7 @@ const ALL_TABS = [
   { key: "balance", label: "Balance", icon: BarChart3 },
   { key: "inventario", label: "Valor Inventario", icon: Package },
   { key: "gastos", label: "Gastos", icon: Receipt },
+  { key: "cierres", label: "Cierres", icon: CalendarCheck },
 ]
 
 interface BalanceData {
@@ -112,6 +114,7 @@ export default function AnalyticsPage() {
       {tab === "balance" && balance && <BalanceTab data={balance} period={period} setPeriod={setPeriod} />}
       {tab === "inventario" && inventario && <InventarioTab data={inventario} />}
       {tab === "gastos" && <GastosPage />}
+      {tab === "cierres" && <CierresTab />}
     </div>
   )
 }
@@ -356,6 +359,189 @@ function InventarioTab({ data }: { data: InventarioData }) {
             </table>
           </div>
         </CardContent></Card>
+    </div>
+  )
+}
+
+function formatDate(d: string | Date) {
+  return new Date(d).toLocaleDateString("es-VE", { day: "2-digit", month: "2-digit", year: "numeric" })
+}
+
+function formatTime(d: string | Date) {
+  return new Date(d).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })
+}
+
+function CierresTab() {
+  const [orders, setOrders] = useState<any[]>([])
+  const [summary, setSummary] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+  const [expanded, setExpanded] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/reports/daily?date=${selectedDate}`)
+      .then(r => r.json())
+      .then(data => {
+        setOrders(data.orders || [])
+        setSummary(data)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [selectedDate])
+
+  const totalPaid = orders.reduce((s, o) => s + o.total, 0)
+  const totalCredit = orders.filter(o => o.creditTerm).reduce((s, o) => s + o.total, 0)
+
+  if (loading) return <div className="flex min-h-[40vh] items-center justify-center"><div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+
+  return (
+    <div className="space-y-4">
+      {/* Date selector */}
+      <div className="flex items-center gap-3">
+        <Input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="w-fit h-9 text-sm"
+        />
+        <span className="text-xs text-muted-foreground">
+          {orders.length} ventas · Total: ${totalPaid.toFixed(2)}
+        </span>
+      </div>
+
+      {/* Summary cards */}
+      {summary && (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Card><CardContent className="p-3 text-center"><p className="text-[10px] text-muted-foreground uppercase">Ventas</p><p className="text-lg font-bold">${summary.totalRevenue.toFixed(2)}</p></CardContent></Card>
+          <Card><CardContent className="p-3 text-center"><p className="text-[10px] text-muted-foreground uppercase">Órdenes</p><p className="text-lg font-bold">{summary.totalOrders}</p></CardContent></Card>
+          <Card><CardContent className="p-3 text-center"><p className="text-[10px] text-muted-foreground uppercase">Tienda online</p><p className="text-lg font-bold">{summary.storeSales}</p></CardContent></Card>
+          <Card><CardContent className="p-3 text-center"><p className="text-[10px] text-muted-foreground uppercase">POS / Tienda</p><p className="text-lg font-bold">{summary.posSales}</p></CardContent></Card>
+        </div>
+      )}
+
+      {/* Payment methods breakdown */}
+      {summary?.paymentsBreakdown && Object.keys(summary.paymentsBreakdown).length > 0 && (
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Desglose por método de pago</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(summary.paymentsBreakdown).map(([method, amount]) => {
+                const labels: Record<string, string> = {
+                  cash: "Efectivo", bank_transfer: "Transferencia", pago_movil: "Pago Móvil",
+                  binancepay: "Binance Pay",
+                }
+                const colors: Record<string, string> = {
+                  cash: "bg-green-100 text-green-700", bank_transfer: "bg-blue-100 text-blue-700",
+                  pago_movil: "bg-purple-100 text-purple-700", binancepay: "bg-orange-100 text-orange-700",
+                }
+                return (
+                  <Badge key={method} className={`${colors[method] || "bg-gray-100"} text-xs px-3 py-1`}>
+                    {labels[method] || method}: ${(amount as number).toFixed(2)}
+                  </Badge>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Credit summary */}
+      {totalCredit > 0 && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="p-3 text-sm flex items-center gap-2">
+            <span>Ventas a crédito:</span>
+            <strong className="text-amber-700">${totalCredit.toFixed(2)}</strong>
+            <span className="text-muted-foreground">({orders.filter(o => o.creditTerm).length} órdenes)</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Orders list */}
+      {orders.length === 0 ? (
+        <Card><CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <CalendarCheck className="size-12 mb-3" />
+          <p className="text-sm">No hay ventas en esta fecha</p>
+        </CardContent></Card>
+      ) : (
+        orders.map((o) => {
+          const isExpanded = expanded === o.id
+          const isPos = o.posPin || o.shippingMethod === "pickup_store" || o.shippingMethod === "store"
+          const isCredit = !!o.creditTerm
+          return (
+            <Card key={o.id} className={`overflow-hidden ${isCredit ? "border-amber-200" : ""}`}>
+              <button onClick={() => setExpanded(isExpanded ? null : o.id)} className="w-full text-left">
+                <CardContent className="p-3 flex items-center gap-3 hover:bg-muted/20 transition-colors">
+                  <div className={`flex size-8 items-center justify-center rounded-full ${isPos ? "bg-indigo-100 text-indigo-600" : "bg-sky-100 text-sky-600"}`}>
+                    {isPos ? <Store className="size-4" /> : <ShoppingCart className="size-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold truncate">{o.customerName}</p>
+                      {isCredit && <Badge className="bg-amber-100 text-amber-700 text-[9px]">Crédito</Badge>}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      #{o.orderNumber} · {new Date(o.createdAt).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })}
+                      {isPos ? " · POS" : " · Tienda"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold">${o.total.toFixed(2)}</p>
+                    <p className={`text-[10px] ${o.paymentStatus === "paid" ? "text-green-600" : o.paymentStatus === "credit" ? "text-amber-600" : "text-muted-foreground"}`}>
+                      {o.paymentStatus === "paid" ? "Pagado" : o.paymentStatus === "credit" ? "Crédito" : o.paymentStatus}
+                    </p>
+                  </div>
+                  <ChevronRight className={`size-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                </CardContent>
+              </button>
+
+              {isExpanded && (
+                <div className="border-t border-border p-3 space-y-2 text-xs">
+                  {o.items && o.items.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Productos</p>
+                      {o.items.map((item: any) => (
+                        <div key={item.id} className="flex justify-between text-muted-foreground">
+                          <span>{item.productName || "Producto"} x{item.quantity}</span>
+                          <span>${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {o.payments && o.payments.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Pagos</p>
+                      <div className="flex flex-wrap gap-1">
+                        {o.payments.map((p: any) => (
+                          <span key={p.id} className={`px-1.5 py-0.5 rounded font-medium ${
+                            p.method === "cash" ? "bg-green-100 text-green-700" :
+                            p.method === "bank_transfer" ? "bg-blue-100 text-blue-700" :
+                            p.method === "pago_movil" ? "bg-purple-100 text-purple-700" :
+                            p.method === "binancepay" ? "bg-orange-100 text-orange-700" : "bg-gray-100"
+                          }`}>
+                            {p.method === "cash" ? "Efectivo" : p.method === "bank_transfer" ? "Transfer" : p.method === "pago_movil" ? "Pago Móvil" : p.method === "binancepay" ? "Binance Pay" : p.method} ${p.amount.toFixed(2)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {o.installments && o.installments.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Cuotas</p>
+                      {o.installments.map((inst: any) => (
+                        <div key={inst.id} className="flex justify-between">
+                          <span className="text-muted-foreground">#{inst.number} — {inst.status === "paid" ? "Pagada" : "Pendiente"}</span>
+                          <span className={inst.status === "paid" ? "text-green-600" : "text-amber-600"}>${inst.amount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          )
+        })
+      )}
     </div>
   )
 }

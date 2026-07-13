@@ -14,7 +14,12 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get("category") || ""
 
   const where: any = { storeId: current.store.id }
-  if (q) where.name = { contains: q, mode: "insensitive" }
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: "insensitive" } },
+      { sku: { contains: q, mode: "insensitive" } },
+    ]
+  }
   if (category) where.categoryId = category
 
   const [products, total] = await Promise.all([

@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useState } from "react"
-import { Plus, Trash2, Smartphone, Banknote } from "lucide-react"
+import { Plus, Trash2, Smartphone, Banknote, Wallet } from "lucide-react"
 import { BANKS_VENEZUELA, DOCUMENT_TYPES, ACCOUNT_TYPES } from "@/lib/constants"
 import { formatAccountNumber, validateAccountNumber, validatePhone, validateDocumentId } from "@/lib/ve-banks"
 import type { Store, PaymentAccount } from "@prisma/client"
@@ -46,21 +46,26 @@ function PaymentAccountForm({
     setLoading(true)
     const form = new FormData(e.currentTarget)
     const formType = form.get("type") as string
-    const docId = (form.get("documentId") as string) || ""
 
-    const docValidation = validateDocumentId(docId || "")
-    if (!docValidation.valid) {
-      toast.error(docValidation.error || "Documento inválido")
-      setLoading(false)
-      return
+    if (formType !== "binancepay") {
+      const docId = (form.get("documentId") as string) || ""
+      const docValidation = validateDocumentId(docId || "")
+      if (!docValidation.valid) {
+        toast.error(docValidation.error || "Documento inválido")
+        setLoading(false)
+        return
+      }
     }
 
     const body: any = {
       type: formType,
-      bankName: selectedBank?.name || form.get("bankName"),
-      bankCode: bankCode,
-      documentId: docValidation.clean,
       accountHolder: form.get("accountHolder"),
+    }
+
+    if (formType !== "binancepay") {
+      body.bankName = selectedBank?.name || form.get("bankName")
+      body.bankCode = bankCode
+      body.documentId = (form.get("documentId") as string) || ""
     }
 
     if (formType === "bank") {
@@ -83,6 +88,8 @@ function PaymentAccountForm({
       }
       body.phone = phoneValidation.clean
       body.phoneBank = selectedBank?.name || form.get("phoneBank")
+    } else if (formType === "binancepay") {
+      body.email = form.get("email")
     }
 
     try {
@@ -112,31 +119,34 @@ function PaymentAccountForm({
         <Select name="type" defaultValue={account?.type || "bank"} onValueChange={(v) => v !== null && setType(v)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Seleccionar tipo">
-              {type === "bank" ? "Cuenta Bancaria" : type === "mobile" ? "Pago Móvil" : ""}
+              {type === "bank" ? "Cuenta Bancaria" : type === "mobile" ? "Pago Móvil" : type === "binancepay" ? "Binance Pay" : ""}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="bank">Cuenta Bancaria</SelectItem>
             <SelectItem value="mobile">Pago Móvil</SelectItem>
+            <SelectItem value="binancepay">Binance Pay</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label>Banco</Label>
-        <Select name="bankName" value={bankCode} onValueChange={(v) => v !== null && setBankCode(v)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Seleccionar banco" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[260px] overflow-y-auto">
-            {BANKS_VENEZUELA.map((bank) => (
-              <SelectItem key={bank.code} value={bank.code}>
-                <span className="font-mono text-muted-foreground">{bank.code}</span> {bank.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {type !== "binancepay" && (
+        <div className="space-y-2">
+          <Label>Banco</Label>
+          <Select name="bankName" value={bankCode} onValueChange={(v) => v !== null && setBankCode(v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Seleccionar banco" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[260px] overflow-y-auto">
+              {BANKS_VENEZUELA.map((bank) => (
+                <SelectItem key={bank.code} value={bank.code}>
+                  <span className="font-mono text-muted-foreground">{bank.code}</span> {bank.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {type === "bank" && (
         <>
@@ -200,35 +210,51 @@ function PaymentAccountForm({
         </div>
       )}
 
+      {type === "binancepay" && (
+        <div className="space-y-2">
+          <Label htmlFor="email">Email / ID de Binance</Label>
+          <Input
+            id="email"
+            name="email"
+            defaultValue={account?.email || ""}
+            placeholder="email@ejemplo.com"
+            required
+          />
+          <p className="text-[10px] text-muted-foreground">Correo electrónico o ID de usuario de Binance</p>
+        </div>
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="accountHolder">Titular</Label>
+        <Label htmlFor="accountHolder">{type === "binancepay" ? "Nombre de la cuenta de Binance" : "Titular"}</Label>
         <Input id="accountHolder" name="accountHolder" defaultValue={account?.accountHolder || ""} required />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="documentId">Documento de identidad</Label>
-        <div className="flex gap-2">
-          <Select name="docTypePrefix" defaultValue={(account?.documentId || "V")[0]}>
-            <SelectTrigger className="w-20 shrink-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOCUMENT_TYPES.map((d) => (
-                <SelectItem key={d.value} value={d.value}>{d.value}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            id="documentId"
-            name="documentId"
-            className="flex-1"
-            defaultValue={(account?.documentId || "").slice(1)}
-            placeholder="12345678"
-            inputMode="numeric"
-            required
-          />
+      {type !== "binancepay" && (
+        <div className="space-y-2">
+          <Label htmlFor="documentId">Documento de identidad</Label>
+          <div className="flex gap-2">
+            <Select name="docTypePrefix" defaultValue={(account?.documentId || "V")[0]}>
+              <SelectTrigger className="w-20 shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_TYPES.map((d) => (
+                  <SelectItem key={d.value} value={d.value}>{d.value}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              id="documentId"
+              name="documentId"
+              className="flex-1"
+              defaultValue={(account?.documentId || "").slice(1)}
+              placeholder="12345678"
+              inputMode="numeric"
+              required
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <Button type="submit" disabled={loading}>
         {loading ? "Guardando..." : account ? "Actualizar" : "Agregar"}
@@ -282,13 +308,17 @@ export function SettingsPayments({ store }: { store: Store & { paymentAccounts: 
               <div key={account.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
                 <div className="space-y-1">
                   <p className="font-medium flex items-center gap-1.5">
-                    {account.type === "mobile" ? <Smartphone className="size-3.5 text-primary" /> : <Banknote className="size-3.5 text-primary" />}
-                    {account.type === "mobile" ? "Pago Móvil" : account.bankName}
+                    {account.type === "mobile" ? <Smartphone className="size-3.5 text-primary" /> : account.type === "binancepay" ? <Wallet className="size-3.5 text-primary" /> : <Banknote className="size-3.5 text-primary" />}
+                    {account.type === "mobile" ? "Pago Móvil" : account.type === "binancepay" ? "Binance Pay" : account.bankName}
                     {bank && <Badge variant="outline" className="text-[9px] font-mono">{bank.code}</Badge>}
                   </p>
                   {account.type === "mobile" ? (
                     <p className="text-xs text-muted-foreground font-mono">
                       {account.phone}
+                    </p>
+                  ) : account.type === "binancepay" ? (
+                    <p className="text-xs text-muted-foreground">
+                      {account.email}
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground font-mono">
@@ -296,7 +326,7 @@ export function SettingsPayments({ store }: { store: Store & { paymentAccounts: 
                     </p>
                   )}
                   <p className="text-[10px] text-muted-foreground">
-                    {account.accountHolder} — {account.documentId}
+                    {account.type === "binancepay" ? account.accountHolder : `${account.accountHolder} — ${account.documentId}`}
                   </p>
                 </div>
                 <Button variant="ghost" size="icon-sm" onClick={() => deleteAccount(account.id)}>

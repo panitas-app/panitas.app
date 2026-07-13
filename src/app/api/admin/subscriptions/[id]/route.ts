@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
-import { sendEmail, subscriptionStatusHtml } from "@/lib/email"
+import { sendEmail } from "@/lib/email"
+import { templatePaymentVerified, templatePaymentRejected } from "@/lib/email-templates"
 import { createAuditEntry } from "@/lib/audit"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -36,8 +37,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (status === "active" || status === "verified") {
     const now = new Date()
     const endDate = new Date(now)
-    if (existing.period === "yearly") endDate.setFullYear(endDate.getFullYear() + 1)
-    else endDate.setMonth(endDate.getMonth() + 1)
+    if (existing.paymentMode === "installment" && !existing.secondPaymentPaid) {
+      endDate.setDate(endDate.getDate() + 15)
+    } else if (existing.period === "yearly") {
+      endDate.setFullYear(endDate.getFullYear() + 1)
+    } else {
+      endDate.setMonth(endDate.getMonth() + 1)
+    }
 
     updateData.status = status
     updateData.startDate = now
@@ -76,14 +82,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await createAuditEntry({ action: `subscription.${status}`, entity: "StoreSubscription", entityId: id, userId: admin.id, storeId: existing.storeId })
 
     if (subscription.store.email && status && notify !== false) {
-    sendEmail(subscription.store.email, "Actualización de suscripción", subscriptionStatusHtml({
-      storeName: subscription.store.name,
-      plan: subscription.store.plan,
-      status,
-      period: existing.period,
-      startDate: updateData.startDate?.toISOString(),
-      endDate: updateData.endDate?.toISOString(),
-    })).catch(e => console.error("Email error:", e))
+    const body = status === "active" || status === "verified"
+      ? templatePaymentVerified(subscription.store.name, subscription.store.name, subscription.store.plan)
+      : status === "rejected"
+        ? templatePaymentRejected(subscription.store.name, subscription.store.name, subscription.store.plan, subscription.rejectionReason || undefined)
+        : ""
+    if (body) {
+      sendEmail(subscription.store.email, "Actualización de suscripción", body, `subscription_${status}`)
+        .catch(e => console.error("Email error:", e))
+    }
   }
 
   return NextResponse.json(subscription)

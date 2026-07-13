@@ -1,15 +1,53 @@
 import { getCurrentStore } from "@/lib/permissions"
 import { redirect } from "next/navigation"
 import { getEffectiveRate } from "@/lib/bcv"
-import { hasModule } from "@/lib/plans"
+import { hasModule, resolvePlanId } from "@/lib/plans"
 import { prisma } from "@/lib/prisma"
 import { DashboardTienda } from "@/components/dashboard/dashboard-tienda"
 import { DashboardAgenda } from "@/components/dashboard/dashboard-agenda"
 import { DashboardNegocio } from "@/components/dashboard/dashboard-negocio"
 import { DashboardEmpresa } from "@/components/dashboard/dashboard-empresa"
-export default async function DashboardPage() {
+
+const planToConfig: Record<string, { modalidad: string | null; planType: string; hasAgenda: boolean }> = {
+  agenda: { modalidad: "agenda", planType: "agenda", hasAgenda: true },
+  comercio: { modalidad: null, planType: "tienda", hasAgenda: true },
+  mayorista: { modalidad: null, planType: "empresa", hasAgenda: false },
+}
+
+export default async function DashboardPage(props: { searchParams?: Promise<{ plan?: string }> }) {
+  const searchParams = await props?.searchParams
+  const planParam = searchParams?.plan
+
   const current = await getCurrentStore()
-  if (!current) redirect("/onboarding")
+  if (!current) redirect("/choose-plan")
+
+  // If user came from choose-plan with a specific plan, update their Negocio
+  if (planParam && current.store.negocioId) {
+    const resolved = resolvePlanId(planParam)
+    const cfg = planToConfig[resolved]
+    if (cfg) {
+      const negocio = await prisma.negocio.findUnique({ where: { id: current.store.negocioId }, select: { planId: true } })
+      if (negocio && negocio.planId !== resolved) {
+        await prisma.negocio.update({
+          where: { id: current.store.negocioId },
+          data: { planId: resolved, modalidad: cfg.modalidad },
+        })
+        if (cfg.hasAgenda) {
+          const existing = await prisma.agenda.findFirst({ where: { negocioId: current.store.negocioId } })
+          if (!existing) {
+            await prisma.agenda.create({
+              data: { nombre: "Mi Agenda", slug: current.store.slug + "-agenda", negocioId: current.store.negocioId },
+            })
+          }
+        }
+        // Update store planType
+        await prisma.store.update({
+          where: { id: current.store.id },
+          data: { planType: cfg.planType },
+        })
+      }
+    }
+  }
 
   const planType = current.store.planType || current.store.plan
   const rate = await getEffectiveRate()

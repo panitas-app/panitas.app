@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Lightbulb, CreditCard, Package, Wrench, Lock, DollarSign } from "lucide-react"
 
 interface FAQItem {
   q: string
@@ -11,14 +11,14 @@ interface FAQItem {
 }
 
 interface FAQCategory {
-  icon: string
+  icon: React.ElementType
   title: string
   items: FAQItem[]
 }
 
 const categories: FAQCategory[] = [
   {
-    icon: "💡",
+    icon: Lightbulb,
     title: "Sobre Panitas (General)",
     items: [
       {
@@ -36,7 +36,7 @@ const categories: FAQCategory[] = [
     ],
   },
   {
-    icon: "💳",
+    icon: CreditCard,
     title: "Pagos y Suscripción",
     items: [
       {
@@ -54,7 +54,7 @@ const categories: FAQCategory[] = [
     ],
   },
   {
-    icon: "📦",
+    icon: Package,
     title: "Envíos, Ventas y Responsabilidad",
     items: [
       {
@@ -76,7 +76,7 @@ const categories: FAQCategory[] = [
     ],
   },
   {
-    icon: "🔒",
+    icon: Lock,
     title: "Privacidad y Visibilidad",
     items: [
       {
@@ -90,7 +90,7 @@ const categories: FAQCategory[] = [
     ],
   },
   {
-    icon: "💰",
+    icon: DollarSign,
     title: "Sobre tus Ventas",
     items: [
       {
@@ -113,14 +113,14 @@ function AccordionItem({ item }: { item: FAQItem }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border border-white/10 rounded-xl overflow-hidden">
+    <div className="rounded-xl bg-background/50 backdrop-blur-sm ring-1 ring-border/10 overflow-hidden transition-all duration-200 hover:ring-border/20">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-white hover:bg-white/5 transition-colors"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-foreground hover:bg-background/50 transition-colors cursor-pointer"
       >
         <span>{item.q}</span>
         <ChevronDown
-          className={`size-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -135,7 +135,7 @@ function AccordionItem({ item }: { item: FAQItem }) {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-slate-400">
+            <div className="border-t border-border/20 px-5 py-4 text-sm leading-relaxed text-muted-foreground">
               {item.a}
             </div>
           </motion.div>
@@ -147,48 +147,53 @@ function AccordionItem({ item }: { item: FAQItem }) {
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0A1628] via-[#0F2240] to-[#102A43] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-foreground">
       <div className="mx-auto max-w-4xl px-4 py-20">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-3">
+          <h1 className="font-heading text-4xl font-bold tracking-tight mb-3">
             Preguntas Frecuentes
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Todo lo que necesitas saber sobre Panitas, en un solo lugar.
           </p>
         </div>
 
-        <div className="space-y-10">
-          {categories.map((category) => (
-            <div key={category.title} className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-5">
-                <span className="text-2xl">{category.icon}</span>
-                <h2 className="text-lg font-bold text-amber-300">
-                  {category.title}
-                </h2>
+        <div className="space-y-8">
+          {categories.map((category) => {
+            const CatIcon = category.icon
+            return (
+              <div key={category.title} className="rounded-2xl bg-white/70 backdrop-blur-xl p-6 ring-1 ring-border/20 shadow-sm">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                    <CatIcon className="size-4.5 text-primary" />
+                  </div>
+                  <h2 className="font-heading text-lg font-bold text-foreground">
+                    {category.title}
+                  </h2>
+                </div>
+                <div className="space-y-3">
+                  {category.items.map((item) => (
+                    <AccordionItem key={item.q} item={item} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-3">
-                {category.items.map((item) => (
-                  <AccordionItem key={item.q} item={item} />
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="mt-12 text-center">
-          <p className="text-sm text-slate-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             ¿No encuentras lo que buscas? Escríbenos a{" "}
             <a
               href="mailto:supportpanitas@gmail.com"
-              className="text-amber-300 hover:text-amber-200 underline"
+              className="text-primary hover:text-primary/80 underline"
             >
               supportpanitas@gmail.com
             </a>
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Volver al inicio
           </Link>

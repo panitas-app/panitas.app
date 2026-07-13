@@ -7,7 +7,7 @@ const csp = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "font-src 'self'",
+  "font-src 'self' https://cdn.prod.website-files.com",
   `connect-src 'self' https://ve.dolarapi.com https://pydolarve.org${
     !isProd ? " ws: wss: http://localhost:* ws://localhost:*" : ""
   }`,

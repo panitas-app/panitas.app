@@ -42,7 +42,7 @@ export async function generateMetadata({
     return {
       title: `${store.name} | Reserva tu cita`,
       description: store.description || `Agenda una cita con ${store.name} a través de Panitas.`,
-      metadataBase: new URL("https://panitas.app"),
+      metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"),
       alternates: { canonical: `/store/${slug}` },
       openGraph: {
         title: `${store.name} | Panitas`,
@@ -73,7 +73,7 @@ export async function generateMetadata({
   return {
     title: `${store.name} | Panitas`,
     description: store.description || `Compra en la tienda oficial de ${store.name} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`,
-    metadataBase: new URL("https://panitas.app"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"),
     alternates: { canonical: `/store/${slug}` },
     openGraph: {
       title: `${store.name} | Panitas`,
@@ -193,7 +193,7 @@ export default async function StorePage({
     name: store.name,
     description: store.description || undefined,
     image: store.logo || undefined,
-    url: `https://panitas.app/store/${slug}`,
+    url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"}/store/${slug}`,
     telephone: store.phone || store.whatsapp || undefined,
     address: store.address ? {
       "@type": "PostalAddress",

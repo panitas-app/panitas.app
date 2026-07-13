@@ -118,4 +118,62 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Servidor corre en `http://localhost:3000` via `npm run dev` o `admin.bat`
 - Google OAuth redirect URI: `http://localhost:3000/api/auth/callback/google`
 
+---
+
+## ⛑️ PROTECCIÓN DE DATOS — SISTEMA DE SEGURIDAD MULTICAPA
+
+### 🚫 Capa 1: Prisma Safety Wrapper (BLOQUEO TOTAL)
+
+Cualquier intento de ejecutar `prisma migrate dev`, `prisma migrate reset` o comandos destructivos es **BLOQUEADO AUTOMÁTICAMENTE** por `scripts/safe-prisma.js`.
+
+El wrapper muestra un mensaje de error y termina el proceso. No se puede eludir a menos que se edite manualmente el script.
+
+Se accede via:
+- `npm run prisma -- <args>` — pasa por el wrapper de seguridad
+- `npx prisma <args>` — pasa por el wrapper solo si `prisma.cmd` está en PATH
+- **`npm run db:push`** — ÚNICA forma permitida de cambiar schema (hace backup automático antes)
+
+### 📦 Capa 2: Backup automático diario
+
+- **Cada vez que ejecutas `npm run dev`**, se hace un backup automático (máximo 1 vez por día)
+- Los backups se guardan en `backups/backup-{fecha}.sql`
+- Para instalar backup programado diario a las 4:00 AM:
+  ```
+  scripts\install-scheduled-backup.bat  (ejecutar como Administrador)
+  ```
+
+### 🛡️ Capa 3: Backup antes de cualquier cambio
+
+- `npm run db:push` → backup automático + `prisma db push`
+- `npm run build` → backup automático
+- Todos los scripts seguros usan `scripts/backup-db.js` que hace pg_dump
+
+### 📋 Capa 4: Comandos seguros (USA SOLO ESTOS)
+
+| Comando | Qué hace | ¿Destruye datos? |
+|---------|----------|-----------------|
+| `npm run dev` | Inicia servidor + backup diario | ❌ No |
+| `npm run db:push` | Aplica cambios de schema + backup previo | ❌ No (seguro) |
+| `npm run db:backup` | Backup manual inmediato | ❌ No |
+| `npm run db:restore` | Restaura desde backup | ⚠️ Sí, pero de backup |
+| `npm run db:status` | Verifica conexión BD | ❌ No |
+| `npm run prisma -- <cmd>` | Ejecuta prisma con protección | ❌ No (si cmd seguro) |
+
+### 🔴 NUNCA USAR (BLOQUEADOS):
+
+| Comando | Motivo |
+|---------|--------|
+| `npx prisma migrate dev` | BLOQUEADO — resetea BD si hay drift |
+| `npx prisma migrate reset` | BLOQUEADO — borra todos los datos |
+| `npm run dev:fast` | Solo si sabes lo que haces (sin backup) |
+
+### 💾 Restaurar desde backup
+
+```bash
+npm run db:restore          # lista backups disponibles
+npm run db:restore 2        # restaura el #2 de la lista
+```
+
+Los backups están en `backups/` — NUNCA los borres manualmente.
+
 <!-- END:panitas-checklist -->

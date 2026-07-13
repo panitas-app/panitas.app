@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
 
-const ALLOWED_ORIGINS = new Set([
-  process.env.NEXTAUTH_URL || "http://localhost:3000",
-  "http://localhost:3000",
-])
+function getAllowedOrigins(): Set<string> {
+  const origins = [process.env.NEXTAUTH_URL].filter(Boolean) as string[]
+  if (process.env.NODE_ENV === "development") {
+    origins.push("http://localhost:3000")
+  }
+  return new Set(origins)
+}
 
 const MAX_BODY_SIZE = 1_000_000 // 1MB
 
@@ -24,11 +27,12 @@ export function csrfGuard(request: Request): NextResponse | null {
     const origin = request.headers.get("origin")
     const referer = request.headers.get("referer")
 
+    const origins = getAllowedOrigins()
     let allowed = false
     if (origin) {
-      allowed = ALLOWED_ORIGINS.has(origin)
+      allowed = origins.has(origin)
     } else if (referer) {
-      allowed = [...ALLOWED_ORIGINS].some((o) => isSameOrigin(referer, o))
+      allowed = [...origins].some((o) => isSameOrigin(referer, o))
     }
 
     if (!allowed) {

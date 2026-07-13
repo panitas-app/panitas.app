@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
-import { sendEmail, paymentVerifiedHtml } from "@/lib/email"
+import { sendEmail } from "@/lib/email"
+import { templatePaymentVerified } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 
@@ -52,13 +53,12 @@ export async function POST(
     await createAuditEntry({ action: "payment.verified", entity: "OrderPayment", entityId: paymentId, storeId: current.store.id, userId: current.userId })
 
     if (updated.customerEmail) {
-      sendEmail(updated.customerEmail, "Pago verificado", paymentVerifiedHtml({
-        orderNumber: updated.orderNumber,
-        customerName: updated.customerName,
-        total: updated.total,
-        currency: updated.currency,
-        storeName: updated.store.name,
-      })).catch(e => console.error("Email error:", e))
+      sendEmail(
+        updated.customerEmail,
+        "Pago verificado — Panitas",
+        templatePaymentVerified(updated.customerName, updated.store.name, ""),
+        "payment_verified"
+      ).catch(e => console.error("Email error:", e))
     }
 
     return NextResponse.json(updated)

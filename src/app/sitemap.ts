@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 
 export default async function sitemap() {
-  const baseUrl = "https://panitas.app"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"
 
   const stores = await prisma.store.findMany({
     where: { isActive: true, planStatus: { in: ["active", "activo"] } },

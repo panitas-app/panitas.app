@@ -74,7 +74,7 @@ export function QRModal({ open, onOpenChange, storeUrl, storeName }: QRModalProp
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center gap-6 py-4">
-          <div className="rounded-2xl border-2 border-slate-100 bg-white p-3 shadow-sm">
+          <div className="rounded-2xl bg-muted p-3 shadow-sm">
             <canvas ref={canvasRef} className="size-[280px]" />
           </div>
           <div className="flex gap-3 w-full">

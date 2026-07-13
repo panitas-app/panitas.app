@@ -107,12 +107,12 @@ export function SettingsAppearance({ store }: { store: Store }) {
           onChange={handleLogoUpload}
           disabled={uploadingLogo}
         />
-        <div className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4">
-          <div className="relative flex size-16 shrink-0 items-center justify-center rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shadow-xs">
+        <div className="flex items-center gap-4 rounded-xl bg-card p-4">
+          <div className="relative flex size-16 shrink-0 items-center justify-center rounded-2xl bg-muted overflow-hidden shadow-xs">
             {logo ? (
               <img src={logo} alt="Logo Preview" className="size-full object-cover" />
             ) : (
-              <Upload className="size-5 text-slate-400" />
+              <Upload className="size-5 text-muted-foreground" />
             )}
           </div>
           <div className="flex flex-col gap-1.5">
@@ -133,13 +133,13 @@ export function SettingsAppearance({ store }: { store: Store }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setLogo("")}
-                  className="h-8.5 rounded-lg text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+                  className="h-8.5 rounded-lg text-xs text-red-500 hover:bg-red-500/10 hover:text-red-600"
                 >
                   Eliminar
                 </Button>
               )}
             </div>
-            <p className="text-[10px] text-slate-400">Imagen cuadrada de 512x512px recomendada</p>
+            <p className="text-[10px] text-muted-foreground">Imagen cuadrada de 512x512px recomendada</p>
           </div>
         </div>
       </div>
@@ -155,14 +155,14 @@ export function SettingsAppearance({ store }: { store: Store }) {
           onChange={handleBannerUpload}
           disabled={uploadingBanner}
         />
-        <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4">
+        <div className="flex flex-col gap-3 rounded-xl bg-card p-4">
           {banner && (
-            <div className="relative h-28 w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
+            <div className="relative h-28 w-full rounded-2xl overflow-hidden shadow-xs">
               <img src={banner} alt="Banner Preview" className="size-full object-cover" />
               <button
                 type="button"
                 onClick={() => setBanner("")}
-                className="absolute top-2 right-2 size-6 rounded-full bg-slate-900/60 hover:bg-red-500 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer"
+                className="absolute top-2 right-2 size-6 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center backdrop-blur-xs transition-colors cursor-pointer"
               >
                 <X className="size-4" />
               </button>
@@ -179,7 +179,7 @@ export function SettingsAppearance({ store }: { store: Store }) {
             >
               {uploadingBanner ? "Subiendo..." : banner ? "Cambiar Banner" : "Subir Banner"}
             </Button>
-            <p className="text-[10px] text-slate-400">Recomendado formato panorámico (horizontal)</p>
+            <p className="text-[10px] text-muted-foreground">Recomendado formato panorámico (horizontal)</p>
           </div>
         </div>
       </div>

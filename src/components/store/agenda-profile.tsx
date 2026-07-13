@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Clock, MapPin, Phone, Store, ChevronRight, Star, Calendar, MessageCircle, Globe } from "lucide-react"
+import { Clock, MapPin, Phone, Store, ChevronRight, Star, Calendar, MessageCircle, Globe, QrCode } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { QrModal } from "@/components/store/qr-modal"
 import type { ServiceData, BookingStoreData, PaymentAccountData } from "@/components/booking/booking-flow"
 
 interface ProfileData {
@@ -17,6 +18,7 @@ export default function AgendaProfile({ slug }: { slug: string }) {
   const router = useRouter()
   const [data, setData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [qrOpen, setQrOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -265,6 +267,24 @@ export default function AgendaProfile({ slug }: { slug: string }) {
           Powered by Panitas
         </p>
       </div>
+
+      {/* QR button */}
+      <button
+        onClick={() => setQrOpen(true)}
+        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+        style={{ backgroundColor: store.primaryColor + "20", color: store.primaryColor, border: "1px solid " + store.primaryColor + "40" }}
+      >
+        <QrCode className="size-4" />
+        QR
+      </button>
+
+      <QrModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        storeName={store.name}
+        storeUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/store/${slug}`}
+        storeLogo={store.logo}
+      />
     </div>
   )
 }

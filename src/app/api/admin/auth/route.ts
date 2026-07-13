@@ -32,14 +32,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const superadmin = await prisma.user.findFirst({ where: { role: "superadmin" } })
+    let superadmin = await prisma.user.findFirst({ where: { role: "superadmin" } })
     if (!superadmin) {
-      return NextResponse.json(
-        {
-          error: "No se ha configurado la cuenta de Superadmin en la base de datos. Por favor, ejecuta el script de configuración antes de acceder.",
+      // Auto-create superadmin if none exists (ADMIN_SECRET already validated)
+      const email = process.env.ADMIN_EMAIL || "admin@panitas.app"
+      superadmin = await prisma.user.create({
+        data: {
+          email,
+          name: "Superadmin",
+          role: "superadmin",
+          is_email_verified: true,
         },
-        { status: 400 }
-      )
+      })
+      console.log(`[admin-auth] Superadmin auto-creado: ${email}`)
     }
   } catch (error) {
     console.error("Database connection check failed in admin auth:", error)

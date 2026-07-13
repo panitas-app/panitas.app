@@ -1,7 +1,11 @@
 import crypto from "crypto"
 import { cookies } from "next/headers"
 
-const SELLER_SECRET = process.env.SELLER_JWT_SECRET || process.env.NEXTAUTH_SECRET || "seller-default-secret"
+const SELLER_SECRET = (() => {
+  const secret = process.env.SELLER_JWT_SECRET || process.env.NEXTAUTH_SECRET
+  if (!secret) throw new Error("SELLER_JWT_SECRET o NEXTAUTH_SECRET debe estar definido")
+  return secret
+})()
 const COOKIE_NAME = "seller_token"
 
 export function createSellerToken(sellerId: string, storeId: string): string {

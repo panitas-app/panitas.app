@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Shield } from "lucide-react"
 
 const sections = [
   {
@@ -11,23 +12,23 @@ const sections = [
           básica pero necesaria:
         </p>
         <div className="space-y-3 mb-3">
-          <div className="border-l-2 border-amber-500/40 pl-4">
-            <strong className="text-amber-300">Datos de registro:</strong>{" "}
+          <div className="border-l-2 border-[#0066FF]/30 pl-4">
+            <strong className="text-[#0066FF]">Datos de registro:</strong>{" "}
             <span>
               Correo electrónico y número de teléfono. Utilizamos estos datos exclusivamente para
               verificar tu identidad al registrarte, enviarte notificaciones importantes sobre tu
               cuenta (como confirmaciones o alertas de nuevos pedidos) y darte soporte técnico.
             </span>
           </div>
-          <div className="border-l-2 border-amber-500/40 pl-4">
-            <strong className="text-amber-300">Datos de tu negocio:</strong>{" "}
+          <div className="border-l-2 border-[#0066FF]/30 pl-4">
+            <strong className="text-[#0066FF]">Datos de tu negocio:</strong>{" "}
             <span>
               El nombre de tu tienda, horarios y la información que decidas mostrar públicamente
               para que tus clientes te contacten.
             </span>
           </div>
         </div>
-        <p className="text-amber-300 font-semibold">
+        <p className="text-[#0066FF] font-semibold">
           Nota importante: Panitas no almacena tus datos bancarios ni los de tus clientes, ya que
           las transferencias y pagos móviles se realizan directamente de banco a banco entre tú y
           tus compradores.
@@ -64,16 +65,16 @@ const sections = [
           una página web. En Panitas las usamos para dos cosas fundamentales:
         </p>
         <div className="space-y-3 mb-3">
-          <div className="border-l-2 border-amber-500/40 pl-4">
-            <strong className="text-amber-300">Cookies Técnicas Obligatorias:</strong>{" "}
+          <div className="border-l-2 border-[#0066FF]/30 pl-4">
+            <strong className="text-[#0066FF]">Cookies Técnicas Obligatorias:</strong>{" "}
             <span>
               Son esenciales para que puedas iniciar sesión en tu cuenta de Panitas de forma segura
               y el sistema recuerde que estás dentro de tu panel de control mientras navegas por la
               web.
             </span>
           </div>
-          <div className="border-l-2 border-amber-500/40 pl-4">
-            <strong className="text-amber-300">Cookies de Rendimiento (Métricas):</strong>{" "}
+          <div className="border-l-2 border-[#0066FF]/30 pl-4">
+            <strong className="text-[#0066FF]">Cookies de Rendimiento (Métricas):</strong>{" "}
             <span>
               Son las que utiliza Google Analytics para ayudarnos a medir el tráfico del sitio de
               manera totalmente anónima.
@@ -111,7 +112,7 @@ const sections = [
         soporte:{": "}
         <a
           href="mailto:supportpanitas@gmail.com"
-          className="text-amber-300 hover:text-amber-200 underline"
+          className="text-[#0066FF] hover:text-blue-700 underline"
         >
           supportpanitas@gmail.com
         </a>
@@ -122,17 +123,20 @@ const sections = [
 
 export default function PrivacidadPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0A1628] via-[#0F2240] to-[#102A43] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-foreground">
       <div className="mx-auto max-w-4xl px-4 py-20">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-3">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+            <Shield className="size-6 text-primary" />
+          </div>
+          <h1 className="font-heading text-3xl font-bold mb-2">
             Política de Privacidad y Cookies
           </h1>
-          <p className="text-sm text-slate-400">Última actualización: Julio de 2026</p>
+          <p className="text-sm text-muted-foreground">Última actualización: Julio de 2026</p>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10">
-          <p className="text-slate-300 leading-relaxed">
+        <div className="mb-10 rounded-2xl bg-white/70 backdrop-blur-xl p-6 md:p-8 ring-1 ring-border/20 shadow-sm">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             En Panitas, nos tomamos muy en serio la seguridad y la privacidad de tus datos. Esta
             Política de Privacidad y Cookies te explica de manera sencilla qué información
             recolectamos, cómo la usamos para que la plataforma funcione perfectamente y cómo
@@ -141,21 +145,21 @@ export default function PrivacidadPage() {
           </p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {sections.map((section) => (
             <div
               key={section.number}
-              className="bg-white/5 border border-white/10 rounded-2xl p-6"
+              className="rounded-2xl bg-white/70 backdrop-blur-xl p-6 md:p-8 ring-1 ring-border/20 shadow-sm transition-all hover:shadow-md hover:ring-border/30"
             >
               <div className="flex items-start gap-4 mb-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300 font-bold text-sm">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm ring-1 ring-primary/20">
                   {section.number}
                 </span>
-                <h2 className="text-xl font-bold text-amber-300 pt-1">
+                <h2 className="font-heading text-lg font-bold text-foreground pt-0.5">
                   {section.title}
                 </h2>
               </div>
-              <div className="text-slate-300 leading-relaxed text-[15px] ml-14">
+              <div className="text-sm text-muted-foreground leading-relaxed ml-[3.25rem]">
                 {section.content}
               </div>
             </div>
@@ -165,7 +169,7 @@ export default function PrivacidadPage() {
         <div className="mt-12 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Volver al inicio
           </Link>

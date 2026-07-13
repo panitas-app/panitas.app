@@ -33,18 +33,18 @@ export function CategoryStats({ type, items }: Props) {
   const labelPl = type === "category" ? "Categorías" : "Servicios"
 
   return (
-    <Card className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-      <CardHeader className="pb-4 pt-7 px-6 border-b border-slate-100 dark:border-slate-800">
+    <Card className="rounded-3xl bg-card shadow-xs overflow-hidden">
+      <CardHeader className="pb-4 pt-7 px-6">
         <CardTitle className="font-heading text-lg font-bold text-accent flex items-center gap-2">
           <Tag className="size-5 text-primary" />
           {labelPl} más vendidos
         </CardTitle>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Distribución de ventas por {label}</p>
+        <p className="text-xs text-muted-foreground">Distribución de ventas por {label}</p>
       </CardHeader>
       <CardContent className="p-6">
         {sorted.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-slate-400 dark:text-slate-500">
-            <Tag className="size-8 text-slate-300 dark:text-slate-600" />
+          <div className="flex flex-col items-center gap-2 py-8 text-muted-foreground">
+            <Tag className="size-8 text-muted-foreground/70" />
             <p className="text-sm font-semibold">Sin {labelPl.toLowerCase()} registradas</p>
           </div>
         ) : (
@@ -85,10 +85,10 @@ export function CategoryStats({ type, items }: Props) {
 
             {/* Best seller highlight */}
             {best && (
-              <div className="flex items-center gap-3 p-3 mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40">
-                <Sparkles className="size-5 text-amber-500 shrink-0" />
+              <div className="flex items-center gap-3 p-3 mb-4 rounded-2xl bg-primary/10">
+                <Sparkles className="size-5 text-primary shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Más vendido</p>
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Más vendido</p>
                   <p className="text-sm font-black text-accent truncate">{best.name}</p>
                 </div>
                 <div className="text-right shrink-0 ml-auto">
@@ -110,7 +110,7 @@ export function CategoryStats({ type, items }: Props) {
                         <span className="text-sm font-semibold text-accent truncate">{item.name}</span>
                         <span className="text-xs font-bold text-muted-foreground">{pct}%</span>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${pct}%`, backgroundColor: item.color }}

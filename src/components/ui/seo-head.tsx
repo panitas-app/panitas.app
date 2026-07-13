@@ -9,7 +9,8 @@ interface SeoHeadProps {
 export function SeoHead({ storeName, storeDescription, storeLogo, slug, template = "modern" }: SeoHeadProps) {
   const title = `${storeName} | Panitas`
   const description = storeDescription || `Compra en la tienda oficial de ${storeName} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`
-  const url = `https://panitas.app/store/${slug}`
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"
+  const url = `${baseUrl}/store/${slug}`
 
   const jsonLd = {
     "@context": "https://schema.org",

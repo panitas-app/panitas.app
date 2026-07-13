@@ -159,7 +159,7 @@ export default function AdminSubscriptionDetailPage() {
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="size-4" /> Información de pago</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Método</span><span>{sub.paymentMethod === "bank_transfer" ? "Transferencia" : sub.paymentMethod === "pago_movil" ? "Pago Móvil" : sub.paymentMethod === "zelle" ? "Zelle" : sub.paymentMethod}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Método</span><span>{sub.paymentMethod === "bank_transfer" ? "Transferencia" : sub.paymentMethod === "pago_movil" ? "Pago Móvil" : sub.paymentMethod === "binancepay" ? "Binance Pay" : sub.paymentMethod}</span></div>
             {sub.bankOrigin && <div className="flex justify-between"><span className="text-muted-foreground">Banco origen</span><span className="font-mono text-xs">{sub.bankOrigin}</span></div>}
             {sub.reference && <div className="flex justify-between"><span className="text-muted-foreground">Referencia</span><span className="font-mono text-xs">{sub.reference}</span></div>}
             {sub.paidAt && <div className="flex justify-between"><span className="text-muted-foreground">Pagado el</span><span>{format(new Date(sub.paidAt), "dd/MM/yyyy hh:mm a", { locale: es })}</span></div>}

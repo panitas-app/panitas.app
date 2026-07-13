@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { getTemplateComponent } from "./template-components"
 import { LoadingState } from "@/components/ui/loading-state"
 import { StoreSkeleton } from "@/components/store/store-skeleton"
+import { QrModal } from "@/components/store/qr-modal"
+import { QrCode } from "lucide-react"
 import "./templates"
 
 interface ProductData {
@@ -84,6 +86,7 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
   const [cartOpen, setCartOpen] = useState(false)
   const [cart, setCart] = useState<CartItemLocal[]>([])
   const [mounted, setMounted] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
 
   useEffect(() => {
     setCart(loadCart(slug))
@@ -157,22 +160,41 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
     return <LoadingState message="Plantilla no encontrada..." />
   }
 
+  const storeUrl = typeof window !== "undefined" ? `${window.location.origin}/store/${slug}` : `/store/${slug}`
+
   return (
-    <Template
-      store={store}
-      products={products}
-      bcvRate={bcvRate}
-      slug={slug}
-      accentColor={accentColor}
-      cart={cart}
-      cartCount={cartCount}
-      cartOpen={cartOpen}
-      canBook={canBook}
-      onCartOpen={setCartOpen}
-      onAddToCart={handleAddToCart}
-      onUpdateQty={handleUpdateQty}
-      onRemove={handleRemove}
-      onCheckout={handleCheckout}
-    />
+    <>
+      <Template
+        store={store}
+        products={products}
+        bcvRate={bcvRate}
+        slug={slug}
+        accentColor={accentColor}
+        cart={cart}
+        cartCount={cartCount}
+        cartOpen={cartOpen}
+        canBook={canBook}
+        onCartOpen={setCartOpen}
+        onAddToCart={handleAddToCart}
+        onUpdateQty={handleUpdateQty}
+        onRemove={handleRemove}
+        onCheckout={handleCheckout}
+      />
+      <button
+        onClick={() => setQrOpen(true)}
+        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+        style={{ backgroundColor: accentColor + "20", color: accentColor, border: "1px solid " + accentColor + "40" }}
+      >
+        <QrCode className="size-4" />
+        QR
+      </button>
+      <QrModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        storeName={store.name}
+        storeUrl={storeUrl}
+        storeLogo={store.logo}
+      />
+    </>
   )
 }

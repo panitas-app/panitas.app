@@ -4,17 +4,17 @@ export interface BcvFetchResult {
 }
 
 export async function fetchBcvRate(): Promise<BcvFetchResult> {
-  // Primary source: official BCV website (most up-to-date)
-  const official = await fetchFromBcvWebsite()
-  if (official) return official
-
-  // Fallback: dolarapi.com
+  // Primary source: dolarapi.com (most reliable, REST API)
   const dolarApi = await fetchFromDolarApi()
   if (dolarApi) return dolarApi
 
-  // Last resort: pydolarve.org
+  // Fallback: pydolarve.org
   const py = await fetchFromPyDolarVe()
   if (py) return py
+
+  // Last resort: official BCV website (web scraping)
+  const official = await fetchFromBcvWebsite()
+  if (official) return official
 
   throw new Error("All BCV rate sources failed")
 }

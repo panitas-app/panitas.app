@@ -41,8 +41,8 @@ export function DashboardAgenda({ store, rate, data, orders, visitorData, servic
           <h1 className="font-heading text-2xl font-black text-foreground tracking-tight md:text-3xl">Panel de Agenda</h1>
           <p className="text-xs text-muted-foreground font-semibold tracking-wider uppercase mt-1">{store.name} · Plan Agenda</p>
         </div>
-        <div data-tour="citas-hoy" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-xs">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400">
+        <div data-tour="citas-hoy" className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400">
             <Calendar className="size-4.5" />
           </div>
           <div className="text-left">
@@ -53,11 +53,11 @@ export function DashboardAgenda({ store, rate, data, orders, visitorData, servic
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card data-tour="kpi-pendientes" className="rounded-3xl border border-border bg-card shadow-xs overflow-hidden relative group">
+        <Card data-tour="kpi-pendientes" className="rounded-3xl bg-card shadow-xs overflow-hidden relative group">
           <div className="absolute top-0 left-0 w-full h-1 bg-purple-500" />
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Citas Pendientes</CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-500">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
               <Clock className="size-4" />
             </div>
           </CardHeader>
@@ -67,11 +67,11 @@ export function DashboardAgenda({ store, rate, data, orders, visitorData, servic
           </CardContent>
         </Card>
 
-        <Card data-tour="kpi-confirmadas" className="rounded-3xl border border-border bg-card shadow-xs overflow-hidden relative group">
+        <Card data-tour="kpi-confirmadas" className="rounded-3xl bg-card shadow-xs overflow-hidden relative group">
           <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Citas Confirmadas</CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-500">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
               <CheckCircle className="size-4" />
             </div>
           </CardHeader>
@@ -81,11 +81,11 @@ export function DashboardAgenda({ store, rate, data, orders, visitorData, servic
           </CardContent>
         </Card>
 
-        <Card data-tour="kpi-completadas" className="rounded-3xl border border-border bg-card shadow-xs overflow-hidden relative group">
+        <Card data-tour="kpi-completadas" className="rounded-3xl bg-card shadow-xs overflow-hidden relative group">
           <div className="absolute top-0 left-0 w-full h-1 bg-green-500" />
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Completadas</CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-green-50 dark:bg-green-950/30 text-green-500">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-green-500/10 text-green-500">
               <CheckCircle className="size-4" />
             </div>
           </CardHeader>
@@ -95,11 +95,11 @@ export function DashboardAgenda({ store, rate, data, orders, visitorData, servic
           </CardContent>
         </Card>
 
-        <Card data-tour="kpi-servicios" className="rounded-3xl border border-border bg-card shadow-xs overflow-hidden relative group">
+        <Card data-tour="kpi-servicios" className="rounded-3xl bg-card shadow-xs overflow-hidden relative group">
           <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Servicios</CardTitle>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-500">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
               <Calendar className="size-4" />
             </div>
           </CardHeader>
