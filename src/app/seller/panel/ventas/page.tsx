@@ -67,7 +67,7 @@ export default function SellerNuevaVentaPage() {
         setCreditOptions(opts)
         if (opts.length > 0) setCreditDays(opts[0])
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   function addToCart(product: Product) {
@@ -106,9 +106,9 @@ export default function SellerNuevaVentaPage() {
         const data = await res.json()
         setCustomerResults(data.data || [])
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
-
+  
   function selectCustomer(c: { id: string; name: string; phone: string; documentId: string | null }) {
     setCustomer({ name: c.name, phone: c.phone, documentId: c.documentId || undefined })
     setCustomerSearch("")

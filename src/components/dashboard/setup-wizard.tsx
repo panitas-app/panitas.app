@@ -301,7 +301,7 @@ function PaymentMethodForm({ storeId }: { storeId: string }) {
     try {
       const res = await fetch("/api/payment-accounts")
       if (res.ok) setMethods(await res.json())
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   async function handleAdd(e: FormEvent) {

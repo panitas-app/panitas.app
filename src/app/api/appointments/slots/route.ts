@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
           schedules.push({ startTime: day.reopen, endTime: day.reclose })
         }
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   const appointmentWhere: any = { agendaId, date, status: { not: "cancelled" } }

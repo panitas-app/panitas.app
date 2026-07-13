@@ -90,7 +90,7 @@ export default function NuevaVentaPage() {
           setCreditOptions(opts)
           if (opts.length > 0) setCreditDays(opts[0])
         }
-      } catch {}
+      } catch (e) { console.error("[unhandled error]", e) }
     }
     loadStore()
   }, [])
@@ -107,9 +107,9 @@ export default function NuevaVentaPage() {
         const data = await res.json()
         setCustomerResults(data.data || [])
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
-
+  
   function selectCustomer(c: Customer) {
     setCustomerName(c.name)
     setCustomerPhone(c.phone)

@@ -37,7 +37,7 @@ function parseHours(raw: string | null): WeekSchedule {
   try {
     const parsed = JSON.parse(raw)
     if (typeof parsed === "object" && !Array.isArray(parsed)) return parsed
-  } catch {}
+  } catch (e) { console.error("[unhandled error]", e) }
   // Legacy format: "8:00 AM - 8:00 PM" — apply to weekdays
   const parts = raw.split(" - ")
     if (parts.length === 2) {

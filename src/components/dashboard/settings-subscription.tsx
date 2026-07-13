@@ -76,7 +76,7 @@ export function SettingsSubscription({ storeId, storePlan }: SettingsSubscriptio
         const data = await res.json()
         setActive(data.active || null)
         setHistory(data.subscriptions || [])
-      } catch {} finally { setLoading(false) }
+      } catch (e) { console.error("[unhandled error]", e) } finally { setLoading(false) }
     }
     load()
   }, [])

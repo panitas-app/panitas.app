@@ -85,7 +85,7 @@ export function DeliveryTemplate({
         else if (today.type === "Horario Corrido") { hoursDisplay = `${today.open} - ${today.close}`; isOpen = true }
         else if (today.type === "Horario Comercial") { hoursDisplay = `${today.open} - ${today.close}, ${today.reopen} - ${today.reclose}`; isOpen = true }
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   return (

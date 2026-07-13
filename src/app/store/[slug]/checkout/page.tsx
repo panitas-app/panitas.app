@@ -198,7 +198,7 @@ export default function CheckoutPage() {
                 }
               }
             }
-          } catch {}
+          } catch (e) { console.error("[unhandled error]", e) }
         }
       })
       .catch(() => {})
@@ -216,7 +216,7 @@ export default function CheckoutPage() {
         const data = JSON.parse(raw) as CheckoutData
         if (data.storeSlug === slug) setCheckoutData(data)
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }, [slug])
 
   useEffect(() => {
@@ -416,7 +416,7 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         let errorMsg = "Error al procesar el pedido"
-        try { const err = await res.json(); errorMsg = err.error || errorMsg } catch {}
+        try { const err = await res.json(); errorMsg = err.error || errorMsg } catch (e) { console.error("[unhandled error]", e) }
         throw new Error(errorMsg)
       }
 

@@ -68,7 +68,7 @@ export async function enforceBodySize(request: Request, maxBytes: number = MAX_B
       if (value) {
         total += value.byteLength
         if (total > maxBytes) {
-          try { await reader.cancel() } catch {}
+          try { await reader.cancel() } catch (e) { console.error("[unhandled error]", e) }
           return NextResponse.json({ error: `El cuerpo excede el límite de ${maxBytes} bytes` }, { status: 413 })
         }
       }

@@ -54,7 +54,7 @@ export default function CustomersPage() {
         setTotal(json.total || 0)
         setTotalPages(json.totalPages || 0)
       }
-    } catch {} finally {
+    } catch (e) { console.error("[unhandled error]", e) } finally {
       setLoading(false)
     }
   }, [search, sort, order, page])

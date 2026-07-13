@@ -27,7 +27,7 @@ export function useNewOrders() {
         setLastTotal(data.total)
         setLoading(false)
       }
-    } catch {}
+    } catch (e) { console.error("[unhandled error]", e) }
   }, [lastTotal])
 
   useEffect(() => {

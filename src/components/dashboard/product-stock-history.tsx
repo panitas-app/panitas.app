@@ -27,7 +27,7 @@ export function ProductStockHistory({ productId }: { productId: string }) {
           const data = await res.json()
           setMovements(data.data || [])
         }
-      } catch { /* ignore */ }
+      } catch (e) { console.error("[unhandled error]", e) }
       finally { setLoading(false) }
     }
     fetchMovements()

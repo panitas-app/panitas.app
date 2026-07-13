@@ -341,7 +341,7 @@ export default function ServiciosPage() {
     try {
       const res = await fetch("/api/services")
       if (res.ok) setServices(await res.json())
-    } catch { /* ignore */ }
+    } catch (e) { console.error("[unhandled error]", e) }
     finally { setLoading(false) }
   }
 
@@ -352,7 +352,7 @@ export default function ServiciosPage() {
         const data = await res.json()
         setAgendas(data)
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.error("[unhandled error]", e) }
   }
 
   async function handleSave(data: any) {
