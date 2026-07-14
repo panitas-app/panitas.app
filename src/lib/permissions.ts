@@ -154,7 +154,7 @@ export async function requireRole(allowedRoles: Role[]): Promise<StoreInfo> {
     ? await prisma.negocio.findUnique({ where: { id: current.store.negocioId } })
     : null
 
-  if (negocio && negocio.planEstado !== "activo") {
+  if (negocio && negocio.planEstado !== "activo" && negocio.planEstado !== "pendiente" && negocio.planEstado !== "trial") {
     throw new Error(
       "Tu plan está pendiente de pago. Actívalo para empezar a usar todas las funciones."
     )
