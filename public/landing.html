@@ -13,7 +13,8 @@
     <link rel="stylesheet" crossorigin href="/assets/index-iEuhCjZC.css">
     <style>
       @media (width <= 768px) {
-        .hero_home_content { padding: 5rem 1.5rem 4rem 1rem; justify-content: flex-end; }
+        .hero_home_content { bottom: 20%; padding: 0 1.5rem 0 1rem; }
+        .hero_home_wrap { min-height: 100dvh; }
         .hero_tagline { margin: 0; }
         .nav_mobile_overlay.is-active { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
@@ -21,17 +22,14 @@
       }
     </style>
     <script>
-      document.addEventListener('click', function(e) {
+      function toggleMobileMenu(e) {
         var toggle = document.getElementById('mobile-nav-toggle');
-        if (toggle && toggle.contains(e.target)) {
-          e.preventDefault();
-          var overlay = document.getElementById('mobile-nav-overlay');
-          var isActive = toggle.classList.contains('is-active');
-          toggle.classList.toggle('is-active');
-          overlay.classList.toggle('is-active');
-          document.querySelector('.page_wrap').style.overflow = isActive ? '' : 'hidden';
-        }
-      });
+        var overlay = document.getElementById('mobile-nav-overlay');
+        var isActive = toggle.classList.contains('is-active');
+        toggle.classList.toggle('is-active');
+        overlay.classList.toggle('is-active');
+        document.querySelector('.page_wrap').style.overflow = isActive ? '' : 'hidden';
+      }
     </script>
   </head>
   <body class="u-theme-light">
@@ -65,7 +63,7 @@
               </div>
             </li>
           </ul>
-          <div class="button_menu_wrap" id="mobile-nav-toggle">
+          <div class="button_menu_wrap" id="mobile-nav-toggle" onclick="toggleMobileMenu(event)" style="cursor:pointer;z-index:1002;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
             <div class="button_menu_icon_line"></div>
             <div class="button_menu_icon_line"></div>
           </div>
