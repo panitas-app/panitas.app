@@ -56,8 +56,20 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
         toast.error(data.error || "Error al registrarse")
         return
       }
-      toast.success("Cuenta creada. Inicia sesión.")
-      router.push("/login")
+      toast.success("Cuenta creada. Iniciando sesión...")
+      const signInResult = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      })
+      if (signInResult?.error) {
+        toast.error("Cuenta creada, pero no se pudo iniciar sesión. Ve al login e ingresa manualmente.")
+        router.push("/")
+      } else if (signInResult?.url) {
+        router.push(signInResult.url)
+      } else {
+        router.push("/choose-plan")
+      }
     } catch {
       toast.error("Error de conexión")
     } finally {
