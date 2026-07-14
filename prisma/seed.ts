@@ -1,13 +1,12 @@
 import { PrismaClient } from "@prisma/client"
-import { Pool, neonConfig } from "@neondatabase/serverless"
+import { neonConfig } from "@neondatabase/serverless"
 import { PrismaNeon } from "@prisma/adapter-neon"
 import ws from "ws"
 
 neonConfig.webSocketConstructor = ws
 
 const dbUrl = process.env.DATABASE_URL ?? "postgresql://panitas_user:changeme@localhost:5432/panitas_db?schema=public"
-const pool = new Pool({ connectionString: dbUrl })
-const adapter = new PrismaNeon(pool)
+const adapter = new PrismaNeon({ connectionString: dbUrl })
 
 const prisma = new PrismaClient({
   adapter,
