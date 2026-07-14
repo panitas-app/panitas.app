@@ -1,12 +1,11 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3"
-import path from "path"
-import { fileURLToPath } from "url"
+import { neonConfig } from "@neondatabase/serverless"
+import { PrismaNeon } from "@prisma/adapter-neon"
+import ws from "ws"
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const dbPath = path.resolve(__dirname, "..", "dev.db")
+neonConfig.webSocketConstructor = ws
 
-const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` })
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 
 const orders = await prisma.order.findMany({
