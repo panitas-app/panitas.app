@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import { enviarBienvenida } from "@/lib/email"
 
-const PASSWORD_MIN_LENGTH = 8
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=<>?/]).{8,}$/
+const PASSWORD_MIN_LENGTH = 6
 
 const planDefaults: Record<string, { planId: string; modalidad: string | null; planType: string; hasAgenda: boolean }> = {
   agenda: { planId: "agenda", modalidad: "agenda", planType: "agenda", hasAgenda: true },
@@ -50,13 +49,7 @@ export async function POST(req: Request) {
 
     if (password.length < PASSWORD_MIN_LENGTH) {
       return NextResponse.json({
-        error: `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres, incluyendo mayúscula, minúscula, número y carácter especial`,
-      }, { status: 400 })
-    }
-
-    if (!PASSWORD_REGEX.test(password)) {
-      return NextResponse.json({
-        error: "La contraseña debe incluir mayúscula, minúscula, número y carácter especial",
+        error: `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres`,
       }, { status: 400 })
     }
 

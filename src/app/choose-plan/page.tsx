@@ -126,6 +126,7 @@ export default function ChoosePlanPage() {
 
   return (
     <div className="min-h-screen bg-[#071A33] relative overflow-hidden">
+      <style>{`@media (width<=768px){.plan-card-mobile{height:280px!important}}`}</style>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-[#0066FF]/[0.05] rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-[#FFD600]/[0.04] rounded-full blur-3xl" />
@@ -290,9 +291,9 @@ export default function ChoosePlanPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.15 } }}
-              className="flex-1 flex items-center justify-center overflow-hidden"
+              className="flex-1 flex md:items-center justify-center overflow-hidden"
             >
-              <div className="flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 w-full max-w-5xl justify-center items-stretch md:items-start overflow-y-auto md:overflow-visible py-1 px-0.5">
+              <div className="flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 w-full max-w-5xl justify-center items-stretch md:items-start overflow-y-auto md:overflow-visible max-h-full py-1 px-0.5">
                 {plans.map((plan, i) => {
                   const isHovered = hoveredId === plan.id
 
@@ -319,7 +320,7 @@ export default function ChoosePlanPage() {
                       <motion.div
                         animate={{ height: isHovered ? 440 : 360 }}
                         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative flex flex-col"
+                        className="relative flex flex-col plan-card-mobile"
                       >
                         <div className="absolute inset-0 overflow-hidden">
                           <motion.div
