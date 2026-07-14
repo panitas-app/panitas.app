@@ -290,9 +290,9 @@ export default function ChoosePlanPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.15 } }}
-              className="flex-1 flex items-center justify-center"
+              className="flex-1 flex items-center justify-center overflow-hidden"
             >
-              <div className="flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 w-full max-w-5xl justify-center items-stretch md:items-start">
+              <div className="flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 w-full max-w-5xl justify-center items-stretch md:items-start overflow-y-auto md:overflow-visible py-1 px-0.5">
                 {plans.map((plan, i) => {
                   const isHovered = hoveredId === plan.id
 
