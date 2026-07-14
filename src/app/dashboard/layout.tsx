@@ -32,15 +32,17 @@ export default async function DashboardLayout({
     const name = user?.name || "Mi Tienda"
     const slug = slugify(name) + "-" + session.user.id.slice(0, 6)
 
-    await prisma.plan.upsert({
-      where: { id: "comercio" },
-      update: {},
-      create: {
-        id: "comercio", nombre: "comercio", label: "Comercio",
-        descripcion: "", precioUsd: 25, precioUsdAnual: 250,
-        activo: true, sortOrder: 2,
-      },
-    })
+    for (const p of [
+      { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
+      { id: "comercio", nombre: "comercio", label: "Comercio", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
+      { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
+    ]) {
+      await prisma.plan.upsert({
+        where: { id: p.id },
+        update: {},
+        create: { ...p, descripcion: "", activo: true },
+      })
+    }
 
     const negocio = await prisma.negocio.create({
       data: {
