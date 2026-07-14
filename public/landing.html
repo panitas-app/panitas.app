@@ -11,6 +11,28 @@
     <link rel="preload" href="/videos/video1.mp4" as="video" type="video/mp4" />
     <script type="module" crossorigin src="/assets/index-C2QVMFJG.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-iEuhCjZC.css">
+    <style>
+      @media (width <= 768px) {
+        .hero_home_content { padding: 5rem 1.5rem 4rem 1rem; justify-content: flex-end; }
+        .hero_tagline { margin: 0; }
+        .nav_mobile_overlay.is-active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
+        .button_menu_wrap.is-active .button_menu_icon_line:last-child { transform: rotate(-45deg) translate(2px, -4px); }
+      }
+    </style>
+    <script>
+      document.addEventListener('click', function(e) {
+        var toggle = document.getElementById('mobile-nav-toggle');
+        if (toggle && toggle.contains(e.target)) {
+          e.preventDefault();
+          var overlay = document.getElementById('mobile-nav-overlay');
+          var isActive = toggle.classList.contains('is-active');
+          toggle.classList.toggle('is-active');
+          overlay.classList.toggle('is-active');
+          document.querySelector('.page_wrap').style.overflow = isActive ? '' : 'hidden';
+        }
+      });
+    </script>
   </head>
   <body class="u-theme-light">
     <div class="page_wrap">
