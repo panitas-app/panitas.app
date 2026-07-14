@@ -1,22 +1,12 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3"
+import { neonConfig } from "@neondatabase/serverless"
+import { PrismaNeon } from "@prisma/adapter-neon"
+import ws from "ws"
 import { createInterface } from "readline"
-import { existsSync } from "fs"
-import { dirname, resolve } from "path"
-import { fileURLToPath } from "url"
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const projectRoot = resolve(__dirname, "..")
-const DB_PATH = resolve(projectRoot, "dev.db")
+neonConfig.webSocketConstructor = ws
 
-if (!existsSync(DB_PATH)) {
-  console.error("Base de datos no encontrada en:", DB_PATH)
-  process.exit(1)
-}
-
-const adapter = new PrismaBetterSqlite3({
-  url: `file:${DB_PATH}`,
-})
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 
 const rl = createInterface({ input: process.stdin, output: process.stdout })

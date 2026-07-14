@@ -1,13 +1,12 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3"
+import { neonConfig } from "@neondatabase/serverless"
+import { PrismaNeon } from "@prisma/adapter-neon"
+import ws from "ws"
 import bcrypt from "bcryptjs"
-import { join } from "path"
 
-const DB_PATH = join(process.cwd(), "dev.db")
+neonConfig.webSocketConstructor = ws
 
-const adapter = new PrismaBetterSqlite3({
-  url: `file:${DB_PATH}`,
-})
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
 const prisma = new PrismaClient({ adapter })
 
 async function run() {
