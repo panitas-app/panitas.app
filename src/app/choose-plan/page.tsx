@@ -165,14 +165,14 @@ export default function ChoosePlanPage() {
               className="flex-1 flex items-center justify-center"
             >
               <div
-                className="relative w-full max-w-5xl overflow-hidden border border-white/10"
+                className="relative w-full max-w-5xl border border-white/10 overflow-y-auto max-h-full"
                 style={{
                   background: "rgba(255,255,255,0.06)",
                   backdropFilter: "blur(20px)",
                   WebkitBackdropFilter: "blur(20px)",
                 }}
               >
-                <div className="absolute inset-0">
+                <div className="absolute inset-0 pointer-events-none">
                   <VideoCycler videos={expandedPlan.videos} isActive={true} accent={expandedPlan.accent} />
                   <div className="absolute inset-0 bg-gradient-to-br from-[#071A33]/90 via-[#071A33]/70 to-[#071A33]/90" />
                 </div>
@@ -373,6 +373,22 @@ export default function ChoosePlanPage() {
                             {plan.name}
                           </motion.h3>
 
+                          {/* Price always visible */}
+                          <div className="pt-2 sm:pt-3 space-y-1.5 sm:space-y-2">
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-none" style={{ color: plan.accent }}>
+                                ${plan.price}
+                              </span>
+                              <span className="text-xs sm:text-sm text-white/40">/mes</span>
+                            </div>
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="text-base sm:text-lg font-bold text-white/60 leading-none">
+                                ${plan.installmentAmount}
+                              </span>
+                              <span className="text-[10px] sm:text-xs text-white/30">/cuota · 2 cuotas</span>
+                            </div>
+                          </div>
+
                           <motion.div
                             variants={contentVariants}
                             initial="collapsed"
@@ -380,21 +396,9 @@ export default function ChoosePlanPage() {
                             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                             className="overflow-hidden"
                           >
-                              <div className="pt-2 sm:pt-3 space-y-1.5 sm:space-y-2">
-                                <div className="flex items-baseline gap-1.5 flex-wrap">
-                                  <span className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-none" style={{ color: plan.accent }}>
-                                    ${plan.price}
-                                  </span>
-                                  <span className="text-xs sm:text-sm text-white/40">/mes</span>
-                                </div>
-                                <div className="flex items-baseline gap-1.5 flex-wrap">
-                                  <span className="text-base sm:text-lg font-bold text-white/60 leading-none">
-                                    ${plan.installmentAmount}
-                                  </span>
-                                  <span className="text-[10px] sm:text-xs text-white/30">/cuota · 2 cuotas</span>
-                                </div>
+                            <div className="pt-1 space-y-1 sm:space-y-1.5">
                               <p className="text-xs sm:text-sm text-white/60 leading-relaxed">{plan.description}</p>
-                              <ul className="space-y-1 sm:space-y-1.5 pt-1">
+                              <ul className="space-y-1 sm:space-y-1.5">
                                 {plan.benefits.slice(0, 3).map((b, bi) => (
                                   <li key={bi} className="flex items-start gap-2 text-[11px] sm:text-xs text-white/50">
                                     <svg
