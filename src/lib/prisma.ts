@@ -14,7 +14,7 @@ if (globalForPrisma.prisma) {
       "DATABASE_URL is not set. Configure it in Vercel env vars or your local .env file",
     )
   }
-  const adapter = new PrismaNeonHttp(dbUrl)
+  const adapter = new PrismaNeonHttp(dbUrl, {})
   prismaClient = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
