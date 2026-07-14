@@ -3,9 +3,13 @@ export async function register() {
     const { runBcvScheduler } = await import("@/lib/bcv")
 
     async function tick() {
-      console.log(`[BCV Cron] Verificando tasa...`)
-      const result = await runBcvScheduler("auto", true)
-      console.log(`[BCV Cron] ${result.action}: ${result.message}`)
+      try {
+        console.log(`[BCV Cron] Verificando tasa...`)
+        const result = await runBcvScheduler("auto", true)
+        console.log(`[BCV Cron] ${result.action}: ${result.message}`)
+      } catch (e) {
+        console.error(`[BCV Cron] Error:`, e)
+      }
     }
 
     await tick()
