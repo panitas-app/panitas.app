@@ -48,40 +48,93 @@ export type StoreInfo = {
   userId: string
 }
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
+}
+
 async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
   try {
-    const negocio = await prisma.negocio.findUnique({ where: { userId } })
-    if (!negocio) return null
+    // 1. Buscar o crear Negocio
+    let negocio = await prisma.negocio.findUnique({ where: { userId } })
+    if (!negocio) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+      const name = user?.name || "Mi Tienda"
+      const slug = slugify(name) + "-" + userId.slice(0, 6)
 
-    const slug = negocio.slug || "tienda-" + userId.slice(0, 8)
-    const planType = negocio.modalidad === "tienda" ? "tienda"
-      : negocio.modalidad === "agenda" ? "agenda"
-      : negocio.planId === "agenda" ? "agenda"
-      : negocio.planId === "negocio" ? "negocio"
-      : negocio.planId === "empresarial" ? "empresa"
-      : "tienda"
+      // Asegurar que existan los planes por defecto
+      for (const p of [
+        { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
+        { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
+        { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
+        { id: "basico", nombre: "basico", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
+        { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
+        { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
+      ]) {
+        await prisma.plan.upsert({
+          where: { id: p.id },
+          update: {},
+          create: { ...p, descripcion: "", activo: true },
+        })
+      }
 
-    const store = await prisma.store.create({
-      data: {
-        name: negocio.nombre,
-        slug,
-        description: negocio.descripcion,
-        userId,
-        negocioId: negocio.id,
-        plan: "free",
-        planType,
-        planStatus: "pendiente",
-      },
-    })
+      negocio = await prisma.negocio.create({
+        data: {
+          nombre: name,
+          slug,
+          planId: "comercio",
+          modalidad: null,
+          planEstado: "pendiente",
+          planVencimiento: null,
+          userId,
+        },
+      })
+    }
 
-    const member = await prisma.storeMember.create({
-      data: { storeId: store.id, userId, role: "admin" },
+    // 2. Buscar o crear Store
+    let store = await prisma.store.findUnique({ where: { userId } })
+    if (!store) {
+      const name = negocio.nombre
+      const slug = negocio.slug
+      const planType = negocio.modalidad === "tienda" ? "tienda"
+        : negocio.modalidad === "agenda" ? "agenda"
+        : negocio.planId === "agenda" ? "agenda"
+        : negocio.planId === "negocio" ? "negocio"
+        : negocio.planId === "empresarial" ? "empresa"
+        : "tienda"
+
+      store = await prisma.store.create({
+        data: {
+          name,
+          slug,
+          userId,
+          negocioId: negocio.id,
+          plan: "free",
+          planType,
+          planStatus: "pendiente",
+        },
+      })
+    }
+
+    // 3. Buscar o crear StoreMember
+    let member = await prisma.storeMember.findFirst({
+      where: { storeId: store.id, userId },
       include: { store: true },
     })
 
+    if (!member) {
+      member = await prisma.storeMember.create({
+        data: {
+          storeId: store.id,
+          userId,
+          role: "admin",
+        },
+        include: { store: true },
+      })
+    }
+
     return {
       store: member.store,
-      role: "admin" as Role,
+      role: member.role as Role,
       memberId: member.id,
       userId,
     }
@@ -90,6 +143,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     return null
   }
 }
+
 
 export async function getCurrentStore(): Promise<StoreInfo | null> {
   const session = await auth()

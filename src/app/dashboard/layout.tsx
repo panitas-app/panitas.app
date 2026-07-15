@@ -12,8 +12,14 @@ import { BcvRateProvider } from "@/lib/bcv-context"
 import { InstallmentOverdueBanner } from "@/components/dashboard/installment-overdue-banner"
 import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
+function isRedirectError(error: any): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof error.digest === "string" &&
+    error.digest.startsWith("NEXT_REDIRECT")
+  )
 }
 
 export default async function DashboardLayout({
@@ -24,6 +30,7 @@ export default async function DashboardLayout({
   try {
     return await DashboardLayoutInner({ children })
   } catch (e: any) {
+    if (isRedirectError(e)) throw e
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
     redirect("/choose-plan")
@@ -34,49 +41,8 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
   const session = await auth()
   if (!session?.user?.id) redirect("/")
 
-  let current = await getCurrentStore()
-
-  // Auto-create Negocio + Store if missing (e.g. Google OAuth first time)
-  if (!current) {
-    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } })
-    const name = user?.name || "Mi Tienda"
-    const slug = slugify(name) + "-" + session.user.id.slice(0, 6)
-
-    for (const p of [
-      { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-      { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
-      { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
-      { id: "basico", nombre: "basico", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-      { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
-      { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
-    ]) {
-      await prisma.plan.upsert({
-        where: { id: p.id },
-        update: {},
-        create: { ...p, descripcion: "", activo: true },
-      })
-    }
-
-    const negocio = await prisma.negocio.create({
-      data: {
-        nombre: name, slug, planId: "comercio",
-        modalidad: null, planEstado: "pendiente",
-        planVencimiento: null,
-        userId: session.user.id,
-      },
-    })
-
-    await prisma.store.create({
-      data: {
-        name, slug, userId: session.user.id, negocioId: negocio.id,
-        plan: "free", planType: "tienda", planStatus: "pendiente",
-        members: { create: { userId: session.user.id, role: "admin" } },
-      },
-    })
-
-    current = await getCurrentStore()
-    if (!current) redirect("/choose-plan")
-  }
+  const current = await getCurrentStore()
+  if (!current) redirect("/choose-plan")
 
   const [user, negocio, activeSubscription, bcvRate] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id } }).catch(() => null),
