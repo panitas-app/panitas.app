@@ -11,8 +11,37 @@ export const authConfig = {
   callbacks: {
     async signIn({ account, profile, user }) {
       if (account?.provider === "google" && profile?.email) {
-        const existingUser = await prisma.user.findUnique({ where: { email: profile.email } }).catch(() => null)
+        const existingUser = await prisma.user.findUnique({
+          where: { email: profile.email },
+          include: { accounts: true },
+        }).catch(() => null)
+
         if (existingUser) {
+          // Manually link Google account if not already linked
+          const hasGoogleAccount = existingUser.accounts.some(a => a.provider === "google")
+          if (!hasGoogleAccount && account.providerAccountId) {
+            try {
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type || "oauth",
+                  provider: "google",
+                  providerAccountId: account.providerAccountId,
+                  refresh_token: account.refresh_token,
+                  access_token: account.access_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                  session_state: typeof account.session_state === "string" ? account.session_state : null,
+                },
+              })
+            } catch (err: any) {
+              if (err?.code !== "P2002") {
+                console.error("[auth] Failed to link Google account:", err)
+              }
+            }
+          }
           enviarBienvenida(profile.email, profile.name || "Usuario")
             .catch(e => console.error("[welcome email error]", e))
         }

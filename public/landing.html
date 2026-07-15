@@ -772,6 +772,15 @@
     setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(),300); }, 3000);
   };
 
+  var urlParams = new URLSearchParams(window.location.search);
+  var errorParam = urlParams.get('error');
+  if (errorParam === 'OAuthAccountNotLinked') {
+    setTimeout(function(){ toast('Este correo ya está registrado con contraseña. Inicia sesión con tu correo y clave, o usa la misma cuenta de Google con la que te registraste.', 'error'); }, 300);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
   document.addEventListener('submit', async function(e) {
     if (e.target.id === 'login-form') {
       e.preventDefault(); e.stopPropagation();
