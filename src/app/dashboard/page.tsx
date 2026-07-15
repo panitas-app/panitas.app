@@ -23,7 +23,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     current = await getCurrentStore()
   } catch (e) {
     console.error("[dashboard page getCurrentStore error]", e)
-    redirect("/choose-plan")
+    throw e
   }
   if (!current) redirect("/choose-plan")
 

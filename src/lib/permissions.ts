@@ -87,6 +87,22 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
           planVencimiento: null,
           userId,
         },
+      }).catch(async (err: any) => {
+        if (err?.code === "P2002") {
+          console.error("[autoCreateStore] negocio.create P2002, retrying with entropy slug")
+          return prisma.negocio.create({
+            data: {
+              nombre: name,
+              slug: `${slug}-${userId.slice(0, 8)}`,
+              planId: "comercio",
+              modalidad: null,
+              planEstado: "pendiente",
+              planVencimiento: null,
+              userId,
+            },
+          })
+        }
+        throw err
       })
     }
 
@@ -157,7 +173,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
       userId,
     }
   } catch (e: any) {
-    console.error("auto-create store failed:", e)
+    console.error("[autoCreateStore] failed for user:", userId, e)
     try {
       await prisma.auditLog.create({
         data: {
@@ -170,14 +186,17 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     } catch (err) {
       console.error("Failed to write audit log:", err)
     }
-    return null
+    throw new Error(`No se pudo crear tu tienda automáticamente: ${e?.message || String(e)}`)
   }
 }
 
 
 export async function getCurrentStore(): Promise<StoreInfo | null> {
   const session = await auth()
-  if (!session?.user?.id) return null
+  if (!session?.user?.id) {
+    console.error("[getCurrentStore] No session or user.id")
+    return null
+  }
 
   let member = await prisma.storeMember.findFirst({
     where: { userId: session.user.id },
@@ -185,11 +204,13 @@ export async function getCurrentStore(): Promise<StoreInfo | null> {
   })
 
   if (!member) {
+    console.error("[getCurrentStore] No StoreMember for user:", session.user.id)
     const ownedStore = await prisma.store.findUnique({
       where: { userId: session.user.id },
     })
 
     if (ownedStore) {
+      console.error("[getCurrentStore] Found owned store, healing StoreMember")
       try {
         const createdMember = await prisma.storeMember.create({
           data: {
@@ -203,7 +224,7 @@ export async function getCurrentStore(): Promise<StoreInfo | null> {
           store: ownedStore,
         }
       } catch (e) {
-        console.error("Failed to auto-heal store admin membership:", e)
+        console.error("[getCurrentStore] Failed to auto-heal StoreMember:", e)
         return {
           store: ownedStore,
           role: "admin" as Role,
@@ -215,8 +236,13 @@ export async function getCurrentStore(): Promise<StoreInfo | null> {
   }
 
   if (!member) {
+    console.error("[getCurrentStore] No store at all, calling autoCreateStore for user:", session.user.id)
     const created = await autoCreateStore(session.user.id)
-    if (created) return created
+    if (created) {
+      console.error("[getCurrentStore] autoCreateStore succeeded")
+      return created
+    }
+    console.error("[getCurrentStore] autoCreateStore returned null")
   }
 
   if (!member) return null
