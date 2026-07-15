@@ -76,21 +76,26 @@ export async function POST(req: Request) {
 
     try {
       // Ensure Plan record exists in DB (no transactions for Neon HTTP)
-      // Use upsert to avoid race condition P2002 between concurrent registrations
-      await prisma.plan.upsert({
-        where: { id: cfg.planId },
-        update: {},
-        create: {
-          id: cfg.planId,
-          nombre: cfg.planId,
-          label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
-          descripcion: "",
-          precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
-          precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
-          activo: true,
-          sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
-        },
-      })
+      // Use findUnique+create instead of upsert (upsert uses transactions internally)
+      const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
+      if (!existingPlan) {
+        try {
+          await prisma.plan.create({
+            data: {
+              id: cfg.planId,
+              nombre: cfg.planId,
+              label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
+              descripcion: "",
+              precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
+              precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
+              activo: true,
+              sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+            },
+          })
+        } catch (err: any) {
+          if (err?.code !== "P2002") throw err
+        }
+      }
 
       const negocio = await prisma.negocio.create({
         data: {
