@@ -46,7 +46,7 @@ export const PLAN_DEFINITIONS: Record<string, PlanDefinition> = {
   },
   comercio: {
     id: "comercio",
-    label: "Comercio",
+    label: "Emprendedor",
     descripcion: "Tienda online + administración para minoristas, bodegones, ropa y calzado.",
     description: "Tienda online + administración para minoristas.",
     precioUsd: 25,

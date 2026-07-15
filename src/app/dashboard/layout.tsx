@@ -34,10 +34,10 @@ export default async function DashboardLayout({
 
     for (const p of [
       { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-      { id: "comercio", nombre: "comercio", label: "Comercio", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
+      { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
       { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       { id: "basico", nombre: "basico", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-      { id: "negocio", nombre: "negocio", label: "Comercio", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
+      { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
       { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
     ]) {
       await prisma.plan.upsert({
@@ -51,7 +51,7 @@ export default async function DashboardLayout({
       data: {
         nombre: name, slug, planId: "comercio",
         modalidad: null, planEstado: "pendiente",
-        planVencimiento: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        planVencimiento: null,
         userId: session.user.id,
       },
     })

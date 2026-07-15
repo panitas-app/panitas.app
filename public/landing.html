@@ -30,6 +30,20 @@
         overlay.classList.toggle('is-active');
         document.querySelector('.page_wrap').style.overflow = isActive ? '' : 'hidden';
       }
+      document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('modal-probar');
+        if (!modal) return;
+        var observer = new MutationObserver(function() {
+          if (modal.hasAttribute('open')) {
+            setTimeout(function() {
+              if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                document.activeElement.blur();
+              }
+            }, 50);
+          }
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
+      });
     </script>
   </head>
   <body class="u-theme-light">
@@ -345,7 +359,7 @@
                     <path d="M10 13h4"/>
                   </svg>
                 </div>
-                <h3 class="plan_card_title">Plan Comercio</h3>
+                <h3 class="plan_card_title">Plan Emprendedor</h3>
                 <div class="plan_card_price"><span class="plan_card_currency">$</span>25<span class="plan_card_period">/mes</span></div>
                 <p class="plan_card_desc" style="font-size: 0.85rem; opacity: 0.6;">$250/año si facturas anual</p>
                 <p class="plan_card_desc" style="margin-top: 0.25rem;">Tienda web + agenda + CRM. Todo lo que necesitas para vender online.</p>
@@ -379,7 +393,7 @@
                 <p class="plan_card_desc" style="font-size: 0.85rem; opacity: 0.6;">$450/año si facturas anual</p>
                 <p class="plan_card_desc" style="margin-top: 0.25rem;">Todo ilimitado + B2B + automatizaciones para distribuidoras y mayoristas.</p>
                 <ul class="plan_card_features">
-                  <li>Todo lo de Comercio</li>
+                  <li>Todo lo de Emprendedor</li>
                   <li>Control de inventario ilimitado</li>
                   <li>Gestión de comisiones y pedidos B2B</li>
                   <li>Notas de entrega automatizadas</li>

@@ -26,7 +26,7 @@ const plans = [
   },
   {
     id: "comercio",
-    name: "Plan Comercio",
+    name: "Plan Emprendedor",
     price: 25,
     installmentAmount: 14,
     tagline: "Tu negocio todo-en-uno",
@@ -57,7 +57,7 @@ const plans = [
     description:
       "Solución enterprise para distribuidoras y mayoristas que necesitan control B2B, automatizaciones y gestión de comisiones. Todo lo que necesitas para escalar.",
     benefits: [
-      "Todo lo del Plan Comercio",
+      "Todo lo del Plan Emprendedor",
       "Módulo B2B para mayoristas",
       "Automatización de notas de entrega",
       "Gestión de comisiones por vendedor",

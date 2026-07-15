@@ -27,7 +27,7 @@ const PLANS = [
   {
     id: "comercio",
     nombre: "comercio",
-    label: "Comercio",
+    label: "Emprendedor",
     descripcion: "Tienda online + administración para minoristas.",
     precioUsd: 25,
     precioUsdAnual: 250,
@@ -61,7 +61,7 @@ const PLANS = [
     id: "negocio",
     nombre: "negocio",
     label: "Negocio",
-    descripcion: "Legacy - reemplazado por Comercio",
+    descripcion: "Legacy - reemplazado por Emprendedor",
     precioUsd: 25,
     precioUsdAnual: 250,
     activo: false,
