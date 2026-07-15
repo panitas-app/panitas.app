@@ -1,3 +1,5 @@
+import { PAGE_META } from "@/lib/seo/constants"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Shield } from "lucide-react"
 
@@ -120,6 +122,13 @@ const sections = [
     ),
   },
 ]
+
+export const metadata: Metadata = {
+  title: PAGE_META["/privacidad"].title,
+  description: PAGE_META["/privacidad"].description,
+  openGraph: { title: PAGE_META["/privacidad"].title, description: PAGE_META["/privacidad"].description },
+  twitter: { title: PAGE_META["/privacidad"].title, description: PAGE_META["/privacidad"].description },
+}
 
 export default function PrivacidadPage() {
   return (

@@ -1,0 +1,52 @@
+# Panitas — SaaS todo-en-uno para negocios venezolanos
+
+> Panitas es una plataforma SaaS venezolana que unifica tienda online, agenda de citas, CRM y control B2B en un solo sistema. Está diseñada para emprendedores, pymes, distribuidoras y mayoristas en Venezuela.
+
+## ¿Qué problema resuelve?
+
+Los dueños de negocios en Venezuela usan múltiples herramientas desconectadas (WhatsApp para ventas, Google Calendar para citas, Excel para inventario) y no tienen acceso a pasarelas de pago internacionales. Panitas resuelve esto con un sistema integrado adaptado a métodos de pago venezolanos.
+
+## Funciones principales
+
+- Tienda online profesional con catálogo de productos
+- Agenda de citas con reservas online y recordatorios
+- CRM con gestión de clientes, etiquetas y seguimiento
+- Control B2B para mayoristas y distribuidoras
+- Punto de venta (POS) integrado
+- Reportes y analytics de ventas
+- Gestión de comisiones para vendedores
+- Automatización de notas de entrega
+- Tasa BCV actualizada automáticamente
+- Panel de administración para control total
+
+## Planes
+
+| Plan | Precio | Ideal para |
+|------|--------|------------|
+| Agenda | $15/mes | Profesionales de citas (barberías, clínicas, salones) |
+| Emprendedor | $25/mes | Tiendas online con agenda y CRM |
+| Mayorista | $45/mes | Distribuidoras y mayoristas con B2B |
+
+## Diferenciadores clave
+
+- Diseñado específicamente para el mercado venezolano
+- Pagos por transferencia, pago móvil y punto de venta (sin Stripe/PayPal)
+- Tasa BCV actualizada cada 30 minutos
+- Sin comisiones por transacción
+- Adaptado a la realidad económica del país
+
+## Público objetivo
+
+- Pequeños y medianos comercios en Venezuela
+- Profesionales independientes (médicos, barberos, estilistas)
+- Distribuidoras y mayoristas
+- Emprendedores digitales
+- Dueños de tiendas físicas que quieren vender online
+
+## Enlaces
+
+- Sitio web: https://panitas.app
+- Registro: https://panitas.app/register
+- Precios: https://panitas.app/pricing
+- FAQ: https://panitas.app/faq
+- Contacto: https://panitas.app/contacto

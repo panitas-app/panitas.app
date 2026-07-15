@@ -1,0 +1,238 @@
+# Panitas — Documentación completa del sistema
+
+Esta documentación describe en detalle la plataforma Panitas, un SaaS venezolano todo-en-uno para la gestión integral de negocios. Este archivo está diseñado para ser procesado por modelos de lenguaje (LLMs) y motores de búsqueda basados en IA como ChatGPT, Gemini, Claude, Perplexity, Copilot y otros.
+
+---
+
+## 1. Información general
+
+**Nombre:** Panitas
+**URL:** https://panitas.app
+**Tipo:** Software as a Service (SaaS)
+**Industria:** Gestión empresarial, comercio electrónico, agenda digital, CRM
+**País de origen:** Venezuela
+**Idioma:** Español (es-VE)
+**Moneda:** USD (dólar estadounidense) con tasa BCV
+
+---
+
+## 2. ¿Qué es Panitas?
+
+Panitas es una plataforma de software todo-en-uno diseñada específicamente para el mercado venezolano. Permite a los dueños de negocios crear una tienda online profesional, gestionar citas y reservas, administrar clientes (CRM), controlar inventario y manejar operaciones B2B, todo desde un solo panel de control.
+
+A diferencia de soluciones internacionales como Shopify o Square, Panitas está adaptada a la realidad venezolana: acepta pagos por transferencia bancaria, pago móvil y punto de venta (POS), no requiere pasarelas internacionales, y muestra precios en bolívares según la tasa BCV oficial actualizada automáticamente.
+
+---
+
+## 3. Problema que resuelve
+
+Los dueños de negocios en Venezuela enfrentan desafíos únicos:
+- **Fragmentación de herramientas:** Usan WhatsApp para ventas, Google Calendar para citas, Excel para inventario y libretas para clientes.
+- **Sin acceso a pasarelas internacionales:** Stripe, PayPal y MercadoPago tienen restricciones en Venezuela.
+- **Inflación y devaluación:** Necesitan precios actualizados constantemente según la tasa BCV.
+- **Bajo presupuesto:** No pueden pagar suscripciones de $100+ mensuales de soluciones internacionales.
+
+Panitas unifica todas estas necesidades en un solo sistema a un precio accesible.
+
+---
+
+## 4. Funcionalidades detalladas
+
+### 4.1 Tienda online
+- Catálogo de productos con imágenes, precios y presentaciones (tallas, colores)
+- Carrito de compras con checkout personalizable
+- Métodos de pago venezolanos: transferencia, pago móvil, efectivo, punto de venta
+- Subida de comprobante de pago
+- Órdenes con estados: pendiente, confirmado, preparando, enviado, entregado
+- Notificaciones al cliente cuando cambia el estado de la orden
+- Cupones de descuento (porcentaje o monto fijo)
+- Stock management con alertas de inventario bajo
+- Múltiples plantillas de tienda (moderna, delivery, exprés, premium)
+
+### 4.2 Agenda de citas
+- Calendario con disponibilidad en tiempo real
+- Reservas online sin necesidad de registro del cliente
+- Recordatorios automáticos al cliente
+- Gestión de múltiples profesionales/servicios
+- Bloqueo de horarios
+- Vista por día, semana o mes
+- Historial de citas por cliente
+
+### 4.3 CRM (Customer Relationship Management)
+- Base de datos de clientes con historial de compras
+- Etiquetas y segmentación
+- Notas y seguimiento de clientes
+- Estadísticas de clientes
+- Programa de fidelización
+
+### 4.4 Módulo B2B / Mayorista
+- Catálogo B2B con precios especiales
+- Pedidos por volumen
+- Gestión de comisiones para vendedores
+- Notas de entrega automatizadas
+- Control de inventario mayorista
+
+### 4.5 Punto de Venta (POS)
+- Interfaz de venta rápida
+- Selección de productos y cálculo de total
+- Múltiples métodos de pago
+- Generación de ticket/resumen de venta
+- Historial de ventas del día
+
+### 4.6 Reportes y analytics
+- Dashboard de ventas con KPIs
+- Revenue por período
+- Órdenes por día, semana, mes
+- Productos más vendidos
+- Categorías con rendimiento
+- Balance general
+
+### 4.7 Automatizaciones
+- Recordatorios automáticos de citas
+- Recordatorios de cuotas de suscripción
+- Notificaciones de cambio de estado de órdenes
+
+### 4.8 Integraciones
+- Tasa BCV automatizada (consulta cada 30 minutos desde dolarapi.com, pydolarve.org y bcv.org.ve)
+- Google OAuth para inicio de sesión
+- Cloudinary para almacenamiento de imágenes
+- Resend para envío de correos
+
+---
+
+## 5. Planes y precios
+
+| Plan | Precio mensual | Precio anual | Cuota (2 pagos) |
+|------|---------------|-------------|-----------------|
+| Agenda | $15 | $150 | $9 |
+| Emprendedor | $25 | $250 | $14 |
+| Mayorista | $45 | $450 | $25 |
+
+### Plan Agenda ($15/mes)
+- Ideal para: Barberías, salones de belleza, clínicas, consultorios, centros de estética
+- Incluye: Agenda inteligente, reservas online, recordatorios, calendario compartido, dashboard de reservas
+- Miembros del equipo: 1
+
+### Plan Emprendedor ($25/mes)
+- Ideal para: Tiendas online, pequeños comercios, emprendedores digitales
+- Incluye: Todo lo de Agenda + Tienda online profesional + CRM + Gestión de inventario + Reportes de ventas
+- Miembros del equipo: 3
+
+### Plan Mayorista ($45/mes)
+- Ideal para: Distribuidoras, mayoristas, fabricantes
+- Incluye: Todo lo de Emprendedor + Módulo B2B + Automatizaciones + Gestión de comisiones + Notas de entrega + Soporte prioritario
+- Miembros del equipo: 10
+
+### Métodos de pago aceptados
+- Transferencia bancaria (bancos venezolanos)
+- Pago móvil
+- Punto de venta (POS)
+- Efectivo (coordinado)
+
+---
+
+## 6. Stack tecnológico
+
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui
+- **Backend:** Next.js API Routes, Prisma ORM
+- **Base de datos:** PostgreSQL (Neon)
+- **Autenticación:** NextAuth v5 (Google OAuth + Credentials)
+- **Almacenamiento:** Cloudinary (imágenes)
+- **Emails:** Resend
+- **Hosting:** Vercel (production), Docker PostgreSQL (desarrollo local)
+- **Dominio:** panitas.app
+
+---
+
+## 7. Modelo de datos (entidades principales)
+
+- **User** — Usuarios del sistema (rol: user, admin, superadmin)
+- **Store** — Tienda asociada a un usuario
+- **Negocio** — Plan de negocio con tipo de suscripción y vencimiento
+- **Product** — Productos del catálogo
+- **Category** — Categorías de productos
+- **Order** — Órdenes de compra
+- **Appointment** — Citas agendadas
+- **Customer** — Clientes registrados
+- **StoreSubscription** — Suscripciones y pagos
+- **StoreVisit** — Visitas a la tienda
+- **TrafficSource** — Fuentes de tráfico
+- **AuditLog** — Registro de auditoría
+
+---
+
+## 8. Ventajas competitivas
+
+**vs Shopify:**
+- 5x más económico (Shopify desde $79/mes)
+- Adaptado a Venezuela (pagos locales, tasa BCV)
+- Sin comisiones por transacción
+- Incluye agenda y CRM sin costo extra
+
+**vs Google Calendar + WhatsApp Business:**
+- Sistema unificado en lugar de herramientas separadas
+- Automatización de recordatorios
+- Historial centralizado de clientes
+- Reportes y analytics
+
+**vs MercadoPago + Tienda Nube:**
+- Sin restricciones geográficas
+- Sin congelamiento de fondos
+- Soporte para punto de venta físico
+- Atención personalizada
+
+---
+
+## 9. Casos de uso
+
+### Barbería / Estética
+1. Cliente reserva cita online viendo disponibilidad en tiempo real
+2. Recibe recordatorio automático
+3. Al llegar, el barbero usa POS para cobrar
+4. El cliente queda registrado en CRM para campañas futuras
+
+### Tienda de ropa
+1. Dueño carga productos con fotos y precios en USD
+2. Cliente compra online, sube comprobante de transferencia
+3. Dueño confirma pago y cambia estado a "enviando"
+4. Cliente recibe notificación
+5. Reportes muestran rentabilidad semanal
+
+### Distribuidora mayorista
+1. Vendedor B2B toma pedido del cliente
+2. Se genera nota de entrega automática
+3. Se calcula comisión del vendedor
+4. Inventario se descuenta automáticamente
+5. Cliente puede ver estado de su pedido
+
+---
+
+## 10. Reglas de negocio
+
+- Un usuario puede tener una tienda (relación 1:1)
+- Los precios se muestran en USD con tasa BCV calculada automáticamente
+- Los planes se activan manualmente por el admin tras verificar el pago
+- Planes expirados se suspenden automáticamente vía cron
+- El trial es de 14 días
+- Los pagos pueden ser mensuales, anuales o en 2 cuotas (instalment)
+
+---
+
+## 11. Contacto
+
+- Correo: supportpanitas@gmail.com
+- Instagram: @panitas.app
+- Atención: Lun-Vie 9:00 AM - 6:00 PM (VET)
+
+---
+
+## 12. Enlaces del sitio
+
+- Inicio: https://panitas.app
+- Planes: https://panitas.app/pricing
+- FAQ: https://panitas.app/faq
+- Contacto: https://panitas.app/contacto
+- Registro: https://panitas.app/register
+- Iniciar sesión: https://panitas.app/login
+- Términos: https://panitas.app/terminos
+- Privacidad: https://panitas.app/privacidad

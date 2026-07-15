@@ -96,7 +96,7 @@ export default function AdminStoresPage() {
                       <Link href={`/admin/stores/${s.id}`}>
                         <Button variant="ghost" size="sm"><Eye className="size-4" /></Button>
                       </Link>
-                      <Link href={`/store/${s.slug}`} target="_blank">
+                      <Link href={`/store/${s.slug}`} target="_blank" rel="noopener noreferrer">
                         <Button variant="ghost" size="sm"><ExternalLink className="size-4" /></Button>
                       </Link>
                     </TableCell>

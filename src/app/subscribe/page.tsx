@@ -1,5 +1,4 @@
 "use client"
-
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Check, CreditCard, Upload, ArrowLeft, Building2, Smartphone, Globe, DollarSign, Banknote, Loader2, Receipt, Wallet } from "lucide-react"

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { PUBLIC_ROUTES } from "@/lib/seo/constants"
 
 export default async function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"
@@ -8,24 +9,19 @@ export default async function sitemap() {
     select: { slug: true, updatedAt: true },
   })
 
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    ...stores.map((s) => ({
-      url: `${baseUrl}/store/${s.slug}`,
-      lastModified: s.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
-  ]
+  const publicPages = PUBLIC_ROUTES.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    lastModified: new Date(),
+    changeFrequency: route.changefreq as "weekly" | "monthly" | "yearly",
+    priority: route.priority,
+  }))
+
+  const storePages = stores.map((s) => ({
+    url: `${baseUrl}/store/${s.slug}`,
+    lastModified: s.updatedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }))
+
+  return [...publicPages, ...storePages]
 }

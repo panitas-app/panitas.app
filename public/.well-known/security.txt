@@ -1,0 +1,10 @@
+# Security contact for Panitas
+# ----------------------------
+# If you find a security vulnerability, please contact:
+# supportpanitas@gmail.com
+# 
+# We take security seriously and will respond promptly.
+# 
+# Preferred languages: Spanish, English
+# Policy: https://panitas.app/privacidad
+# Last updated: 2026-07-15

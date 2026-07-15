@@ -1,5 +1,6 @@
 "use client"
 
+import { FaqPageSchema } from "@/lib/seo/schema"
 import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -146,8 +147,11 @@ function AccordionItem({ item }: { item: FAQItem }) {
 }
 
 export default function FAQPage() {
+  const allQuestions = categories.flatMap((cat) => cat.items.map((item) => ({ question: item.q, answer: item.a })))
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-foreground">
+      <FaqPageSchema questions={allQuestions} />
       <div className="mx-auto max-w-4xl px-4 py-20">
         <div className="mb-12 text-center">
           <h1 className="font-heading text-4xl font-bold tracking-tight mb-3">

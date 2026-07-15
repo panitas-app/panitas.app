@@ -1,5 +1,4 @@
 "use client"
-
 import Link from "next/link"
 import { Mail, Phone, Clock, Copy, ExternalLink, MessageCircle, Music2, Camera } from "lucide-react"
 

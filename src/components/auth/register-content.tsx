@@ -61,12 +61,11 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
         email,
         password,
         redirect: false,
+        callbackUrl: "/choose-plan",
       })
       if (signInResult?.error) {
         toast.error("Cuenta creada, pero no se pudo iniciar sesión. Ve al login e ingresa manualmente.")
-        router.push("/")
-      } else if (signInResult?.url) {
-        router.push(signInResult.url)
+        router.push("/login")
       } else {
         router.push("/choose-plan")
       }
