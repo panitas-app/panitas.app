@@ -65,10 +65,8 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
       })
       if (signInResult?.error) {
         toast.error("Cuenta creada, pero no se pudo iniciar sesión. Intenta manualmente.")
-        router.push("/choose-plan")
-      } else {
-        router.push("/choose-plan")
       }
+      window.location.href = "/choose-plan"
     } catch {
       toast.error("Error de conexión")
     } finally {
