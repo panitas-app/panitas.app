@@ -76,9 +76,6 @@ export function TrafficSources({ sources = [] }: Props) {
           ) : (
             <svg viewBox="0 0 120 120" className="size-32">
               <circle cx={60} cy={60} r={50} fill="none" stroke="#e2e8f0" strokeWidth="14" />
-              <text x={60} y={60} textAnchor="middle" dominantBaseline="central" fill="#94a3b8" fontSize="10" fontWeight="bold">
-                0%
-              </text>
             </svg>
           )}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
