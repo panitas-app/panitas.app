@@ -4,6 +4,7 @@ import { getLocalSuperadmin } from "@/lib/local-only"
 import { sendEmail } from "@/lib/email"
 import { templatePaymentVerified, templatePaymentRejected } from "@/lib/email-templates"
 import { createAuditEntry } from "@/lib/audit"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getLocalSuperadmin()
@@ -80,6 +81,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     })
 
     await createAuditEntry({ action: `subscription.${status}`, entity: "StoreSubscription", entityId: id, userId: admin.id, storeId: existing.storeId })
+
+    if (status === "active" || status === "verified") {
+      const posthog = getPostHogClient()
+      posthog.capture({
+        distinctId: existing.storeId,
+        event: "subscription_activated",
+        properties: {
+          subscription_id: id,
+          plan: subscription.plan,
+          period: existing.period,
+          payment_mode: existing.paymentMode,
+          amount: existing.amount,
+          store_id: existing.storeId,
+        },
+      })
+      await posthog.flush()
+    } else if (status === "rejected") {
+      const posthog = getPostHogClient()
+      posthog.capture({
+        distinctId: existing.storeId,
+        event: "subscription_rejected",
+        properties: {
+          subscription_id: id,
+          plan: existing.plan,
+          store_id: existing.storeId,
+          rejection_reason: rejectionReason || null,
+        },
+      })
+      await posthog.flush()
+    }
 
     if (subscription.store.email && status && notify !== false) {
     const body = status === "active" || status === "verified"

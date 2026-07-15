@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+import posthog from "posthog-js"
 
 const plans = [
   {
@@ -309,7 +310,10 @@ export default function ChoosePlanPage() {
                       transition={{ delay: 0.1 + i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                       onHoverStart={() => setHoveredId(plan.id)}
                       onHoverEnd={() => setHoveredId(null)}
-                      onClick={() => setExpandedId(plan.id)}
+                      onClick={() => {
+                        setExpandedId(plan.id)
+                        posthog.capture("plan_expanded", { plan_id: plan.id, plan_name: plan.name, plan_price: plan.price })
+                      }}
                       className="relative cursor-pointer overflow-hidden transition-all duration-500 select-none w-full"
                       style={{
                         background: "rgba(255,255,255,0.05)",
