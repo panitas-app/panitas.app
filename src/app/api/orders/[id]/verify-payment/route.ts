@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email"
 import { templatePaymentVerified } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 export async function POST(
   request: NextRequest,
@@ -51,6 +52,14 @@ export async function POST(
     })
 
     await createAuditEntry({ action: "payment.verified", entity: "OrderPayment", entityId: paymentId, storeId: current.store.id, userId: current.userId })
+
+    const posthog = getPostHogClient()
+    posthog.capture({
+      distinctId: current.userId,
+      event: "payment_verified",
+      properties: { order_id: id, payment_id: paymentId, store_id: current.store.id, order_status: orderStatus || "confirmed" },
+    })
+    await posthog.flush()
 
     if (updated.customerEmail) {
       sendEmail(

@@ -13,6 +13,7 @@ import { motion } from "framer-motion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Sparkles, ArrowLeft, UserPlus, Globe, Mail, Lock, Loader2 } from "lucide-react"
 import { Toaster, toast } from "sonner"
+import posthog from "posthog-js"
 
 interface SessionUser {
   name?: string | null
@@ -56,6 +57,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
         toast.error(data.error || "Error al registrarse")
         return
       }
+      posthog.capture("register_submitted", { plan: selectedPlan || "comercio", method: "email" })
       toast.success("Cuenta creada. Iniciando sesión...")
       const signInResult = await signIn("credentials", {
         email,

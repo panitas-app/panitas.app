@@ -63,3 +63,4 @@ prisma.ps1
 
 .vercel
 .env*
+.env.local

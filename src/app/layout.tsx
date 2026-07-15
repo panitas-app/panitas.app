@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
+import { PostHogIdentifier } from "@/components/posthog-identifier";
 import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema } from "@/lib/seo/schema";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app";
@@ -75,6 +76,7 @@ export default function RootLayout({
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TDP569Q9"
 height={0} width={0} style={{ display: "none", visibility: "hidden" }}></iframe></noscript>
         <SessionProvider>
+          <PostHogIdentifier />
           {children}
         </SessionProvider>
         <CookieConsentBanner />
