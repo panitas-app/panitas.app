@@ -27,8 +27,8 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   }
   if (!current) redirect("/choose-plan")
 
-  // If user came from choose-plan with a specific plan, update their Negocio
-  if (planParam && current.store.negocioId) {
+  // If user came from choose-plan with a specific plan, update their Negocio AND Store
+  if (planParam) {
     const resolved = resolvePlanId(planParam)
     const cfg = planToConfig[resolved]
     if (cfg) {
@@ -51,26 +51,67 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
         }
       }
 
-      const negocio = await prisma.negocio.findUnique({ where: { id: current.store.negocioId }, select: { planId: true } })
-      if (negocio && negocio.planId !== resolved) {
-        await prisma.negocio.update({
-          where: { id: current.store.negocioId },
-          data: { planId: resolved, modalidad: cfg.modalidad },
-        })
-        if (cfg.hasAgenda) {
-          const existing = await prisma.agenda.findFirst({ where: { negocioId: current.store.negocioId } })
-          if (!existing) {
-            await prisma.agenda.create({
-              data: { nombre: "Mi Agenda", slug: current.store.slug + "-agenda", negocioId: current.store.negocioId },
-            })
+      // Update Negocio if it exists, otherwise create one
+      if (current.store.negocioId) {
+        const negocio = await prisma.negocio.findUnique({ where: { id: current.store.negocioId }, select: { planId: true } })
+        if (negocio && negocio.planId !== resolved) {
+          await prisma.negocio.update({
+            where: { id: current.store.negocioId },
+            data: { planId: resolved, modalidad: cfg.modalidad },
+          })
+          if (cfg.hasAgenda) {
+            const existing = await prisma.agenda.findFirst({ where: { negocioId: current.store.negocioId } })
+            if (!existing) {
+              await prisma.agenda.create({
+                data: { nombre: "Mi Agenda", slug: current.store.slug + "-agenda", negocioId: current.store.negocioId },
+              })
+            }
           }
         }
-        // Update store planType
+      } else {
+        // No Negocio linked — create one and link to Store
+        const newNegocio = await prisma.negocio.create({
+          data: {
+            nombre: current.store.name,
+            slug: current.store.slug + "-" + current.store.userId.slice(0, 6),
+            planId: resolved,
+            modalidad: cfg.modalidad,
+            planEstado: "pendiente",
+            planVencimiento: null,
+            userId: current.store.userId,
+          },
+        }).catch(async (err: any) => {
+          if (err?.code === "P2002") {
+            return prisma.negocio.create({
+              data: {
+                nombre: current.store.name,
+                slug: current.store.slug + "-" + current.store.userId.slice(0, 8),
+                planId: resolved,
+                modalidad: cfg.modalidad,
+                planEstado: "pendiente",
+                planVencimiento: null,
+                userId: current.store.userId,
+              },
+            })
+          }
+          throw err
+        })
+        if (newNegocio && cfg.hasAgenda) {
+          await prisma.agenda.create({
+            data: { nombre: "Mi Agenda", slug: current.store.slug + "-agenda", negocioId: newNegocio.id },
+          }).catch(() => {})
+        }
         await prisma.store.update({
           where: { id: current.store.id },
-          data: { planType: cfg.planType },
+          data: { negocioId: newNegocio.id },
         })
       }
+
+      // ALWAYS update store planType (not just inside the negocio check)
+      await prisma.store.update({
+        where: { id: current.store.id },
+        data: { planType: cfg.planType },
+      })
     }
   }
 
