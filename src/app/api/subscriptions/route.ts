@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { csrfGuard } from "@/lib/csrf"
 import { sendEmail } from "@/lib/email"
 import { templatePaymentPending } from "@/lib/email-templates"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 export async function GET() {
   const session = await auth()
@@ -110,6 +111,21 @@ export async function POST(req: NextRequest) {
     templatePaymentPending(user.name || "Usuario", plan, subscription.amount, reference || ""),
     "payment_pending"
   ).catch(e => console.error("[subscription email] payment pending error:", e))
+
+  const phog = getPostHogClient()
+  phog.capture({
+    distinctId: user.id,
+    event: "subscription_created",
+    properties: {
+      plan,
+      period: period || "monthly",
+      payment_mode: isInstallment ? "installment" : "single",
+      amount_usd: amount,
+      payment_method: paymentMethod,
+      store_id: store.id,
+    },
+  })
+  await phog.flush()
 
   return NextResponse.json(subscription, { status: 201 })
 }

@@ -70,12 +70,11 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
         { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       ]) {
-        const existingPlan = await prisma.plan.findUnique({ where: { id: p.id } })
-        if (!existingPlan) {
-          await prisma.plan.create({
-            data: { ...p, descripcion: "", activo: true },
-          }).catch(() => {})
-        }
+        await prisma.plan.upsert({
+          where: { id: p.id },
+          update: {},
+          create: { ...p, descripcion: "", activo: true },
+        })
       }
 
       negocio = await prisma.negocio.create({
@@ -113,6 +112,21 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
           planType,
           planStatus: "pendiente",
         },
+      }).catch(async (err: any) => {
+        if (err?.code === "P2002") {
+          return prisma.store.create({
+            data: {
+              name,
+              slug: `${slug}-${userId.slice(0, 8)}`,
+              userId,
+              negocioId: negocio.id,
+              plan: "free",
+              planType,
+              planStatus: "pendiente",
+            },
+          })
+        }
+        throw err
       })
     }
 

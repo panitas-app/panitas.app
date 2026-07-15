@@ -7,6 +7,7 @@ import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import { safeErrorResponse, jsonError } from "@/lib/api-errors"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 const MAX_ITEMS = 50
 const MAX_QTY_PER_ITEM = 999
@@ -243,6 +244,26 @@ export async function POST(request: NextRequest) {
     })
 
     await createAuditEntry({ action: "order.created", entity: "Order", entityId: order.id, metadata: { orderNumber: order.orderNumber, total: order.total }, storeId: storeExists.id })
+
+    const phog = getPostHogClient()
+    const distinctId = request.headers.get("x-posthog-distinct-id") || `anon-store-${storeId}`
+    phog.capture({
+      distinctId,
+      event: "order_created",
+      properties: {
+        order_number: order.orderNumber,
+        store_id: storeId,
+        total_usd: order.total,
+        subtotal_usd: order.subtotal,
+        discount_usd: order.discount,
+        shipping_cost_usd: order.shippingCost,
+        item_count: order.items.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0),
+        shipping_method: order.shippingMethod,
+        coupon_applied: !!order.couponId,
+        currency: order.currency,
+      },
+    })
+    await phog.flush()
 
     if (storeExists.email) {
       enviarAlertaNuevoPedido(

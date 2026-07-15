@@ -76,21 +76,21 @@ export async function POST(req: Request) {
 
     try {
       // Ensure Plan record exists in DB (no transactions for Neon HTTP)
-      const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
-      if (!existingPlan) {
-        await prisma.plan.create({
-          data: {
-            id: cfg.planId,
-            nombre: cfg.planId,
-            label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
-            descripcion: "",
-            precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
-            precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
-            activo: true,
-            sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
-          },
-        })
-      }
+      // Use upsert to avoid race condition P2002 between concurrent registrations
+      await prisma.plan.upsert({
+        where: { id: cfg.planId },
+        update: {},
+        create: {
+          id: cfg.planId,
+          nombre: cfg.planId,
+          label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
+          descripcion: "",
+          precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
+          precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
+          activo: true,
+          sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+        },
+      })
 
       const negocio = await prisma.negocio.create({
         data: {
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       const phog = getPostHogClient()
       phog.identify({ distinctId: user.id, properties: { plan: planKey } })
       phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
-      await phog.flush()
+      phog.flush().catch(e => console.error("[posthog flush error]", e))
 
     } catch (creationError: any) {
       console.error("[register creation crash]", creationError)
@@ -158,8 +158,8 @@ export async function POST(req: Request) {
       } catch (logErr) {
         console.error("Failed to write register crash audit log:", logErr)
       }
-      // Relanzamos el error para que la ruta devuelva el 500
-      throw creationError
+      // Opción A: No relanzar si el User ya fue creado.
+      // getCurrentStore() auto-healeará Store/Negocio faltantes en el siguiente login.
     }
 
     return NextResponse.json({ success: true })

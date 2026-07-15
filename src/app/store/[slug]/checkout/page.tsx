@@ -44,6 +44,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import confetti from "canvas-confetti"
+import posthog from "posthog-js"
 
 interface CartItem {
   productId: string
@@ -424,6 +425,16 @@ export default function CheckoutPage() {
       const order = await res.json()
       setOrderNumber(order.orderNumber)
       setSubmitted(true)
+
+      posthog.capture("checkout_completed", {
+        store_slug: slug,
+        order_number: order.orderNumber,
+        total_usd: total,
+        item_count: cart.reduce((s, i) => s + i.quantity, 0),
+        shipping_method: shippingMethod,
+        coupon_applied: !!appliedCoupon,
+        discount_usd: discount,
+      })
 
       localStorage.removeItem(`panitas_cart_${slug}`)
       localStorage.removeItem(`panitas_checkout_${slug}`)
@@ -1097,6 +1108,7 @@ _¡Muchas gracias por su compra!_`
                               if (!res.ok) { setCouponError(data.error || "Cupón inválido"); return }
                               setAppliedCoupon({ id: data.couponId, code: couponCode, discount: data.discount, type: data.type, value: data.value })
                               setCouponDiscount(data.discount)
+                              posthog.capture("coupon_applied", { store_slug: slug, coupon_code: couponCode, discount_usd: data.discount, coupon_type: data.type })
                               toast.success(`Cupón aplicado: ${data.discount > 0 ? "$" + data.discount.toFixed(2) + " de descuento" : "Descuento aplicado"}`)
                             } catch {
                               setCouponError("Error al validar cupón")

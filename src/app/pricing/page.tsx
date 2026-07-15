@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSession } from "next-auth/react"
+import posthog from "posthog-js"
 import {
   Check,
   X,
@@ -79,6 +80,10 @@ export default function PricingPage() {
   const { data: session } = useSession()
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  function capturePlanSelected(planId: string, period: string, paymentMode: string) {
+    posthog.capture("plan_selected", { plan: planId, period, payment_mode: paymentMode, authenticated: !!session })
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -203,19 +208,19 @@ export default function PricingPage() {
 
                 {billingCycle === "monthly" ? (
                   <div className="flex flex-col gap-2">
-                    <Link href={session ? `/subscribe?plan=${card.id}&period=monthly&paymentMode=single` : `/register?plan=${card.id}&paymentMode=single`}>
+                    <Link href={session ? `/subscribe?plan=${card.id}&period=monthly&paymentMode=single` : `/register?plan=${card.id}&paymentMode=single`} onClick={() => capturePlanSelected(card.id, "monthly", "single")}>
                       <Button size="lg" className={`w-full h-11 rounded-xl text-xs font-bold ${card.popular ? "bg-primary text-accent hover:brightness-105 shadow-lg shadow-primary/20" : "bg-accent text-white hover:bg-accent/90"}`}>
                         Pago único · ${card.price}/mes
                       </Button>
                     </Link>
-                    <Link href={session ? `/subscribe?plan=${card.id}&period=monthly&paymentMode=installment` : `/register?plan=${card.id}&paymentMode=installment`}>
+                    <Link href={session ? `/subscribe?plan=${card.id}&period=monthly&paymentMode=installment` : `/register?plan=${card.id}&paymentMode=installment`} onClick={() => capturePlanSelected(card.id, "monthly", "installment")}>
                       <Button variant="outline" size="sm" className="w-full h-9 rounded-xl text-xs font-bold text-[#6B7280] border-gray-200 hover:bg-gray-50">
                         2 cuotas de ${installmentAmt} (${installmentTotal})
                       </Button>
                     </Link>
                   </div>
                 ) : (
-                  <Link href={session ? `/subscribe?plan=${card.id}&period=yearly` : `/register?plan=${card.id}&paymentMode=single`}>
+                  <Link href={session ? `/subscribe?plan=${card.id}&period=yearly` : `/register?plan=${card.id}&paymentMode=single`} onClick={() => capturePlanSelected(card.id, "yearly", "single")}>
                     <Button size="lg" className={`w-full h-11 rounded-xl text-xs font-bold ${card.popular ? "bg-primary text-accent hover:brightness-105 shadow-lg shadow-primary/20" : "bg-accent text-white hover:bg-accent/90"}`}>
                       Elegir plan
                     </Button>
