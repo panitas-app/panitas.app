@@ -52,6 +52,7 @@ import { PLAN_LIMITS } from "@/lib/constants"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 import { rateLimit } from "@/lib/rate-limit"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -169,6 +170,21 @@ export async function POST(request: NextRequest) {
     })
 
     await createAuditEntry({ action: "product.created", entity: "Product", entityId: product.id, storeId: current.store.id, userId: current.userId })
+
+    const posthog = getPostHogClient()
+    posthog.capture({
+      distinctId: current.userId,
+      event: "product_created",
+      properties: {
+        store_id: current.store.id,
+        store_plan: current.store.plan,
+        has_category: !!product.categoryId,
+        is_wholesale: product.isWholesale,
+        has_sizes: product.hasSizes,
+        price: product.price,
+      },
+    })
+    await posthog.flush()
 
     return NextResponse.json(product, { status: 201 })
   } catch (err) {

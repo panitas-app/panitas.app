@@ -1,4 +1,5 @@
 "use client"
+import posthog from "posthog-js"
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Check, CreditCard, Upload, ArrowLeft, Building2, Smartphone, Globe, DollarSign, Banknote, Loader2, Receipt, Wallet } from "lucide-react"
@@ -185,9 +186,17 @@ function SubscribeContent() {
         throw new Error(err.error || "Error al procesar")
       }
 
+      posthog.capture("subscription_payment_submitted", {
+        plan: planKey,
+        period,
+        payment_mode: isInstallment ? "installment" : "single",
+        amount,
+        payment_method_type: selected?.type || null,
+      })
       setSuccess(true)
       toast.success("Solicitud enviada")
     } catch (error: any) {
+      posthog.captureException(error)
       toast.error(error.message)
     } finally {
       setSubmitting(false)

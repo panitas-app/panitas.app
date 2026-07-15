@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { csrfGuard } from "@/lib/csrf"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 export async function POST(req: Request) {
   const csrf = csrfGuard(req)
@@ -57,6 +58,19 @@ export async function POST(req: Request) {
     }
 
     if (discount > orderSubtotal) discount = orderSubtotal
+
+    const posthog = getPostHogClient()
+    posthog.capture({
+      distinctId: store.id,
+      event: "coupon_validated",
+      properties: {
+        coupon_type: coupon.type,
+        coupon_value: coupon.value,
+        discount: Math.round(discount * 100) / 100,
+        store_id: store.id,
+      },
+    })
+    await posthog.flush()
 
     return NextResponse.json({
       valid: true,
