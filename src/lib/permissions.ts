@@ -123,14 +123,17 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     })
 
     if (!member) {
-      member = await prisma.storeMember.create({
+      const createdMember = await prisma.storeMember.create({
         data: {
           storeId: store.id,
           userId,
           role: "admin",
         },
-        include: { store: true },
       })
+      member = {
+        ...createdMember,
+        store,
+      }
     }
 
     return {
@@ -174,14 +177,17 @@ export async function getCurrentStore(): Promise<StoreInfo | null> {
 
     if (ownedStore) {
       try {
-        member = await prisma.storeMember.create({
+        const createdMember = await prisma.storeMember.create({
           data: {
             storeId: ownedStore.id,
             userId: session.user.id,
             role: "admin",
           },
-          include: { store: true },
         })
+        member = {
+          ...createdMember,
+          store: ownedStore,
+        }
       } catch (e) {
         console.error("Failed to auto-heal store admin membership:", e)
         return {
