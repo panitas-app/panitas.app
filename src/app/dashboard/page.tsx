@@ -41,12 +41,11 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
         { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
         { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       ]) {
-        const existingPlan = await prisma.plan.findUnique({ where: { id: p.id } })
-        if (!existingPlan) {
-          await prisma.plan.create({
-            data: { ...p, descripcion: "", activo: true },
-          }).catch(() => {})
-        }
+        await prisma.plan.upsert({
+          where: { id: p.id },
+          update: {},
+          create: { ...p, descripcion: "", activo: true },
+        })
       }
 
       const negocio = await prisma.negocio.findUnique({ where: { id: current.store.negocioId }, select: { planId: true } })
