@@ -138,8 +138,20 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
       memberId: member.id,
       userId,
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error("auto-create store failed:", e)
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: "store.autocreate_failed",
+          entity: "Store",
+          metadata: JSON.stringify({ error: e?.message || String(e), stack: e?.stack }),
+          userId,
+        }
+      })
+    } catch (err) {
+      console.error("Failed to write audit log:", err)
+    }
     return null
   }
 }

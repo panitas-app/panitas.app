@@ -80,6 +80,11 @@ export async function GET() {
       }
     })
 
+    const auditLogs = await prisma.auditLog.findMany({
+      take: 15,
+      orderBy: { createdAt: "desc" },
+    })
+
     return NextResponse.json({
       success: true,
       totals: {
@@ -94,7 +99,8 @@ export async function GET() {
       slugConflicts: {
         negocios: negocioSlugs,
         stores: storeSlugs,
-      }
+      },
+      auditLogs
     })
   } catch (error: any) {
     return NextResponse.json({
