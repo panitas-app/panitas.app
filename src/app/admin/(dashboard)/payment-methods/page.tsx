@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Pencil, Plus, Trash2, Banknote, Smartphone, Wallet } from "lucide-react"
+import { Pencil, Plus, Trash2, Banknote, Smartphone, Wallet, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,12 +31,14 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   bank: <Banknote className="size-4" />,
   mobile: <Smartphone className="size-4" />,
   binancepay: <Wallet className="size-4" />,
+  punto_de_venta: <CreditCard className="size-4" />,
 }
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Cuenta Bancaria",
   mobile: "Pago Móvil",
   binancepay: "Binance Pay",
+  punto_de_venta: "Punto de Venta",
 }
 
 const ACCOUNT_TYPES = [
@@ -152,6 +154,7 @@ export default function AdminPaymentMethodsPage() {
                       <SelectItem value="bank"><div className="flex items-center gap-2"><Banknote className="size-4" /> Bancaria</div></SelectItem>
                       <SelectItem value="mobile"><div className="flex items-center gap-2"><Smartphone className="size-4" /> Pago Móvil</div></SelectItem>
                       <SelectItem value="binancepay"><div className="flex items-center gap-2"><Wallet className="size-4" /> Binance Pay</div></SelectItem>
+                      <SelectItem value="punto_de_venta"><div className="flex items-center gap-2"><CreditCard className="size-4" /> Punto de Venta</div></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -231,6 +234,30 @@ export default function AdminPaymentMethodsPage() {
                     <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@ejemplo.com" />
                   </div>
                 )}
+
+                {form.type === "punto_de_venta" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label>Banco</Label>
+                      <Select value={form.bankCode || ""} onValueChange={(v) => {
+                        const code = v ?? ""
+                        const bank = BANKS_VENEZUELA.find(b => b.code === code)
+                        setForm({ ...form, bankCode: code, bankName: bank?.name || code })
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Seleccionar banco" /></SelectTrigger>
+                        <SelectContent>
+                          {BANKS_VENEZUELA.map(b => (
+                            <SelectItem key={b.code} value={b.code}>{b.code} - {b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Nombre del punto</Label>
+                      <Input value={form.accountHolder} onChange={(e) => setForm({ ...form, accountHolder: e.target.value })} placeholder="Ej: Punto del Venezuela" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex gap-2 justify-end pt-2">
@@ -258,6 +285,7 @@ export default function AdminPaymentMethodsPage() {
                     {m.type === "bank" && `${m.bankName} - ${m.accountType} - ${m.accountNumber}`}
                     {m.type === "mobile" && `${m.phoneBank} - ${m.phone}`}
                     {m.type === "binancepay" && m.email}
+                    {m.type === "punto_de_venta" && `${m.bankName} · ${m.accountHolder}`}
                   </p>
                   {m.accountHolder && <p className="text-xs text-muted-foreground">Titular: {m.accountHolder}</p>}
                 </div>

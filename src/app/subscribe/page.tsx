@@ -46,12 +46,14 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   bank: <Building2 className="size-5" />,
   mobile: <Smartphone className="size-5" />,
   binancepay: <Wallet className="size-5" />,
+  punto_de_venta: <CreditCard className="size-5" />,
 }
 
 const TYPE_LABELS: Record<string, string> = {
   bank: "Cuenta Bancaria",
   mobile: "Pago Móvil",
   binancepay: "Binance Pay",
+  punto_de_venta: "Punto de Venta",
 }
 
 function formatBolivares(usd: number, rate: number): string {
@@ -271,6 +273,7 @@ function SubscribeContent() {
                           {m.type === "bank" && `${m.bankName} - ${m.accountType} - ${m.accountNumber}`}
                           {m.type === "mobile" && `${m.phoneBank} - ${m.phone} - ${m.accountHolder}`}
                           {m.type === "binancepay" && m.email}
+                          {m.type === "punto_de_venta" && `${m.bankName} · ${m.accountHolder}`}
                         </p>
                       </div>
                       {selectedMethod === m.id && (
@@ -304,6 +307,12 @@ function SubscribeContent() {
                   )}
                   {selected.type === "binancepay" && (
                     <p className="text-white/70 text-xs">Envía el pago a: <strong className="text-white">{selected.email}</strong></p>
+                  )}
+                  {selected.type === "punto_de_venta" && (
+                    <ul className="text-white/70 text-xs space-y-1">
+                      <li>Banco: <span className="text-white/90">{selected.bankName}</span></li>
+                      <li>Punto: <strong className="text-white">{selected.accountHolder}</strong></li>
+                    </ul>
                   )}
                   {bcvRate && selected.type === "bank" && (
                     <p className="mt-2 pt-2 border-t border-white/10 text-[10px] text-white/40 font-mono">
