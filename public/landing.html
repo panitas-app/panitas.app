@@ -783,7 +783,7 @@
         const res = await fetch('/api/auth/callback/credentials', {
           method:'POST',
           headers:{'Content-Type':'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({ csrfToken:csrf.csrfToken, email, password, callbackUrl:'/choose-plan', json:'true' })
+          body: new URLSearchParams({ csrfToken:csrf.csrfToken, email, password, callbackUrl:'/dashboard', json:'true' })
         });
         const data = await res.json();
         if (data.url && !data.url.includes('error=')) { window.location.href = data.url; }
@@ -819,7 +819,7 @@
         const res = await fetch('/api/auth/signin/google', {
           method:'POST',
           headers:{'Content-Type':'application/x-www-form-urlencoded','X-Auth-Return-Redirect':'true'},
-          body: new URLSearchParams({ csrfToken:csrf.csrfToken, callbackUrl:'/choose-plan' })
+          body: new URLSearchParams({ csrfToken:csrf.csrfToken, callbackUrl:'/dashboard' })
         });
         const data = await res.json();
         if (data.url) { window.location.href = data.url; }
