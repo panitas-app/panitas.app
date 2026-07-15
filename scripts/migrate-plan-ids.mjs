@@ -1,8 +1,14 @@
 import { PrismaClient } from "@prisma/client"
+import { neonConfig } from "@neondatabase/serverless"
+import { PrismaNeon } from "@prisma/adapter-neon"
+import ws from "ws"
 
-const prisma = new PrismaClient()
+neonConfig.webSocketConstructor = ws
 
-const LEGACY_MAP: Record<string, string> = {
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
+const prisma = new PrismaClient({ adapter })
+
+const LEGACY_MAP = {
   basico: "agenda",
   negocio: "comercio",
   empresarial: "mayorista",
@@ -30,7 +36,6 @@ async function main() {
 
   console.log(`Total negocios migrados: ${migrated}`)
 
-  // Also migrate Store.planType if it has legacy values
   console.log("Migrando planType legacy en Store...")
   for (const [oldType, newType] of Object.entries(LEGACY_MAP)) {
     const result = await prisma.store.updateMany({
@@ -42,7 +47,6 @@ async function main() {
     }
   }
 
-  // Also migrate Store.plan if it has legacy values
   console.log("Migrando plan legacy en Store...")
   for (const [oldPlan, newPlan] of Object.entries(LEGACY_MAP)) {
     const result = await prisma.store.updateMany({
