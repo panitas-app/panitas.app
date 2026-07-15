@@ -25,6 +25,7 @@ export const authConfig = {
         if (url === "/" || url === "/login") return `${baseUrl}/choose-plan`
         return `${baseUrl}${url}`
       }
+      if (url === baseUrl) return `${baseUrl}/choose-plan`
       if (new URL(url).origin === baseUrl) return url
       return `${baseUrl}/choose-plan`
     },
