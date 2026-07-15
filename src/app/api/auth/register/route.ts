@@ -96,7 +96,7 @@ export async function POST(req: Request) {
         planId: cfg.planId,
         modalidad: cfg.modalidad,
         planEstado: "pendiente",
-        planVencimiento: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        planVencimiento: null,
         userId: user.id,
       },
     })

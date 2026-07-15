@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (store?.negocioId) {
       await prisma.negocio.update({
         where: { id: store.negocioId },
-        data: { planEstado: "activo" },
+        data: { planEstado: "activo", planVencimiento: endDate },
       })
     }
   } else if (status === "rejected") {

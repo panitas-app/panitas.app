@@ -16,14 +16,14 @@ import { formatBCV } from "@/lib/bcv/format"
 
 const PLANS: Record<string, { name: string; monthly: number; yearly: number; installmentAmount: number; installmentTotal: number }> = {
   agenda: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
-  comercio: { name: "Comercio", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
+  comercio: { name: "Emprendedor", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
   mayorista: { name: "Mayorista", monthly: 45, yearly: 450, installmentAmount: 25, installmentTotal: 50 },
-  emprendedor: { name: "Comercio", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
-  negocio: { name: "Comercio", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
+  emprendedor: { name: "Emprendedor", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
+  negocio: { name: "Emprendedor", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
   empresarial: { name: "Mayorista", monthly: 45, yearly: 450, installmentAmount: 25, installmentTotal: 50 },
   basico: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
   basic: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
-  advanced: { name: "Comercio", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
+  advanced: { name: "Emprendedor", monthly: 25, yearly: 250, installmentAmount: 14, installmentTotal: 28 },
   free: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
   reservas: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
 }

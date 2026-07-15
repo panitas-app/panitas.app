@@ -46,7 +46,7 @@ const planCards = [
   },
   {
     id: "comercio",
-    label: "Comercio",
+    label: "Emprendedor",
     desc: "Tienda online + agenda + CRM para minoristas.",
     icon: Store,
     iconBg: "from-primary to-blue-600",
@@ -236,7 +236,7 @@ export default function PricingPage() {
               <tr className="bg-gray-50">
                 <th className="px-5 py-4 text-left font-bold text-accent">Módulo</th>
                 <th className="px-5 py-4 text-center font-bold text-[#050505]/80">Agenda</th>
-                <th className="px-5 py-4 text-center font-bold text-[#050505]/80">Comercio</th>
+                <th className="px-5 py-4 text-center font-bold text-[#050505]/80">Emprendedor</th>
                 <th className="px-5 py-4 text-center font-bold text-[#050505]/80">Mayorista</th>
               </tr>
             </thead>
