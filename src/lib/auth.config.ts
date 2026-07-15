@@ -21,13 +21,10 @@ export const authConfig = {
       return true
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) {
-        if (url === "/" || url === "/login") return `${baseUrl}/choose-plan`
-        return `${baseUrl}${url}`
-      }
-      if (url === baseUrl) return `${baseUrl}/choose-plan`
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url === baseUrl) return baseUrl
       if (new URL(url).origin === baseUrl) return url
-      return `${baseUrl}/choose-plan`
+      return baseUrl
     },
     async session({ session, token }) {
       if (token.sub && session.user) {

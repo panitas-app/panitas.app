@@ -5,7 +5,7 @@ export const signInWithCredentials = async (email: string, password: string) => 
 }
 
 export const signOut = async (options?: { redirectTo?: string }) => {
-  const callbackUrl = options?.redirectTo || "/login"
+  const callbackUrl = options?.redirectTo || "/"
   return naSignOut({ callbackUrl })
 }
 

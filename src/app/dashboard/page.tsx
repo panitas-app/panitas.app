@@ -28,10 +28,13 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   if (!current) redirect("/choose-plan")
 
   // If user came from choose-plan with a specific plan, update their Negocio AND Store
+  console.error("[dashboard page] planParam:", planParam, "current.store.planType:", current.store.planType, "negocioId:", current.store.negocioId)
   if (planParam) {
     const resolved = resolvePlanId(planParam)
     const cfg = planToConfig[resolved]
+    console.error("[dashboard page] resolved:", resolved, "cfg:", cfg)
     if (cfg) {
+      try {
       // Ensure all plans exist in DB to prevent foreign key errors during update (no transactions for Neon HTTP)
       for (const p of [
         { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
@@ -112,6 +115,10 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
         where: { id: current.store.id },
         data: { planType: cfg.planType },
       })
+      console.error("[dashboard page] store.update done, cfg.planType:", cfg.planType)
+      } catch (planErr) {
+        console.error("[dashboard page] ERROR in plan processing:", planErr)
+      }
     }
   }
 
@@ -121,6 +128,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     select: { planType: true, plan: true },
   })
   const planType = freshStore?.planType || freshStore?.plan || current.store.plan || "tienda"
+  console.error("[dashboard page] freshStore.planType:", freshStore?.planType, "final planType:", planType)
   const rate = await getEffectiveRate()
 
   const modules = {
