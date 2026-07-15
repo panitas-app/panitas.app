@@ -26,7 +26,7 @@ export default async function DashboardLayout({
   } catch (e: any) {
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
-    redirect("/")
+    redirect("/choose-plan")
   }
 }
 
@@ -75,7 +75,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
     })
 
     current = await getCurrentStore()
-    if (!current) redirect("/login")
+    if (!current) redirect("/choose-plan")
   }
 
   const [user, negocio, activeSubscription, bcvRate] = await Promise.all([

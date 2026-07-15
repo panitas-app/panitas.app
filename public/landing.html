@@ -784,7 +784,8 @@
           body: new URLSearchParams({ csrfToken:csrf.csrfToken, email, password, callbackUrl:'/choose-plan', json:'true' })
         });
         const data = await res.json();
-        if (data.url) { window.location.href = data.url; }
+        if (data.url && !data.url.includes('error=')) { window.location.href = data.url; }
+        else if (data.url && data.url.includes('error=')) { toast('Credenciales inv\u00e1lidas', 'error'); }
         else { toast('Credenciales inv\u00e1lidas', 'error'); }
       } catch { toast('Error de conexi\u00f3n', 'error'); }
     }
