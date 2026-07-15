@@ -125,7 +125,7 @@ export default function ChoosePlanPage() {
   const expandedPlan = expandedId ? plans.find((p) => p.id === expandedId) : null
 
   return (
-    <div className="min-h-screen bg-[#071A33] relative overflow-hidden">
+    <div className="min-h-screen bg-[#071A33] relative overflow-x-hidden">
       <style>{`@media (width<=768px){.plan-card-mobile{height:280px!important}}`}</style>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-[#0066FF]/[0.05] rounded-full blur-3xl" />
@@ -133,7 +133,7 @@ export default function ChoosePlanPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#A78BFA]/[0.03] rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 h-screen flex flex-col overflow-hidden">
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 min-h-screen flex flex-col">
         <div className="flex items-center justify-between mb-3 sm:mb-6 shrink-0">
           <Link href="/" className="block w-20 sm:w-28">
             <img src="/logonuevo.png" alt="Panitas" className="w-full h-auto opacity-70 hover:opacity-100 transition-opacity" />
