@@ -170,7 +170,7 @@ export default function AdminUserDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Store className="size-4" /> Tienda</CardTitle>
-            {user.negocio?.planVencimiento && (
+            {user.negocio?.planEstado === "activo" && user.negocio?.planVencimiento && (
               <p className="text-xs text-muted-foreground">
                 Vence: {format(new Date(user.negocio.planVencimiento), "dd/MM/yyyy", { locale: es })} ·{' '}
                 {Math.max(0, Math.ceil((new Date(user.negocio.planVencimiento).getTime() - Date.now()) / 86400000))} días restantes

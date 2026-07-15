@@ -26,13 +26,13 @@ export default async function DashboardLayout({
   } catch (e: any) {
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
-    redirect("/login")
+    redirect("/")
   }
 }
 
 async function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user?.id) redirect("/login")
+  if (!session?.user?.id) redirect("/")
 
   let current = await getCurrentStore()
 
