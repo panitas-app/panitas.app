@@ -21,6 +21,16 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  try {
+    return await DashboardLayoutInner({ children })
+  } catch (e: any) {
+    if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
+    console.error("[dashboard layout crash]", e)
+    redirect("/login")
+  }
+}
+
+async function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
 
@@ -68,28 +78,29 @@ export default async function DashboardLayout({
     if (!current) redirect("/login")
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
-
-  const negocio = await prisma.negocio.findUnique({
-    where: { userId: session.user.id },
-    select: { planId: true, modalidad: true },
-  })
-
-  // Check for overdue second installment
-  const activeSubscription = await prisma.storeSubscription.findFirst({
-    where: {
-      storeId: current.store.id,
-      status: "active",
-      paymentMode: "installment",
-      secondPaymentPaid: false,
-      secondPaymentDue: { lte: new Date() },
-    },
-    select: { id: true, secondPaymentDue: true, installmentAmount: true },
-  })
-
-  const bcvRate = await getEffectiveRate()
+  const [user, negocio, activeSubscription, bcvRate] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id } }).catch(() => null),
+    prisma.negocio.findUnique({
+      where: { userId: session.user.id },
+      select: { planId: true, modalidad: true },
+    }).catch(() => null),
+    prisma.storeSubscription.findFirst({
+      where: {
+        storeId: current.store.id,
+        status: "active",
+        paymentMode: "installment",
+        secondPaymentPaid: false,
+        secondPaymentDue: { lte: new Date() },
+      },
+      select: { id: true, secondPaymentDue: true, installmentAmount: true },
+    }).catch(() => null),
+    getEffectiveRate(),
+  ])
 
   const planType = current.store.planType || "tienda"
+  const storeSetupComplete = planType === "agenda"
+    ? !!current.store.name
+    : (!!current.store.description && !!current.store.name)
 
   return (
     <DashboardTourHandler planType={planType}>
@@ -100,7 +111,7 @@ export default async function DashboardLayout({
             negocioId={current.store.negocioId}
             planId={negocio?.planId || "comercio"}
             planType={planType}
-            storeSetupComplete={!!current.store.description && !!current.store.name}
+            storeSetupComplete={storeSetupComplete}
           >
             <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
               <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />

@@ -1,3 +1,5 @@
+import { PAGE_META } from "@/lib/seo/constants"
+import type { Metadata } from "next"
 import Link from "next/link"
 import { FileText } from "lucide-react"
 
@@ -157,6 +159,13 @@ const sections = [
     ),
   },
 ]
+
+export const metadata: Metadata = {
+  title: PAGE_META["/terminos"].title,
+  description: PAGE_META["/terminos"].description,
+  openGraph: { title: PAGE_META["/terminos"].title, description: PAGE_META["/terminos"].description },
+  twitter: { title: PAGE_META["/terminos"].title, description: PAGE_META["/terminos"].description },
+}
 
 export default function TerminosPage() {
   return (

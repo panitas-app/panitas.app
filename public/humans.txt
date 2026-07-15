@@ -1,0 +1,12 @@
+# Humans of Panitas
+# ---------------
+# Desarrollado con pasión en Venezuela.
+# 
+# Fundador: Diego Suárez
+# Correo: supportpanitas@gmail.com
+# Sitio: https://panitas.app
+#
+# Stack: Next.js, TypeScript, Prisma, PostgreSQL, Tailwind CSS
+# Hosting: Vercel + Neon
+#
+# Gracias por usar Panitas. Construimos esto para ti.
