@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Plus, Minus, Trash2, Search, User, Phone, CreditCard, Package, ShoppingCart, Store } from "lucide-react"
+import posthog from "posthog-js"
 
 interface Product {
   id: string
@@ -208,6 +209,12 @@ export default function NuevaVentaPage() {
       }
       const order = await res.json()
       toast.success(`Venta #${order.orderNumber} creada`)
+      posthog.capture("pos_sale_completed", {
+        order_number: order.orderNumber,
+        total_usd: subtotal,
+        item_count: totalItems,
+        credit_days: parseInt(creditDays) || 0,
+      })
       setCart([])
       setCustomerName("")
       setCustomerPhone("")

@@ -18,7 +18,13 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   const searchParams = await props?.searchParams
   const planParam = searchParams?.plan
 
-  const current = await getCurrentStore()
+  let current
+  try {
+    current = await getCurrentStore()
+  } catch (e) {
+    console.error("[dashboard page getCurrentStore error]", e)
+    redirect("/choose-plan")
+  }
   if (!current) redirect("/choose-plan")
 
   // If user came from choose-plan with a specific plan, update their Negocio
