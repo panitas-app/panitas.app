@@ -143,6 +143,43 @@ export function resolvePlanId(id: string): string {
   return legacyPlanMap[id] || id
 }
 
+const planTypeMap: Record<string, string> = {
+  // planType values (Store.planType) → canonical planId
+  tienda: "comercio",
+  empresa: "mayorista",
+  agenda: "agenda",
+  negocio: "comercio",
+  empresarial: "mayorista",
+  basico: "agenda",
+  free: "agenda",
+}
+
+export function resolvePlanType(type: string): string {
+  return planTypeMap[type] || legacyPlanMap[type] || type
+}
+
+export function planDisplayLabel(idOrType: string): string {
+  const resolved = resolvePlanType(idOrType)
+  return getPlan(resolved)?.label || getPlan(resolvePlanId(idOrType))?.label || idOrType
+}
+
+const planColorMap: Record<string, string> = {
+  agenda: "bg-slate-100 text-slate-700",
+  comercio: "bg-blue-100 text-blue-700",
+  mayorista: "bg-amber-100 text-amber-700",
+  tienda: "bg-blue-100 text-blue-700",
+  empresa: "bg-amber-100 text-amber-700",
+  negocio: "bg-blue-100 text-blue-700",
+  empresarial: "bg-amber-100 text-amber-700",
+  basico: "bg-slate-100 text-slate-700",
+  free: "bg-slate-100 text-slate-700",
+}
+
+export function planColor(idOrType: string): string {
+  const resolved = resolvePlanType(idOrType)
+  return planColorMap[resolved] || planColorMap[idOrType] || "bg-slate-100 text-slate-700"
+}
+
 export function puedeAccederModulo(planId: string, modalidad: string | null, modulo: "tienda" | "agenda" | "b2b"): boolean {
   const resolved = resolvePlanId(planId)
   const plan = getPlan(resolved)

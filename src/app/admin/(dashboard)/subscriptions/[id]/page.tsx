@@ -13,6 +13,7 @@ import { format, differenceInDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { ArrowLeft, CheckCircle2, XCircle, Building2, CreditCard, DollarSign, FileText, ImageIcon, ExternalLink, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface SubscriptionDetail {
   id: string; plan: string; status: string; amount: number; currency: string; period: string
@@ -24,8 +25,8 @@ interface SubscriptionDetail {
   verifiedBy: { name: string | null; email: string | null } | null
 }
 
-const planLabels: Record<string, string> = { basico: "Emprendedor", negocio: "Negocio", empresarial: "Empresarial" }
-const planColors: Record<string, string> = { basico: "bg-slate-100 text-slate-700", negocio: "bg-blue-100 text-blue-700", empresarial: "bg-amber-100 text-amber-700" }
+const planLabels: Record<string, string> = {}
+const planColors: Record<string, string> = {}
 const statusLabels: Record<string, string> = { pending: "Pendiente", verified: "Verificada", active: "Activa", expired: "Vencida", cancelled: "Cancelada", rejected: "Rechazada" }
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700", verified: "bg-blue-100 text-blue-700",
@@ -123,7 +124,7 @@ export default function AdminSubscriptionDetailPage() {
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Nombre</span><span className="font-medium">{sub.store.name}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Slug</span><span className="font-mono text-xs">{sub.store.slug}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Plan actual</span><Badge className={cn("font-medium", planColors[sub.store.plan] || "bg-slate-100")}>{planLabels[sub.store.plan as keyof typeof planLabels] || sub.store.plan}</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Plan actual</span><Badge className={cn("font-medium", planColor(sub.store.plan))}>{planDisplayLabel(sub.store.plan)}</Badge></div>
             {sub.store.email && <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{sub.store.email}</span></div>}
             {sub.store.phone && <div className="flex justify-between"><span className="text-muted-foreground">Teléfono</span><span>{sub.store.phone}</span></div>}
           </CardContent>
@@ -132,7 +133,7 @@ export default function AdminSubscriptionDetailPage() {
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><CreditCard className="size-4" /> Plan solicitado</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Plan</span><Badge className={cn("font-medium", planColors[sub.plan as keyof typeof planColors] || "bg-slate-100")}>{planLabels[sub.plan as keyof typeof planLabels] || sub.plan}</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Plan</span><Badge className={cn("font-medium", planColor(sub.plan))}>{planDisplayLabel(sub.plan)}</Badge></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Monto</span><span className="font-mono font-bold text-lg">{sub.currency === "USD" ? "$" : "Bs."}{sub.amount.toFixed(2)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Período</span><span>{sub.period === "yearly" ? "Anual" : "Mensual"}</span></div>
             {sub.startDate && <div className="flex justify-between"><span className="text-muted-foreground">Inicio</span><span>{format(new Date(sub.startDate), "dd/MM/yyyy", { locale: es })}</span></div>}

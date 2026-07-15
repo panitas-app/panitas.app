@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface UserDetail {
   id: string
@@ -112,11 +113,7 @@ export default function AdminUserDetailPage() {
   }
 
   function getPlanLabel(p: string) {
-    const map: Record<string, string> = {
-      basico: "Emprendedor", negocio: "Negocio", empresarial: "Empresarial",
-      free: "Gratis", basic: "Básico", advanced: "Avanzado",
-    }
-    return map[p] || p
+    return planDisplayLabel(p)
   }
 
   function getStatusColor(s: string) {
@@ -182,7 +179,7 @@ export default function AdminUserDetailPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Nombre</span><span className="font-medium">{user.store.name}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Slug</span><span className="font-mono text-xs">{user.store.slug}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Plan</span><Badge className={cn("font-medium", user.store.planType === "negocio" ? "bg-blue-100 text-blue-700" : user.store.planType === "empresarial" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-700")}>{getPlanLabel(user.store.planType)}</Badge></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Plan</span><Badge className={cn("font-medium", planColor(user.store.planType))}>{getPlanLabel(user.store.planType)}</Badge></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Productos</span><span>{user.store._count.products}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Órdenes</span><span>{user.store._count.orders}</span></div>
               </div>

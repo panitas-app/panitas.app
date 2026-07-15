@@ -11,6 +11,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Search, ExternalLink, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface StoreItem {
   id: string
@@ -24,7 +25,7 @@ interface StoreItem {
   _count: { products: number; orders: number; members: number }
 }
 
-const planColors: Record<string, string> = { basico: "bg-slate-100 text-slate-700", negocio: "bg-blue-100 text-blue-700", empresarial: "bg-amber-100 text-amber-700" }
+const planColors: Record<string, string> = {}
 
 export default function AdminStoresPage() {
   const [data, setData] = useState<StoreItem[]>([])
@@ -86,7 +87,7 @@ export default function AdminStoresPage() {
                         <p className="text-xs text-muted-foreground">{s.slug}</p>
                       </div>
                     </TableCell>
-                    <TableCell>                    <Badge className={cn("font-medium", planColors[s.plan] || "bg-slate-100 text-slate-700")}>{s.plan === "basico" ? "Emprendedor" : s.plan === "negocio" ? "Negocio" : s.plan === "empresarial" ? "Empresarial" : s.plan}</Badge></TableCell>
+                    <TableCell>                    <Badge className={cn("font-medium", planColor(s.plan))}>{planDisplayLabel(s.plan)}</Badge></TableCell>
                     <TableCell>{s._count.products}</TableCell>
                     <TableCell>{s._count.orders}</TableCell>
                     <TableCell>{s._count.members}</TableCell>
