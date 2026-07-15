@@ -33,7 +33,16 @@ export default async function DashboardLayout({
     if (isRedirectError(e)) throw e
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
-    redirect("/choose-plan")
+    // Retry once — the initial crash may be from a transient DB error
+    // in Promise.all while the store itself exists and is valid
+    try {
+      return await DashboardLayoutInner({ children })
+    } catch (retryErr: any) {
+      if (isRedirectError(retryErr)) throw retryErr
+      if (retryErr?.digest === "DYNAMIC_SERVER_USAGE") throw retryErr
+      console.error("[dashboard layout crash - retry failed]", retryErr)
+      redirect("/choose-plan")
+    }
   }
 }
 

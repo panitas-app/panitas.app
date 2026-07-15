@@ -117,7 +117,8 @@ const contentVariants = {
 }
 
 export default function ChoosePlanPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const isAuthenticated = status === "authenticated"
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -138,7 +139,7 @@ export default function ChoosePlanPage() {
             <img src="/logonuevo.png" alt="Panitas" className="w-full h-auto opacity-70 hover:opacity-100 transition-opacity" />
           </Link>
           <div className="flex-1" />
-          {!session && (
+          {!isAuthenticated && (
             <Link href="/login" className="text-[10px] sm:text-xs text-white/25 hover:text-white/60 transition-colors whitespace-nowrap">
               Iniciar sesión
             </Link>
@@ -254,7 +255,7 @@ export default function ChoosePlanPage() {
                         className="mt-6 sm:mt-8 lg:mt-10 flex flex-col gap-3"
                       >
                         <Link
-                          href={session ? `/subscribe?plan=${expandedPlan.id}&paymentMode=single` : `/register?plan=${expandedPlan.id}&paymentMode=single`}
+                          href={isAuthenticated ? `/subscribe?plan=${expandedPlan.id}&paymentMode=single` : `/register?plan=${expandedPlan.id}&paymentMode=single`}
                           className="group relative inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-gradient-to-br from-[#0066FF] to-[#0044CC] text-white font-semibold text-sm sm:text-base rounded-lg overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,102,255,0.35)] hover:scale-[1.02] active:scale-[0.98]"
                         >
                           <span className="relative z-10">Pagar · ${expandedPlan.price}/mes</span>
@@ -265,7 +266,7 @@ export default function ChoosePlanPage() {
                         </Link>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                           <Link
-                            href={session ? `/subscribe?plan=${expandedPlan.id}&paymentMode=installment` : `/register?plan=${expandedPlan.id}&paymentMode=installment`}
+                            href={isAuthenticated ? `/subscribe?plan=${expandedPlan.id}&paymentMode=installment` : `/register?plan=${expandedPlan.id}&paymentMode=installment`}
                             className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 min-h-[44px] border border-white/15 text-white font-medium text-xs sm:text-sm rounded-lg overflow-hidden transition-all duration-200 hover:border-white/30 hover:bg-white/5 flex-1"
                           >
                             <span className="relative z-10">2 cuotas de ${expandedPlan.installmentAmount} (${expandedPlan.installmentAmount * 2})</span>
@@ -274,7 +275,7 @@ export default function ChoosePlanPage() {
                             </svg>
                           </Link>
                           <Link
-                            href={session ? `/dashboard?plan=${expandedPlan.id}` : `/register?plan=${expandedPlan.id}&payLater=true`}
+                            href={isAuthenticated ? `/dashboard?plan=${expandedPlan.id}` : `/register?plan=${expandedPlan.id}&payLater=true`}
                             className="inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-white/30 border border-white/5 rounded-lg hover:border-white/15 hover:text-white/50 transition-all duration-200 group flex-1"
                           >
                             Ir al dashboard y pagar después
