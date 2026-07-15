@@ -34,14 +34,34 @@ export default async function DashboardLayout({
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
     // Retry once — the initial crash may be from a transient DB error
-    // in Promise.all while the store itself exists and is valid
     try {
       return await DashboardLayoutInner({ children })
     } catch (retryErr: any) {
       if (isRedirectError(retryErr)) throw retryErr
       if (retryErr?.digest === "DYNAMIC_SERVER_USAGE") throw retryErr
       console.error("[dashboard layout crash - retry failed]", retryErr)
-      redirect("/choose-plan")
+      // Don't redirect to /choose-plan (causes loop). Show error instead.
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 bg-white">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-bold text-[#050505] mb-3">No se pudo cargar tu tienda</h1>
+            <p className="text-sm text-gray-600 mb-1">
+              Hubo un problema al crear o cargar los datos de tu tienda.
+            </p>
+            <p className="text-xs text-gray-400 mb-6 break-words">
+              {retryErr?.message || "Error desconocido"}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <a href="/choose-plan" className="px-4 py-2 bg-[#0066FF] text-white text-sm font-semibold rounded-lg hover:bg-[#0044CC] transition-colors">
+                Ir a elegir plan
+              </a>
+              <a href="/" className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                Volver al inicio
+              </a>
+            </div>
+          </div>
+        </div>
+      )
     }
   }
 }
