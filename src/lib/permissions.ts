@@ -61,7 +61,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
       const name = user?.name || "Mi Tienda"
       const slug = slugify(name) + "-" + userId.slice(0, 6)
 
-      // Asegurar que existan los planes por defecto
+      // Asegurar que existan los planes por defecto (sin transacciones para Neon HTTP)
       for (const p of [
         { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
         { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
@@ -70,11 +70,12 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
         { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       ]) {
-        await prisma.plan.upsert({
-          where: { id: p.id },
-          update: {},
-          create: { ...p, descripcion: "", activo: true },
-        })
+        const existingPlan = await prisma.plan.findUnique({ where: { id: p.id } })
+        if (!existingPlan) {
+          await prisma.plan.create({
+            data: { ...p, descripcion: "", activo: true },
+          }).catch(() => {})
+        }
       }
 
       negocio = await prisma.negocio.create({

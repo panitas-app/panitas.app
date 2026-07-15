@@ -26,7 +26,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     const resolved = resolvePlanId(planParam)
     const cfg = planToConfig[resolved]
     if (cfg) {
-      // Ensure all plans exist in DB to prevent foreign key errors during update
+      // Ensure all plans exist in DB to prevent foreign key errors during update (no transactions for Neon HTTP)
       for (const p of [
         { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
         { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
@@ -35,11 +35,12 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
         { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
         { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       ]) {
-        await prisma.plan.upsert({
-          where: { id: p.id },
-          update: {},
-          create: { ...p, descripcion: "", activo: true },
-        })
+        const existingPlan = await prisma.plan.findUnique({ where: { id: p.id } })
+        if (!existingPlan) {
+          await prisma.plan.create({
+            data: { ...p, descripcion: "", activo: true },
+          }).catch(() => {})
+        }
       }
 
       const negocio = await prisma.negocio.findUnique({ where: { id: current.store.negocioId }, select: { planId: true } })

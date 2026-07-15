@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import { enviarBienvenida } from "@/lib/email"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 const PASSWORD_MIN_LENGTH = 6
 
@@ -71,23 +72,24 @@ export async function POST(req: Request) {
     // Auto-create Negocio + Store + Agenda if plan is provided
     const planKey = plan && planDefaults[plan] ? plan : "comercio"
     const cfg = planDefaults[planKey]
-    const planSlug = slugify(trimmedName)
+    const planSlug = slugify(trimmedName) + "-" + user.id.slice(0, 6)
 
-    // Ensure Plan record exists in DB
-    await prisma.plan.upsert({
-      where: { id: cfg.planId },
-      update: {},
-      create: {
-        id: cfg.planId,
-        nombre: cfg.planId,
-        label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
-        descripcion: "",
-        precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
-        precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
-        activo: true,
-        sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
-      },
-    })
+    // Ensure Plan record exists in DB (no transactions for Neon HTTP)
+    const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
+    if (!existingPlan) {
+      await prisma.plan.create({
+        data: {
+          id: cfg.planId,
+          nombre: cfg.planId,
+          label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
+          descripcion: "",
+          precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
+          precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
+          activo: true,
+          sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+        },
+      }).catch(() => {})
+    }
 
     const negocio = await prisma.negocio.create({
       data: {
@@ -111,8 +113,8 @@ export async function POST(req: Request) {
       })
     }
 
-    // Create Store
-    await prisma.store.create({
+    // Create Store without nested creation to avoid HTTP transaction failures
+    const store = await prisma.store.create({
       data: {
         name: trimmedName,
         slug: planSlug,
@@ -121,14 +123,25 @@ export async function POST(req: Request) {
         planType: cfg.planType,
         userId: user.id,
         negocioId: negocio.id,
-        members: {
-          create: { userId: user.id, role: "admin" },
-        },
+      },
+    })
+
+    // Create StoreMember separately
+    await prisma.storeMember.create({
+      data: {
+        storeId: store.id,
+        userId: user.id,
+        role: "admin",
       },
     })
 
     enviarBienvenida(trimmedEmail, trimmedName)
       .catch(e => console.error("[welcome email error]", e))
+
+    const phog = getPostHogClient()
+    phog.identify({ distinctId: user.id, properties: { plan: planKey } })
+    phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
+    await phog.flush()
 
     return NextResponse.json({ success: true })
   } catch {
