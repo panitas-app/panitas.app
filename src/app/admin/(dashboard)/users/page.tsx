@@ -26,8 +26,9 @@ interface UserItem {
   suspendedAt: string | null
   suspensionReason: string | null
   store: { id: string; name: string; slug: string; plan: string; planType: string; planStatus: string; subscriptions: { status: string }[] } | null
-  negocio: { id: string; planId: string; modalidad: string | null; planEstado: string } | null
+  negocio: { id: string; planId: string; modalidad: string | null; planEstado: string; planVencimiento: string | null } | null
   _count: { orders: number }
+  daysRemaining: number | null
 }
 
 export default function AdminUsersPage() {
@@ -147,14 +148,15 @@ export default function AdminUsersPage() {
                 <TableHead>Órdenes</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Registro</TableHead>
+                <TableHead className="text-right">Días</TableHead>
                 <TableHead className="text-right">Acción</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Cargando...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Cargando...</TableCell></TableRow>
               ) : data.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Sin resultados</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Sin resultados</TableCell></TableRow>
               ) : (
                 data.map((u) => (
                   <TableRow key={u.id} className={u.suspendedAt ? "opacity-60" : ""}>
@@ -190,6 +192,21 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(u.createdAt), "dd/MM/yyyy", { locale: es })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {u.daysRemaining !== null && u.daysRemaining !== undefined ? (
+                        <span className={cn(
+                          "inline-flex items-center justify-center size-8 rounded-full text-xs font-bold",
+                          u.daysRemaining <= 0 ? "bg-red-100 text-red-700" :
+                          u.daysRemaining <= 3 ? "bg-red-50 text-red-600" :
+                          u.daysRemaining <= 7 ? "bg-amber-50 text-amber-600" :
+                          "bg-green-50 text-green-600"
+                        )}>
+                          {u.daysRemaining}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
             subscriptions: { select: { status: true }, orderBy: { createdAt: "desc" }, take: 1 },
           },
         },
-        negocio: { select: { id: true, planId: true, modalidad: true, planEstado: true } },
+        negocio: { select: { id: true, planId: true, modalidad: true, planEstado: true, planVencimiento: true } },
         _count: { select: { orders: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -45,5 +45,13 @@ export async function GET(req: NextRequest) {
     prisma.user.count({ where }),
   ])
 
-  return NextResponse.json({ data: users, total, page, totalPages: Math.ceil(total / limit) })
+  const now = new Date()
+  const enriched = users.map((u) => ({
+    ...u,
+    daysRemaining: u.negocio?.planVencimiento
+      ? Math.max(0, Math.ceil((new Date(u.negocio.planVencimiento).getTime() - now.getTime()) / 86400000))
+      : null,
+  }))
+
+  return NextResponse.json({ data: enriched, total, page, totalPages: Math.ceil(total / limit) })
 }

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity } from "lucide-react"
+import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface UserDetail {
@@ -46,6 +46,9 @@ export default function AdminUserDetailPage() {
   const [loading, setLoading] = useState(true)
   const [suspendOpen, setSuspendOpen] = useState(false)
   const [suspendReason, setSuspendReason] = useState("")
+  const [renewOpen, setRenewOpen] = useState(false)
+  const [renewDays, setRenewDays] = useState<30 | 15>(30)
+  const [renewing, setRenewing] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -67,6 +70,20 @@ export default function AdminUserDetailPage() {
     if (!res.ok) { toast.error("Error al suspender"); return }
     toast.success("Usuario suspendido")
     setSuspendOpen(false)
+    window.location.reload()
+  }
+
+  async function handleRenew() {
+    setRenewing(true)
+    const res = await fetch(`/api/admin/users/${id}/renew`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days: renewDays }),
+    })
+    setRenewing(false)
+    if (!res.ok) { toast.error("Error al renovar"); return }
+    toast.success(`Suscripción renovada +${renewDays} días`)
+    setRenewOpen(false)
     window.location.reload()
   }
 
@@ -114,6 +131,9 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
         <div className="ml-auto flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setRenewOpen(true)}>
+            <RefreshCw className="size-4" /> Renovar
+          </Button>
           {user.suspendedAt ? (
             <Button variant="outline" className="gap-2" onClick={handleReactivate}>
               <UserCheck className="size-4" /> Reactivar
@@ -128,7 +148,15 @@ export default function AdminUserDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Store className="size-4" /> Tienda</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Store className="size-4" /> Tienda</CardTitle>
+            {user.negocio?.planVencimiento && (
+              <p className="text-xs text-muted-foreground">
+                Vence: {format(new Date(user.negocio.planVencimiento), "dd/MM/yyyy", { locale: es })} ·{' '}
+                {Math.max(0, Math.ceil((new Date(user.negocio.planVencimiento).getTime() - Date.now()) / 86400000))} días restantes
+              </p>
+            )}
+          </CardHeader>
           <CardContent>
             {user.store ? (
               <div className="space-y-2 text-sm">
@@ -181,6 +209,37 @@ export default function AdminUserDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={renewOpen} onOpenChange={setRenewOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><RefreshCw className="size-4" /> Renovar suscripción</DialogTitle></DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-sm text-muted-foreground">Selecciona el tipo de renovación para <strong>{user.name || user.email}</strong>:</p>
+            <div className="flex gap-3">
+              <Button
+                variant={renewDays === 30 ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setRenewDays(30)}
+              >
+                Mes completo <br /><span className="text-xs opacity-70">+30 días</span>
+              </Button>
+              <Button
+                variant={renewDays === 15 ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setRenewDays(15)}
+              >
+                Cuota <br /><span className="text-xs opacity-70">+15 días</span>
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenewOpen(false)}>Cancelar</Button>
+            <Button onClick={handleRenew} disabled={renewing}>
+              {renewing ? "Procesando..." : `Renovar (+${renewDays} días)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={suspendOpen} onOpenChange={setSuspendOpen}>
         <DialogContent className="sm:max-w-md">
