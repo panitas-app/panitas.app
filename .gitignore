@@ -62,3 +62,4 @@ prisma.ps1
 /public/uploads/
 
 .vercel
+.env*

@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { useBcvRate } from "@/lib/bcv-context"
+import { formatBCV } from "@/lib/bcv/format"
 import {
   Plus, Minus, Trash2, Search, Package, ShoppingCart, User, Phone, CreditCard,
   DollarSign, Printer, Download, X,   ChevronDown, ChevronUp, ChevronRight, Percent, Banknote,
@@ -1139,7 +1140,7 @@ export default function POSPage() {
 
                 <div className="text-center text-[10px] text-muted-foreground pt-1">
                   <p>¡Gracias por tu compra!</p>
-                  {bcvRate > 0 && <p>Tasa BCV: Bs. {bcvRate.toFixed(2)} / USD</p>}
+                  {bcvRate > 0 && <p>Tasa BCV: Bs. {formatBCV(bcvRate)} / USD</p>}
                 </div>
               </div>
             )}

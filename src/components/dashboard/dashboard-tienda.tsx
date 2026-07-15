@@ -6,6 +6,7 @@ import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { TrafficSources } from "@/components/dashboard/traffic-sources"
 import { VisitorsPanel } from "@/components/dashboard/visitors-panel"
+import { formatBCV } from "@/lib/bcv/format"
 import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget"
 import { CategoryStats } from "@/components/dashboard/category-stats"
 
@@ -53,7 +54,7 @@ export function DashboardTienda({ store, rate: initialRate, data, orders, visito
           </div>
           <div className="text-left">
             <span className="text-[10px] font-bold text-muted-foreground block uppercase tracking-wider">Tasa BCV del Día</span>
-            <span className="text-sm font-black text-foreground">Bs. {rate.toFixed(2)} / USD</span>
+            <span className="text-sm font-black text-foreground">Bs. {formatBCV(rate)} / USD</span>
           </div>
         </div>
       </div>

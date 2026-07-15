@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { BarChart3, TrendingUp, TrendingDown, Minus, Package, Receipt, Download, CalendarCheck, Banknote, ChevronRight, Phone, Search, Store, ShoppingCart } from "lucide-react"
 import { downloadCsv } from "@/lib/export-csv"
 import GastosPage from "@/components/dashboard/gastos-page"
+import { formatBCV } from "@/lib/bcv/format"
 
 const ALL_TABS = [
   { key: "balance", label: "Balance", icon: BarChart3 },
@@ -217,7 +218,7 @@ function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Pe
             </span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">Balance general ({PERIOD_LABELS[period].toLowerCase()})</p>
-          <p className="text-xs text-muted-foreground">Tasa BCV: Bs. {data.rate.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Tasa BCV: Bs. {formatBCV(data.rate)}</p>
         </CardContent>
       </Card>
 
