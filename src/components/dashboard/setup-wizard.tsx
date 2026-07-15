@@ -304,8 +304,7 @@ function PaymentMethodForm({ storeId }: { storeId: string }) {
     } catch (e) { console.error("[unhandled error]", e) }
   }
 
-  async function handleAdd(e: FormEvent) {
-    e.preventDefault()
+  async function handleAdd(e: React.MouseEvent) {
     setSaving(true)
     try {
       const body: any = { type, storeId }
@@ -362,7 +361,7 @@ function PaymentMethodForm({ storeId }: { storeId: string }) {
           + Agregar método de pago
         </button>
       ) : (
-        <form onSubmit={handleAdd} className="space-y-2 p-3 border rounded-lg bg-gray-50">
+        <div className="space-y-2 p-3 border rounded-lg bg-gray-50">
           <div className="flex gap-2">
             <button type="button" onClick={() => setType("bank")} className={`flex-1 py-1.5 text-xs font-semibold rounded ${type === "bank" ? "bg-primary text-white" : "bg-white border"}`}>Banco</button>
             <button type="button" onClick={() => setType("mobile")} className={`flex-1 py-1.5 text-xs font-semibold rounded ${type === "mobile" ? "bg-primary text-white" : "bg-white border"}`}>Pago Móvil</button>
@@ -398,10 +397,10 @@ function PaymentMethodForm({ storeId }: { storeId: string }) {
             </>
           )}
           <div className="flex gap-2">
-            <Button type="submit" disabled={saving} className="flex-1 text-xs bg-primary text-accent">{saving ? "..." : "Guardar"}</Button>
+            <Button type="button" disabled={saving} onClick={handleAdd} className="flex-1 text-xs bg-primary text-accent">{saving ? "..." : "Guardar"}</Button>
             <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="text-xs">Cancelar</Button>
           </div>
-        </form>
+        </div>
       )}
     </div>
   )
