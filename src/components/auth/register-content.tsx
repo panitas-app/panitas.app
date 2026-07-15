@@ -64,12 +64,12 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
         email,
         password,
         redirect: false,
-        callbackUrl: "/choose-plan",
+        callbackUrl: selectedPlan ? `/dashboard?plan=${selectedPlan}` : "/dashboard",
       })
       if (signInResult?.error) {
         toast.error("Cuenta creada, pero no se pudo iniciar sesión. Intenta manualmente.")
       }
-      window.location.href = "/choose-plan"
+      window.location.href = selectedPlan ? `/dashboard?plan=${selectedPlan}` : "/dashboard"
     } catch {
       toast.error("Error de conexión")
     } finally {
@@ -226,7 +226,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
                 className="w-full rounded-xl bg-white font-black text-[#050505]/80 h-12 shadow-sm transition-all duration-300 hover:bg-muted active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm tracking-wider uppercase"
                 onClick={() => {
                   posthog.capture("user_registered", { plan: selectedPlan || "none", method: "google" })
-                  signIn("google", { callbackUrl: "/dashboard" })
+                  signIn("google", { callbackUrl: selectedPlan ? `/dashboard?plan=${selectedPlan}` : "/dashboard" })
                 }}
               >
                 <svg className="h-5 w-5" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">

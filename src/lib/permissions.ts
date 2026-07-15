@@ -125,6 +125,8 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         : negocio.planId === "agenda" ? "agenda"
         : negocio.planId === "negocio" ? "negocio"
         : negocio.planId === "empresarial" ? "empresa"
+        : negocio.planId === "mayorista" ? "empresa"
+        : negocio.planId === "comercio" ? "tienda"
         : "tienda"
 
       store = await prisma.store.create({
