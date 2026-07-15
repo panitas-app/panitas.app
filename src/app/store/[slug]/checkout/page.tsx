@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { CheckoutSteps } from "@/components/store/checkout-steps"
 import { BANKS_VENEZUELA, DOCUMENT_TYPES } from "@/lib/constants"
+import { formatBCV } from "@/lib/bcv/format"
 import { formatAccountNumber, validateReference, validatePhone, isMobilePayment } from "@/lib/ve-banks"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -489,7 +490,7 @@ ${itemsText}
 - Envío: ${shippingCost === 0 ? "Gratis" : `$${shippingCost.toFixed(2)}`}
 - Descuento: $${discount.toFixed(2)}
 *Total a Pagar:* $${total.toFixed(2)}
-${bcvRate > 0 ? `*Tasa BCV:* Bs. ${bcvRate.toFixed(2)}\n*Total en Bs:* Bs. ${(total * bcvRate).toFixed(2)}` : ""}
+${bcvRate > 0 ? `*Tasa BCV:* Bs. ${formatBCV(bcvRate)}\n*Total en Bs:* Bs. ${(total * bcvRate).toFixed(2)}` : ""}
 
 *Método de Pago:* ${paymentMethodText}
 ${referenceNumber ? `*Referencia:* ${referenceNumber}` : ""}

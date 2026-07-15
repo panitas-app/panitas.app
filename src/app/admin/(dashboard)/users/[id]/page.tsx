@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw } from "lucide-react"
+import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface UserDetail {
@@ -49,6 +49,9 @@ export default function AdminUserDetailPage() {
   const [renewOpen, setRenewOpen] = useState(false)
   const [renewDays, setRenewDays] = useState<30 | 15>(30)
   const [renewing, setRenewing] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteSecret, setDeleteSecret] = useState("")
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -92,6 +95,20 @@ export default function AdminUserDetailPage() {
     if (!res.ok) { toast.error("Error al reactivar"); return }
     toast.success("Usuario reactivado")
     window.location.reload()
+  }
+
+  async function handleDelete() {
+    if (!deleteSecret.trim()) { toast.error("Ingresa la contraseña de administrador"); return }
+    setDeleting(true)
+    const res = await fetch(`/api/admin/users/${id}/delete`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: deleteSecret }),
+    })
+    setDeleting(false)
+    if (!res.ok) { const err = await res.json().catch(() => ({})); toast.error(err.error || "Error al eliminar"); return }
+    toast.success("Cuenta eliminada permanentemente")
+    router.push("/admin/users")
   }
 
   function getPlanLabel(p: string) {
@@ -143,6 +160,9 @@ export default function AdminUserDetailPage() {
               <UserX className="size-4" /> Suspender
             </Button>
           )}
+          <Button variant="destructive" className="gap-2" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="size-4" /> Eliminar cuenta
+          </Button>
         </div>
       </div>
 
@@ -251,6 +271,30 @@ export default function AdminUserDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSuspendOpen(false)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleSuspend}>Suspender</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><Trash2 className="size-4" /> Eliminar cuenta</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Esta acción eliminará permanentemente la cuenta de <strong>{user.name || user.email}</strong> y todos sus datos asociados (tienda, productos, órdenes, etc.). No se puede deshacer.
+            </p>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Ingresa la contraseña de administrador para confirmar:</label>
+              <Input type="password" placeholder="Contraseña de administrador" value={deleteSecret}
+                onChange={(e) => setDeleteSecret(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteSecret("") }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Eliminando..." : "Eliminar cuenta"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

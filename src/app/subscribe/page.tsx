@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { BANKS_VENEZUELA } from "@/lib/constants"
 import { useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
+import { formatBCV } from "@/lib/bcv/format"
 
 const PLANS: Record<string, { name: string; monthly: number; yearly: number; installmentAmount: number; installmentTotal: number }> = {
   agenda: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
@@ -232,7 +233,7 @@ function SubscribeContent() {
           </div>
           {bcvRate && (
             <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-center">
-              <span className="text-[10px] text-white/30 font-mono">Tasa BCV: Bs. {bcvRate.toFixed(2)} / USD</span>
+              <span className="text-[10px] text-white/30 font-mono">Tasa BCV: Bs. {formatBCV(bcvRate)} / USD</span>
               <span className="text-[10px] text-white/30 font-mono">Total en bolívares: Bs. {formatBolivares(amount, bcvRate)}</span>
             </div>
           )}

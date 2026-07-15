@@ -49,7 +49,12 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     }
   }
 
-  const planType = current.store.planType || current.store.plan
+  // Re-read planType from DB in case it was just updated above
+  const freshStore = await prisma.store.findUnique({
+    where: { id: current.store.id },
+    select: { planType: true, plan: true },
+  })
+  const planType = freshStore?.planType || freshStore?.plan || current.store.plan || "tienda"
   const rate = await getEffectiveRate()
 
   const modules = {

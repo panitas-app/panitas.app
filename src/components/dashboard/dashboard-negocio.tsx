@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { DollarSign, ShoppingCart, Calendar, TrendingUp, Users, Briefcase, BarChart3, ArrowRight, CreditCard, XCircle, CheckCircle, Clock, Wallet } from "lucide-react"
 import type { Store } from "@prisma/client"
+import { formatBCV } from "@/lib/bcv/format"
 
 interface Props {
   store: Store
@@ -37,7 +38,7 @@ export function DashboardNegocio({ store, rate, sales, appointments, orders, vis
           </div>
           <div className="text-left">
             <span className="text-[10px] font-bold text-muted-foreground block uppercase tracking-wider">Tasa BCV</span>
-            <span className="text-sm font-black text-foreground">Bs. {rate.toFixed(2)} / USD</span>
+            <span className="text-sm font-black text-foreground">Bs. {formatBCV(rate)} / USD</span>
           </div>
         </div>
       </div>

@@ -56,6 +56,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     const slug = negocio.slug || "tienda-" + userId.slice(0, 8)
     const planType = negocio.modalidad === "tienda" ? "tienda"
       : negocio.modalidad === "agenda" ? "agenda"
+      : negocio.planId === "agenda" ? "agenda"
       : negocio.planId === "negocio" ? "negocio"
       : negocio.planId === "empresarial" ? "empresa"
       : "tienda"
