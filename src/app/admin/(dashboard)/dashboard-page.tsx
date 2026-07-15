@@ -9,6 +9,7 @@ import { Users, Store, ShoppingCart, CreditCard, DollarSign, Clock, CheckCircle2
 import { format, differenceInDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel } from "@/lib/plans"
 
 interface Stats {
   totalUsers: number; usersThisMonth: number
@@ -141,7 +142,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="space-y-2">
                 {stats.planDistribution.map((p) => {
-                  const label = p.plan === "basico" ? "Emprendedor" : p.plan === "negocio" ? "Negocio" : p.plan === "empresarial" ? "Empresarial" : p.plan
+                  const label = planDisplayLabel(p.plan)
                   return (
                     <div key={p.plan} className="flex items-center justify-between">
                       <span className="text-sm capitalize">{label}</span>

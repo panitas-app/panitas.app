@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface UserItem {
   id: string
@@ -82,12 +83,7 @@ export default function AdminUsersPage() {
   }
 
   function getPlanLabel(planType: string): string {
-    const map: Record<string, string> = {
-      tienda: "Emprendedor", agenda: "Emprendedor", basico: "Emprendedor",
-      negocio: "Negocio", empresarial: "Empresarial",
-      free: "Gratis", basic: "Básico", advanced: "Avanzado",
-    }
-    return map[planType] || planType
+    return planDisplayLabel(planType)
   }
 
   function getStatusInfo(u: UserItem): { label: string; color: string } {
@@ -104,13 +100,7 @@ export default function AdminUsersPage() {
   }
 
   function getPlanColor(planType: string): string {
-    const map: Record<string, string> = {
-      tienda: "bg-slate-100 text-slate-700", agenda: "bg-slate-100 text-slate-700",
-      basico: "bg-slate-100 text-slate-700",
-      negocio: "bg-blue-100 text-blue-700",
-      empresarial: "bg-amber-100 text-amber-700",
-    }
-    return map[planType] || "bg-slate-100 text-slate-700"
+    return planColor(planType)
   }
 
   return (

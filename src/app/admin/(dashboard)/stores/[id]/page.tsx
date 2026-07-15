@@ -11,6 +11,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ArrowLeft, Store, Users, Package, ShoppingCart, DollarSign, Calendar, ExternalLink, TrendingUp, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface StoreDetail {
   id: string; name: string; slug: string; description: string | null; email: string | null; phone: string | null
@@ -22,8 +23,8 @@ interface StoreDetail {
   subscriptions: Array<{ id: string; plan: string; status: string; amount: number; createdAt: string; endDate: string | null }>
 }
 
-const planLabels: Record<string, string> = { basico: "Emprendedor", negocio: "Negocio", empresarial: "Empresarial" }
-const planColors: Record<string, string> = { basico: "bg-slate-100 text-slate-700", negocio: "bg-blue-100 text-blue-700", empresarial: "bg-amber-100 text-amber-700" }
+const planLabels: Record<string, string> = {}
+const planColors: Record<string, string> = {}
 
 export default function AdminStoreDetailPage() {
   const params = useParams()
@@ -105,8 +106,8 @@ export default function AdminStoreDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Plan</p>
-                <Badge className={cn("mt-1 font-medium", planColors[store.plan as keyof typeof planColors] || "bg-slate-100")}>
-                  {planLabels[store.plan as keyof typeof planLabels] || store.plan}
+                <Badge className={cn("mt-1 font-medium", planColor(store.plan))}>
+                  {planDisplayLabel(store.plan)}
                 </Badge>
               </div>
               <CreditCard className="size-8 text-primary/40" />
@@ -199,8 +200,8 @@ export default function AdminStoreDetailPage() {
               {store.subscriptions.map((s) => (
                 <Link key={s.id} href={`/admin/subscriptions/${s.id}`} className="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-muted/50">
                   <div className="flex items-center gap-3">
-                    <Badge className={cn("font-medium", planColors[s.plan as keyof typeof planColors] || "bg-slate-100")}>
-                      {planLabels[s.plan as keyof typeof planLabels] || s.plan}
+                    <Badge className={cn("font-medium", planColor(s.plan))}>
+                      {planDisplayLabel(s.plan)}
                     </Badge>
                     <span className="font-mono">${s.amount.toFixed(2)}</span>
                   </div>

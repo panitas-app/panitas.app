@@ -16,6 +16,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Search, CreditCard, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { planDisplayLabel, planColor } from "@/lib/plans"
 
 interface Subscription {
   id: string
@@ -30,11 +31,7 @@ interface Subscription {
   store: { name: string; slug: string; plan: string }
 }
 
-const planColors: Record<string, string> = {
-  basico: "bg-slate-100 text-slate-700",
-  negocio: "bg-blue-100 text-blue-700",
-  empresarial: "bg-amber-100 text-amber-700",
-}
+const planColors: Record<string, string> = {}
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -134,8 +131,8 @@ export default function AdminSubscriptionsPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge className={cn("font-medium", planColors[sub.plan] || planColors.free)}>
-                                {sub.plan === "basico" ? "Emprendedor" : sub.plan === "negocio" ? "Negocio" : sub.plan === "empresarial" ? "Empresarial" : sub.plan}
+                              <Badge className={cn("font-medium", planColor(sub.plan))}>
+                                {planDisplayLabel(sub.plan)}
                               </Badge>
                             </TableCell>
                             <TableCell className="font-mono">{sub.currency === "USD" ? "$" : "Bs."}{sub.amount.toFixed(2)}</TableCell>
