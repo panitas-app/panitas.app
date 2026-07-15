@@ -52,6 +52,19 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
 }
 
+async function planFindOrCreate(p: { id: string; nombre: string; label: string; precioUsd: number; precioUsdAnual: number; sortOrder: number }) {
+  const existing = await prisma.plan.findUnique({ where: { id: p.id } })
+  if (existing) return existing
+  try {
+    return await prisma.plan.create({ data: { ...p, descripcion: "", activo: true } })
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      return prisma.plan.findUniqueOrThrow({ where: { id: p.id } })
+    }
+    throw err
+  }
+}
+
 async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
   try {
     // 1. Buscar o crear Negocio
@@ -70,11 +83,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
         { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
       ]) {
-        await prisma.plan.upsert({
-          where: { id: p.id },
-          update: {},
-          create: { ...p, descripcion: "", activo: true },
-        })
+        await planFindOrCreate(p)
       }
 
       negocio = await prisma.negocio.create({
