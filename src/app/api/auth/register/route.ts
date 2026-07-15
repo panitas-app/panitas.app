@@ -74,77 +74,96 @@ export async function POST(req: Request) {
     const cfg = planDefaults[planKey]
     const planSlug = slugify(trimmedName) + "-" + user.id.slice(0, 6)
 
-    // Ensure Plan record exists in DB (no transactions for Neon HTTP)
-    const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
-    if (!existingPlan) {
-      await prisma.plan.create({
+    try {
+      // Ensure Plan record exists in DB (no transactions for Neon HTTP)
+      const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
+      if (!existingPlan) {
+        await prisma.plan.create({
+          data: {
+            id: cfg.planId,
+            nombre: cfg.planId,
+            label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
+            descripcion: "",
+            precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
+            precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
+            activo: true,
+            sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+          },
+        })
+      }
+
+      const negocio = await prisma.negocio.create({
         data: {
-          id: cfg.planId,
-          nombre: cfg.planId,
-          label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
-          descripcion: "",
-          precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
-          precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
-          activo: true,
-          sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
+          nombre: trimmedName,
+          slug: planSlug,
+          planId: cfg.planId,
+          modalidad: cfg.modalidad,
+          planEstado: "pendiente",
+          planVencimiento: null,
+          userId: user.id,
         },
-      }).catch(() => {})
-    }
+      })
 
-    const negocio = await prisma.negocio.create({
-      data: {
-        nombre: trimmedName,
-        slug: planSlug,
-        planId: cfg.planId,
-        modalidad: cfg.modalidad,
-        planEstado: "pendiente",
-        planVencimiento: null,
-        userId: user.id,
-      },
-    })
+      if (cfg.hasAgenda) {
+        await prisma.agenda.create({
+          data: {
+            nombre: "Mi Agenda",
+            slug: planSlug + "-agenda",
+            negocioId: negocio.id,
+          },
+        })
+      }
 
-    if (cfg.hasAgenda) {
-      await prisma.agenda.create({
+      // Create Store without nested creation to avoid HTTP transaction failures
+      const store = await prisma.store.create({
         data: {
-          nombre: "Mi Agenda",
-          slug: planSlug + "-agenda",
+          name: trimmedName,
+          slug: planSlug,
+          plan: "free",
+          planStatus: "pendiente",
+          planType: cfg.planType,
+          userId: user.id,
           negocioId: negocio.id,
         },
       })
+
+      // Create StoreMember separately
+      await prisma.storeMember.create({
+        data: {
+          storeId: store.id,
+          userId: user.id,
+          role: "admin",
+        },
+      })
+
+      enviarBienvenida(trimmedEmail, trimmedName)
+        .catch(e => console.error("[welcome email error]", e))
+
+      const phog = getPostHogClient()
+      phog.identify({ distinctId: user.id, properties: { plan: planKey } })
+      phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
+      await phog.flush()
+
+    } catch (creationError: any) {
+      console.error("[register creation crash]", creationError)
+      try {
+        await prisma.auditLog.create({
+          data: {
+            action: "register.creation_failed",
+            entity: "User",
+            metadata: JSON.stringify({ error: creationError?.message || String(creationError), stack: creationError?.stack }),
+            userId: user.id,
+          }
+        })
+      } catch (logErr) {
+        console.error("Failed to write register crash audit log:", logErr)
+      }
+      // Relanzamos el error para que la ruta devuelva el 500
+      throw creationError
     }
 
-    // Create Store without nested creation to avoid HTTP transaction failures
-    const store = await prisma.store.create({
-      data: {
-        name: trimmedName,
-        slug: planSlug,
-        plan: "free",
-        planStatus: "pendiente",
-        planType: cfg.planType,
-        userId: user.id,
-        negocioId: negocio.id,
-      },
-    })
-
-    // Create StoreMember separately
-    await prisma.storeMember.create({
-      data: {
-        storeId: store.id,
-        userId: user.id,
-        role: "admin",
-      },
-    })
-
-    enviarBienvenida(trimmedEmail, trimmedName)
-      .catch(e => console.error("[welcome email error]", e))
-
-    const phog = getPostHogClient()
-    phog.identify({ distinctId: user.id, properties: { plan: planKey } })
-    phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
-    await phog.flush()
-
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (error: any) {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
