@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   const now = new Date()
   const enriched = users.map((u) => ({
     ...u,
-    daysRemaining: u.negocio?.planVencimiento
+    daysRemaining: u.negocio?.planEstado === "activo" && u.negocio?.planVencimiento
       ? Math.max(0, Math.ceil((new Date(u.negocio.planVencimiento).getTime() - now.getTime()) / 86400000))
       : null,
   }))

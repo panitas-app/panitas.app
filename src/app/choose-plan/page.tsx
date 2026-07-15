@@ -138,6 +138,11 @@ export default function ChoosePlanPage() {
             <img src="/logonuevo.png" alt="Panitas" className="w-full h-auto opacity-70 hover:opacity-100 transition-opacity" />
           </Link>
           <div className="flex-1" />
+          {!session && (
+            <Link href="/login" className="text-[10px] sm:text-xs text-white/25 hover:text-white/60 transition-colors whitespace-nowrap">
+              Iniciar sesión
+            </Link>
+          )}
         </div>
         <motion.div
           initial={{ opacity: 0, y: -20 }}

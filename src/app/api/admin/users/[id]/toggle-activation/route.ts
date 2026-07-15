@@ -38,7 +38,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (user.negocio) {
     await prisma.negocio.update({
       where: { id: user.negocio.id },
-      data: { planEstado: active ? "activo" : "cancelado" },
+      data: {
+        planEstado: active ? "activo" : "cancelado",
+        ...(active ? {} : { planVencimiento: null }),
+      },
     })
   }
 
