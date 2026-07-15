@@ -12,6 +12,7 @@ import { BANKS_VENEZUELA } from "@/lib/constants"
 import { useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import { formatBCV } from "@/lib/bcv/format"
+import posthog from "posthog-js"
 
 const PLANS: Record<string, { name: string; monthly: number; yearly: number; installmentAmount: number; installmentTotal: number }> = {
   agenda: { name: "Agenda", monthly: 15, yearly: 150, installmentAmount: 9, installmentTotal: 18 },
@@ -185,6 +186,7 @@ function SubscribeContent() {
         throw new Error(err.error || "Error al procesar")
       }
 
+      posthog.capture("subscription_form_submitted", { plan: planKey, period, payment_mode: isInstallment ? "installment" : "single", amount })
       setSuccess(true)
       toast.success("Solicitud enviada")
     } catch (error: any) {

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import { enviarBienvenida } from "@/lib/email"
+import { getPostHogClient } from "@/lib/posthog-server"
 
 const PASSWORD_MIN_LENGTH = 6
 
@@ -129,6 +130,11 @@ export async function POST(req: Request) {
 
     enviarBienvenida(trimmedEmail, trimmedName)
       .catch(e => console.error("[welcome email error]", e))
+
+    const posthog = getPostHogClient()
+    posthog.identify({ distinctId: user.id, properties: { name: trimmedName } })
+    posthog.capture({ distinctId: user.id, event: "user_signed_up", properties: { plan: planKey } })
+    await posthog.flush()
 
     return NextResponse.json({ success: true })
   } catch {

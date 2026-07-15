@@ -8,7 +8,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https: https://www.googletagmanager.com",
   "font-src 'self' https://cdn.prod.website-files.com",
-  `connect-src 'self' https://ve.dolarapi.com https://pydolarve.org https://www.googletagmanager.com${
+  `connect-src 'self' https://ve.dolarapi.com https://pydolarve.org https://www.googletagmanager.com https://us.i.posthog.com https://us-assets.i.posthog.com${
     !isProd ? " ws: wss: http://localhost:* ws://localhost:*" : ""
   }`,
   "frame-src 'self' https://www.googletagmanager.com",
@@ -27,8 +27,21 @@ const nextConfig: NextConfig = {
         source: "/",
         destination: "/landing.html",
       },
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/array/:path*",
+        destination: "https://us-assets.i.posthog.com/array/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
     ]
   },
+  skipTrailingSlashRedirect: true,
   async headers() {
     return [
       {
