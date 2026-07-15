@@ -35,9 +35,10 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
 
   useEffect(() => {
     if (session) {
-      router.push("/dashboard")
+      const planRedirect = selectedPlan ? `/dashboard?plan=${selectedPlan}` : "/dashboard"
+      router.push(planRedirect)
     }
-  }, [session, router])
+  }, [session, router, selectedPlan])
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault()
