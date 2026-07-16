@@ -77,9 +77,12 @@ function SubscribeContent() {
 
   const planKey = searchParams.get("plan") || "agenda"
   const period = searchParams.get("period") || "monthly"
-  const paymentMode = searchParams.get("paymentMode") || "single"
+  const initialPaymentMode = searchParams.get("paymentMode") || "single"
   const plan = PLANS[planKey] || PLANS.agenda
-  const isInstallment = paymentMode === "installment" && period === "monthly"
+  const [paymentModeState, setPaymentModeState] = useState<"single" | "installment">(
+    initialPaymentMode === "installment" && period === "monthly" ? "installment" : "single"
+  )
+  const isInstallment = paymentModeState === "installment" && period === "monthly"
   const amount = isInstallment ? plan.installmentAmount : period === "yearly" ? plan.yearly : plan.monthly
   const totalLabel = isInstallment ? `/cuota (${plan.installmentTotal} total)` : period === "yearly" ? "/año" : "/mes"
 
@@ -213,9 +216,9 @@ if (success) {
       <div className="pointer-events-none absolute -bottom-40 -left-40 size-[600px] rounded-full bg-[#FFD600]/[0.03] blur-3xl" />
 
       <div className="relative mx-auto max-w-2xl px-4 py-10">
-        <button onClick={() => router.push("/choose-plan")} className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-6 group">
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-6 group">
           <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
-          Volver a planes
+          Volver
         </button>
 
         {/* Plan summary with BCV rate */}
@@ -248,6 +251,56 @@ if (success) {
             </div>
           )}
         </div>
+
+        {/* Payment mode selector — Pago completo vs Cuotas (only for monthly) */}
+        {period === "monthly" && (
+          <div className="relative p-5 rounded-2xl backdrop-blur-xl bg-white/10 border border-white/15 shadow-xl shadow-black/10">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="flex size-7 items-center justify-center rounded-full bg-[#FFD600]/20 text-[10px] font-bold text-[#FFD600]">$</span>
+                <h2 className="text-base font-semibold text-white">Modo de pago</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentModeState("single")}
+                  className={cn(
+                    "p-4 rounded-xl border text-left transition-all duration-200",
+                    !isInstallment
+                      ? "border-[#0066FF]/50 bg-[#0066FF]/10 ring-1 ring-[#0066FF]/30"
+                      : "border-white/10 bg-white/5 hover:bg-white/[0.08] hover:border-white/20"
+                  )}
+                >
+                  <p className="font-bold text-white text-sm">Pago completo</p>
+                  <p className="mt-1 text-2xl font-bold text-[#FFD600] font-mono">${plan.monthly.toFixed(2)}</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">Un solo pago mensual</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentModeState("installment")}
+                  className={cn(
+                    "p-4 rounded-xl border text-left transition-all duration-200",
+                    isInstallment
+                      ? "border-[#0066FF]/50 bg-[#0066FF]/10 ring-1 ring-[#0066FF]/30"
+                      : "border-white/10 bg-white/5 hover:bg-white/[0.08] hover:border-white/20"
+                  )}
+                >
+                  <p className="font-bold text-white text-sm">2 cuotas</p>
+                  <p className="mt-1 text-2xl font-bold text-[#FFD600] font-mono">${plan.installmentAmount.toFixed(2)}</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">Total ${plan.installmentTotal.toFixed(2)} · 2 pagos</p>
+                </button>
+              </div>
+              {isInstallment && nextInstallmentDate && (
+                <div className="mt-3 p-3 rounded-lg bg-[#FFD600]/[0.06] border border-[#FFD600]/15">
+                  <p className="text-xs text-white/60">
+                    <span className="font-semibold text-[#FFD600]">Próximo pago:</span> {nextInstallmentDate} · ${plan.installmentAmount.toFixed(2)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Step 1: Payment method */}

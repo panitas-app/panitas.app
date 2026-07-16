@@ -56,7 +56,7 @@ function computePlanStatus(
         return {
           label: "Renueva tu suscripción",
           href: subscribeHref,
-          className: "border-amber-400/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 animate-pulse",
+          className: "border-yellow-400 bg-yellow-400 text-black hover:bg-yellow-300 hover:border-yellow-300 shadow-lg shadow-yellow-400/30 animate-pulse font-extrabold",
           icon: <RefreshCw className="size-3.5" />,
         }
       }
@@ -69,7 +69,7 @@ function computePlanStatus(
           return {
             label: "Renueva tu suscripción",
             href: subscribeHref,
-            className: "border-amber-400/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 animate-pulse",
+            className: "border-yellow-400 bg-yellow-400 text-black hover:bg-yellow-300 hover:border-yellow-300 shadow-lg shadow-yellow-400/30 animate-pulse font-extrabold",
             icon: <RefreshCw className="size-3.5" />,
           }
         }
@@ -99,7 +99,7 @@ function computePlanStatus(
   return {
     label: "Activa tu plan",
     href: subscribeHref,
-    className: "border-blue-400/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 animate-pulse",
+    className: "border-yellow-400 bg-yellow-400 text-black hover:bg-yellow-300 hover:border-yellow-300 shadow-lg shadow-yellow-400/30 animate-pulse font-extrabold",
     icon: <Zap className="size-3.5" />,
   }
 }
