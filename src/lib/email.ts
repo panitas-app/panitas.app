@@ -16,7 +16,7 @@ import {
 } from "@/lib/email-templates"
 
 const resend = new Resend(process.env.RESEND_API_KEY || "")
-const FROM = "Panitas <onboarding@resend.dev>"
+const FROM = "Panitas <noreply@panitas.app>"
 
 function htmlLayout(subject: string, body: string): string {
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
