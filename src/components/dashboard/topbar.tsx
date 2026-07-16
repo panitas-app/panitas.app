@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { signOut } from "@/lib/auth-client"
-import { LogOut, User, Share2, QrCode, Crown, Sparkles } from "lucide-react"
+import { LogOut, User, Share2, QrCode, Sparkles, Zap, Clock, CheckCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import type { Store, User as UserType } from "@prisma/client"
@@ -21,21 +21,112 @@ import { roleLabels, roleColors } from "@/lib/roles"
 import { cn } from "@/lib/utils"
 import { useBcvRate } from "@/lib/bcv-context"
 
-const planLabels: Record<string, { label: string; color: string }> = {
-  tienda: { label: "Tienda", color: "text-muted-foreground" },
-  agenda: { label: "Agenda", color: "text-purple-400" },
-  negocio: { label: "Negocio", color: "text-blue-400" },
-  empresa: { label: "Empresa", color: "text-primary" },
+interface PlanStatusButton {
+  label: string
+  href: string
+  className: string
+  icon: React.ReactNode
+}
+
+function computePlanStatus(
+  store: Store,
+  planEstado: string,
+  planId: string,
+  planVencimiento: string | null,
+  latestSubscription: {
+    status: string
+    endDate: string | null
+    paymentMode: string
+    secondPaymentDue: string | null
+    secondPaymentPaid: boolean
+    period: string
+  } | null,
+): PlanStatusButton {
+  const subscribeHref = `/subscribe?plan=${encodeURIComponent(planId)}`
+
+  // 1. Plan activo — check if renewal is needed (within 5 days for monthly, 1 day for installment 2nd payment)
+  if (planEstado === "activo") {
+    if (planVencimiento) {
+      const venc = new Date(planVencimiento)
+      const now = new Date()
+      const daysLeft = Math.ceil((venc.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+      // For monthly single payment: renew when ≤5 days left
+      if (latestSubscription?.period === "monthly" && latestSubscription.paymentMode === "single" && daysLeft <= 5 && daysLeft >= 0) {
+        return {
+          label: "Renueva tu suscripción",
+          href: subscribeHref,
+          className: "border-amber-400/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 animate-pulse",
+          icon: <RefreshCw className="size-3.5" />,
+        }
+      }
+
+      // For installment: renew when ≤1 day left for 2nd payment
+      if (latestSubscription?.paymentMode === "installment" && !latestSubscription.secondPaymentPaid && latestSubscription.secondPaymentDue) {
+        const secondDue = new Date(latestSubscription.secondPaymentDue)
+        const daysLeftSecond = Math.ceil((secondDue.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        if (daysLeftSecond <= 1 && daysLeftSecond >= 0) {
+          return {
+            label: "Renueva tu suscripción",
+            href: subscribeHref,
+            className: "border-amber-400/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 animate-pulse",
+            icon: <RefreshCw className="size-3.5" />,
+          }
+        }
+      }
+    }
+
+    // Plan active, no renewal needed
+    return {
+      label: "Plan activo",
+      href: "/dashboard/settings?tab=subscription",
+      className: "border-green-400/20 bg-green-500/5 text-green-300 hover:bg-green-500/10",
+      icon: <CheckCircle className="size-3.5" />,
+    }
+  }
+
+  // 2. Payment pending verification (most recent subscription status is "pending")
+  if (latestSubscription?.status === "pending" || latestSubscription?.status === "verified") {
+    return {
+      label: "Pago en verificación",
+      href: "/dashboard/settings?tab=subscription",
+      className: "border-yellow-400/20 bg-yellow-500/5 text-yellow-300 hover:bg-yellow-500/10",
+      icon: <Clock className="size-3.5" />,
+    }
+  }
+
+  // 3. Default: activate plan (pendiente — no payment submitted yet)
+  return {
+    label: "Activa tu plan",
+    href: subscribeHref,
+    className: "border-blue-400/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 animate-pulse",
+    icon: <Zap className="size-3.5" />,
+  }
 }
 
 export function DashboardTopbar({
   store,
   user,
   role,
+  planEstado,
+  planId,
+  planVencimiento,
+  latestSubscription,
 }: {
   store: Store
   user: UserType | null
   role: Role
+  planEstado: string
+  planId: string
+  planVencimiento: string | null
+  latestSubscription: {
+    status: string
+    endDate: string | null
+    paymentMode: string
+    secondPaymentDue: string | null
+    secondPaymentPaid: boolean
+    period: string
+  } | null
 }) {
   const [qrOpen, setQrOpen] = useState(false)
   const { rate: bcvRate } = useBcvRate()
@@ -48,10 +139,10 @@ export function DashboardTopbar({
         .slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() || "U"
 
-  const planType = store.planType || store.plan
-  const planInfo = planLabels[planType] || planLabels.tienda
   const [storeUrl, setStoreUrl] = useState("")
   useEffect(() => { setStoreUrl(`${window.location.origin}/store/${store.slug}`) }, [store.slug])
+
+  const planButton = computePlanStatus(store, planEstado, planId, planVencimiento, latestSubscription)
 
   async function handleCopyLink() {
     try {
@@ -76,13 +167,16 @@ export function DashboardTopbar({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Plan badge */}
+          {/* Plan status button */}
           <Link
-            href="/pricing"
-            className="hidden items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary transition-all hover:bg-primary/20 md:flex"
+            href={planButton.href}
+            className={cn(
+              "hidden items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all md:flex",
+              planButton.className,
+            )}
           >
-            <Crown className="size-3.5" />
-            {planInfo.label}
+            {planButton.icon}
+            {planButton.label}
           </Link>
 
           {/* Share button */}

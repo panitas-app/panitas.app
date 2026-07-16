@@ -73,11 +73,16 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
   const current = await getCurrentStore()
   if (!current) redirect("/choose-plan")
 
-  const [user, negocio, activeSubscription, bcvRate] = await Promise.all([
+  const [user, negocio, latestSubscription, activeInstallment, bcvRate] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id } }).catch(() => null),
     prisma.negocio.findUnique({
       where: { userId: session.user.id },
-      select: { planId: true, modalidad: true },
+      select: { planId: true, modalidad: true, planEstado: true, planVencimiento: true },
+    }).catch(() => null),
+    prisma.storeSubscription.findFirst({
+      where: { storeId: current.store.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, status: true, endDate: true, paymentMode: true, secondPaymentDue: true, secondPaymentPaid: true, period: true },
     }).catch(() => null),
     prisma.storeSubscription.findFirst({
       where: {
@@ -111,9 +116,24 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
             <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
               <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
               <div className="flex flex-1 flex-col lg:pl-64">
-                <DashboardTopbar store={current.store} user={user} role={current.role} />
+                <DashboardTopbar
+                store={current.store}
+                user={user}
+                role={current.role}
+                planEstado={negocio?.planEstado || "pendiente"}
+                planId={negocio?.planId || "comercio"}
+                planVencimiento={negocio?.planVencimiento?.toISOString() || null}
+                latestSubscription={latestSubscription ? {
+                  status: latestSubscription.status,
+                  endDate: latestSubscription.endDate?.toISOString() || null,
+                  paymentMode: latestSubscription.paymentMode || "single",
+                  secondPaymentDue: latestSubscription.secondPaymentDue?.toISOString() || null,
+                  secondPaymentPaid: latestSubscription.secondPaymentPaid,
+                  period: latestSubscription.period || "monthly",
+                } : null}
+              />
                 <main className="flex-1 p-4 md:p-6">
-                  {activeSubscription && <InstallmentOverdueBanner subscriptionId={activeSubscription.id} dueDate={activeSubscription.secondPaymentDue!} amount={activeSubscription.installmentAmount!} />}
+                  {activeInstallment && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount!} />}
                   <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
                     {children}
                   </UpgradeBannerWrapper>
