@@ -127,7 +127,7 @@ function SubscribeContent() {
     )
   }
 
-  if (success) {
+if (success) {
     return (
       <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#071A33] via-[#0D2B4A] to-[#071A33]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_#0066FF15,_transparent_50%),radial-gradient(ellipse_at_bottom_left,_#FFD60010,_transparent_50%)]" />
@@ -137,8 +137,8 @@ function SubscribeContent() {
               <Check className="size-8 text-green-600" />
             </div>
             <h2 className="text-xl font-bold text-[#102A43]">Solicitud enviada</h2>
-            <p className="text-muted-foreground">Hemos recibido tu solicitud del plan <strong>{plan.name}</strong> ({isInstallment ? `${plan.installmentAmount} cuota inicial` : "pago único"}). Pronto verificaremos el pago y activaremos tu plan.</p>
-            <Button onClick={() => router.push("/dashboard/settings")} className="bg-gradient-to-r from-[#0066FF] to-[#0044CC] text-white">Ir a Configuración</Button>
+            <p className="text-muted-foreground">Hemos recibido tu solicitud del plan <strong>{plan.name}</strong> ({isInstallment ? `${plan.installmentAmount} cuota inicial` : "pago unico"}). Pronto verificaremos el pago y activaremos tu plan.</p>
+            <Button onClick={() => router.push("/dashboard")} className="bg-gradient-to-r from-[#0066FF] to-[#0044CC] text-white">Volver al dashboard</Button>
           </CardContent>
         </Card>
       </div>
