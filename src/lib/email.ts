@@ -26,7 +26,7 @@ function htmlLayout(subject: string, body: string): string {
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;background:#f4f4f5}
   .container{max-width:600px;margin:24px auto;background:#fff;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .header{background:#184BBF;padding:24px;text-align:center}
-  .header img{height:40px;width:auto}
+  .header img{height:40px;width:auto;pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
   .body{padding:24px;color:#102A43;font-size:14px;line-height:1.6}
   .body h2{color:#184BBF;font-size:18px;margin:0 0 16px}
   .footer{background:#f4f4f5;padding:16px;text-align:center;font-size:12px;color:#6b7280}
@@ -41,9 +41,9 @@ function htmlLayout(subject: string, body: string): string {
   .badge-red{background:#fee2e2;color:#991b1b}
 </style></head><body>
 <div class="container">
-  <div class="header"><img src="${baseUrl}/logo.png" alt="Panitas" /></div>
+  <div class="header"><img src="${baseUrl}/logonuevo.png" alt="Panitas" draggable="false" oncontextmenu="return false" /></div>
   <div class="body">${body}</div>
-  <div class="footer">Panitas App &mdash; Hecho en Venezuela con ❤️</div>
+  <div class="footer">Panitas App &mdash; Hecho en Venezuela con &#10084;</div>
 </div></body></html>`
 }
 

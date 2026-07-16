@@ -77,6 +77,20 @@ export function SettingsEmail({ email, initialVerified, initialPhone, initialPho
     }
   }
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6)
+    if (pasted.length > 0) {
+      const newCode = ["", "", "", "", "", ""]
+      for (let i = 0; i < pasted.length; i++) {
+        newCode[i] = pasted[i]
+      }
+      setCode(newCode)
+      const focusIndex = Math.min(pasted.length, 5)
+      inputRefs.current[focusIndex]?.focus()
+    }
+  }
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus()
@@ -166,8 +180,7 @@ export function SettingsEmail({ email, initialVerified, initialPhone, initialPho
               <p className="text-sm text-muted-foreground text-center">
                 Ingresa el codigo de 6 digitos que enviamos a <strong>{email}</strong>
               </p>
-              <div className="flex justify-center gap-2">
-                {code.map((digit, i) => (
+              <div className="flex justify-center gap-2" onPaste={handlePaste}>{code.map((digit, i) => (
                   <Input
                     key={i}
                     ref={(el) => { inputRefs.current[i] = el }}
