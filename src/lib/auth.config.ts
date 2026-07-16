@@ -57,12 +57,25 @@ export const authConfig = {
     },
     async session({ session, token }) {
       if (token.sub && session.user) {
-        session.user.id = token.sub
+        (session.user as any).id = token.sub
+        ;(session.user as any).is_email_verified = token.is_email_verified ?? false
       }
       return session
     },
     async jwt({ token, user }) {
-      if (user) token.sub = user.id
+      if (user) {
+        token.sub = user.id
+        // Fetch is_email_verified from DB for the logged-in user
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { is_email_verified: true },
+          })
+          ;(token as any).is_email_verified = dbUser?.is_email_verified ?? false
+        } catch {
+          ;(token as any).is_email_verified = false
+        }
+      }
       return token
     },
   },
