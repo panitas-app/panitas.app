@@ -17,7 +17,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Upload } from "lucide-react"
 import { DeleteProductButton } from "@/components/dashboard/products-table"
 import { PaginationLinks } from "@/components/ui/pagination-links"
 
@@ -61,12 +61,20 @@ export default async function ProductsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-xl font-semibold">Productos</h1>
-        <Link href="/dashboard/products/new">
-          <Button>
-            <Plus className="size-4" />
-            Nuevo Producto
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/dashboard/products/import">
+            <Button variant="outline">
+              <Upload className="size-4" />
+              Importar Excel
+            </Button>
+          </Link>
+          <Link href="/dashboard/products/new">
+            <Button>
+              <Plus className="size-4" />
+              Nuevo Producto
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">

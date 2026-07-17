@@ -1,8 +1,14 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+
+const CLOUDINARY_CLOUD = "dxgqv585u"
+
+function cv(publicId: string): string {
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/f_auto,q_auto,dpr_auto/${publicId}`
+}
 
 const plans = [
   {
@@ -19,7 +25,7 @@ const plans = [
       "Múltiples profesionales y sedes",
       "Dashboard de reservas y cancelaciones",
     ],
-    videos: ["/videos/plans/agenda/agenda1.mp4", "/videos/plans/agenda/agenda2.mp4", "/videos/plans/agenda/agenda3.mp4"],
+    videos: [cv("panitas/videos/plans/agenda/agenda1"), cv("panitas/videos/plans/agenda/agenda2"), cv("panitas/videos/plans/agenda/agenda3")],
     accent: "#0066FF",
     bgGradient: "from-[#0066FF]/10 to-transparent",
   },
@@ -40,9 +46,9 @@ const plans = [
       "Catálogo de productos ilimitado",
     ],
     videos: [
-      "/videos/plans/emprendedor/emprendedor1.mp4",
-      "/videos/plans/emprendedor/emprendedor2.mp4",
-      "/videos/plans/emprendedor/emprendedor3.mp4",
+      cv("panitas/videos/plans/emprendedor/emprendedor1"),
+      cv("panitas/videos/plans/emprendedor/emprendedor2"),
+      cv("panitas/videos/plans/emprendedor/emprendedor3"),
     ],
     accent: "#FFD600",
     bgGradient: "from-[#FFD600]/10 to-transparent",
@@ -65,9 +71,9 @@ const plans = [
       "API de integración",
     ],
     videos: [
-      "/videos/plans/mayorista/mayorista1.mp4",
-      "/videos/plans/mayorista/mayorista2.mp4",
-      "/videos/plans/mayorista/mayorista3.mp4",
+      cv("panitas/videos/plans/mayorista/mayorista1"),
+      cv("panitas/videos/plans/mayorista/mayorista2"),
+      cv("panitas/videos/plans/mayorista/mayorista3"),
     ],
     accent: "#A78BFA",
     bgGradient: "from-[#A78BFA]/10 to-transparent",
@@ -78,10 +84,34 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
   const [idx, setIdx] = useState(0)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect() } },
+      { rootMargin: "200px" }
+    )
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!isActive) { setIdx(0); setLoaded(false); setError(false) }
   }, [isActive])
+
+  useEffect(() => {
+    const video = containerRef.current?.querySelector("video")
+    if (!video || !isVisible) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { entry.isIntersecting ? video.play().catch(() => {}) : video.pause() },
+      { threshold: 0.1 }
+    )
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [isVisible, idx])
 
   if (!isActive) return null
 
@@ -95,19 +125,23 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
   }
 
   return (
-    <video
-      key={idx}
-      muted
-      playsInline
-      autoPlay
-      preload="metadata"
-      onLoadedData={() => setLoaded(true)}
-      onError={() => setError(true)}
-      onEnded={handleEnded}
-      className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
-    >
-      <source src={videos[idx]} type="video/mp4" />
-    </video>
+    <div ref={containerRef} className="w-full h-full">
+      {isVisible && (
+        <video
+          key={idx}
+          muted
+          playsInline
+          autoPlay
+          preload="metadata"
+          onLoadedData={() => setLoaded(true)}
+          onError={() => setError(true)}
+          onEnded={handleEnded}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+        >
+          <source src={videos[idx]} />
+        </video>
+      )}
+    </div>
   )
 }
 

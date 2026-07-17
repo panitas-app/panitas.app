@@ -87,28 +87,25 @@ function getNavItems(planType: string): SidebarItem[] {
 
   if (planType === "negocio") {
     baseItems.push(
-      { href: "/dashboard/pos", label: "Vender", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+{ href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
       { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] },
     )
   }
 
-  // Empresarial: nueva venta, vendedores, comisiones
+  // Empresarial: vendedores, comisiones
   if (planType === "empresa" || planType === "empresarial") {
     baseItems.push(
-      { href: "/dashboard/nueva-venta", label: "Nueva Venta", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
       { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/sellers", label: "Vendedores", icon: Users, roles: ["admin", "manager"] },
       { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"] },
     )
   }
 
-  if (planType === "emprendedor" || planType === "tienda") {
+if (planType === "emprendedor" || planType === "tienda") {
     baseItems.push(
-      { href: "/dashboard/pos", label: "Vender", icon: ShoppingCart, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
       { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] },
     )
@@ -168,7 +165,7 @@ function sidebarPlanLabel(planId: string, modalidad: string | null | undefined):
 function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps) {
   const pathname = usePathname()
   const [pendingCount, setPendingCount] = useState(0)
-  const [lastViewed, setLastViewed] = useState<string | null>(null)
+  const lastViewedRef = useRef<string | null>(null)
   const prevCountRef = useRef(0)
   const soundCooldownRef = useRef(false)
 
@@ -179,7 +176,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
   const fetchPendingCount = useCallback(async () => {
     try {
       const params = new URLSearchParams({ status: "pending" })
-      if (lastViewed) params.set("after", lastViewed)
+      if (lastViewedRef.current) params.set("after", lastViewedRef.current)
       const res = await fetch(`/api/orders/count?${params}`)
       if (res.ok) {
         const data = await res.json()
@@ -193,7 +190,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
         setPendingCount(newCount)
       }
     } catch (e) { console.error("[unhandled error]", e) }
-  }, [lastViewed])
+  }, [])
 
   useEffect(() => {
     fetchPendingCount()
@@ -203,7 +200,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
 
   useEffect(() => {
     if (isOnOrders && pendingCount > 0) {
-      setLastViewed(new Date().toISOString())
+      lastViewedRef.current = new Date().toISOString()
       setPendingCount(0)
     }
   }, [isOnOrders])

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,17 +47,19 @@ export default function AdminUsersPage() {
   const [adminPassword, setAdminPassword] = useState("")
   const [toggling, setToggling] = useState(false)
 
+  const debouncedSearch = useDebounce(search, 300)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
-    if (search) params.set("search", search)
+    if (debouncedSearch) params.set("search", debouncedSearch)
     if (statusFilter !== "all") params.set("status", statusFilter)
     const res = await fetch(`/api/admin/users?${params}`)
     const json = await res.json()
     setData(json.data || [])
     setTotalPages(json.totalPages || 1)
     setLoading(false)
-  }, [page, search, statusFilter])
+  }, [page, debouncedSearch, statusFilter])
 
   useEffect(() => { fetchData() }, [fetchData])
 

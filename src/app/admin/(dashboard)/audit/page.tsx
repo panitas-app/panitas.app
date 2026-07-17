@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,16 +29,18 @@ export default function AdminAuditPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
+  const debouncedSearch = useDebounce(search, 300)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
-    if (search) params.set("action", search)
+    if (debouncedSearch) params.set("action", debouncedSearch)
     const res = await fetch(`/api/admin/audit?${params}`)
     const json = await res.json()
     setData(json.data || [])
     setTotalPages(json.totalPages || 1)
     setLoading(false)
-  }, [page, search])
+  }, [page, debouncedSearch])
 
   useEffect(() => { fetchData() }, [fetchData])
 
