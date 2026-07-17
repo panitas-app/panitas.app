@@ -12,6 +12,7 @@ const csp = [
     !isProd ? " ws: wss: http://localhost:* ws://localhost:*" : ""
   }`,
   "frame-src 'self' https://www.googletagmanager.com",
+  "media-src 'self' https://res.cloudinary.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
