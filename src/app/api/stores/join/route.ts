@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { csrfGuard } from "@/lib/csrf"
+import { enviarMiembroAceptado } from "@/lib/email"
 
 export async function POST(req: Request) {
   const csrf = csrfGuard(req)
@@ -62,6 +63,20 @@ export async function POST(req: Request) {
       where: { id: invitation.storeId },
       select: { name: true, slug: true },
     })
+
+    // Notify admin that invitation was accepted
+    if (invitation.invitedBy) {
+      const admin = await prisma.user.findUnique({ where: { id: invitation.invitedBy }, select: { email: true } })
+      const newMember = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true } })
+      if (admin?.email && newMember) {
+        enviarMiembroAceptado(admin.email, {
+          tiendaNombre: store?.name || "Tu tienda",
+          nombreMiembro: newMember.name || "Nuevo miembro",
+          emailMiembro: newMember.email || "",
+          rol: invitation.role,
+        }).catch(e => console.error("[team email] accepted error:", e))
+      }
+    }
 
     return NextResponse.json({ success: true, store })
   } catch (e) {

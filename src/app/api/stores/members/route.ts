@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
 import crypto from "crypto"
 import { csrfGuard } from "@/lib/csrf"
+import { enviarInvitacionEquipo } from "@/lib/email"
 
 export async function GET() {
   try {
@@ -70,6 +71,15 @@ export async function POST(req: Request) {
 
     const origin = process.env.NEXTAUTH_URL || "http://localhost:3000"
     const inviteLink = `${origin}/join?token=${token}`
+
+    // Send invitation email
+    const inviter = await prisma.user.findUnique({ where: { id: inviterId }, select: { name: true } })
+    enviarInvitacionEquipo(trimmedEmail, {
+      tiendaNombre: store.name,
+      invitadoPor: inviter?.name || "Un miembro del equipo",
+      rol: role,
+      linkInvitacion: inviteLink,
+    }).catch(e => console.error("[team email] invitation error:", e))
 
     return NextResponse.json({ success: true, inviteLink, email: trimmedEmail })
   } catch (e) {

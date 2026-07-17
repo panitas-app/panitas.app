@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
+import { enviarCambioRol } from "@/lib/email"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
@@ -28,6 +29,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: { role },
     })
+
+    // Notify member of role change
+    const memberUser = await prisma.user.findUnique({ where: { id: target.userId }, select: { email: true } })
+    const changer = await prisma.user.findUnique({ where: { id: currentMemberId }, select: { name: true } })
+    if (memberUser?.email) {
+      enviarCambioRol(memberUser.email, {
+        tiendaNombre: store.name,
+        rolAnterior: target.role,
+        rolNuevo: role,
+        cambiadoPor: changer?.name || "Un administrador",
+      }).catch(e => console.error("[team email] role change error:", e))
+    }
 
     return NextResponse.json({ success: true, member: updated })
   } catch (e) {

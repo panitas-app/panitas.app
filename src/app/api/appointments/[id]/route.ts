@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getCurrentNegocio } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
+import { enviarCitaCompletada } from "@/lib/email"
+import { formatDate, formatTime } from "@/lib/email-helpers"
 
 const VALID_STATUSES = ["pending", "confirmed", "cancelled", "completed"] as const
 
@@ -50,6 +52,18 @@ export async function PATCH(
     data,
     include: { service: true },
   })
+
+  // Send email when appointment is completed
+  if (data.status === "completed" && appointment.customerEmail) {
+    const negocio = await prisma.negocio.findUnique({ where: { id: appointment.negocioId }, select: { nombre: true } })
+    enviarCitaCompletada(appointment.customerEmail, {
+      clienteNombre: appointment.customerName,
+      tiendaNombre: negocio?.nombre || "Tu negocio",
+      fecha: formatDate(appointment.date),
+      hora: formatTime(appointment.time),
+      servicioNombre: updated.service?.name || "Sin servicio",
+    }).catch(e => console.error("[appointment email] completed error:", e))
+  }
 
   return NextResponse.json(updated)
 }

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
-import { enviarBienvenida } from "@/lib/email"
+import { enviarBienvenida, sendEmail } from "@/lib/email"
+import { templateVerifyEmail } from "@/lib/email-templates"
 import { getPostHogClient } from "@/lib/posthog-server"
 
 const PASSWORD_MIN_LENGTH = 6
@@ -143,6 +144,31 @@ export async function POST(req: Request) {
 
       enviarBienvenida(trimmedEmail, trimmedName)
         .catch(e => console.error("[welcome email error]", e))
+
+      // Send verification email automatically on registration
+      try {
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString()
+        const token = crypto.randomUUID()
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            verification_token: JSON.stringify({ codigo, token }),
+            token_expires_at: expiresAt,
+          },
+        })
+
+        const link = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`
+        sendEmail(
+          trimmedEmail,
+          "Verifica tu correo electrónico — Panitas",
+          templateVerifyEmail(trimmedName, codigo, link),
+          "verify_email"
+        ).catch(e => console.error("[verify email error]", e))
+      } catch (err: any) {
+        console.error("[register verify email setup error]", err)
+      }
 
       const phog = getPostHogClient()
       phog.identify({ distinctId: user.id, properties: { plan: planKey } })

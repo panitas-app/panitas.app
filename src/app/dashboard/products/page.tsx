@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Upload } from "lucide-react"
 import { DeleteProductButton } from "@/components/dashboard/products-table"
 import { PaginationLinks } from "@/components/ui/pagination-links"
+import { resolvePlanType } from "@/lib/plans"
 
 const PER_PAGE = 20
 
@@ -30,6 +31,9 @@ export default async function ProductsPage({
 }) {
   const current = await getCurrentStore()
   if (!current) redirect("/choose-plan")
+
+  const resolvedPlan = resolvePlanType(current.store.planType)
+  const canImport = resolvedPlan === "comercio" || resolvedPlan === "mayorista"
 
   const searchParamsResolved = await searchParams
   const { q, category } = searchParamsResolved
@@ -62,12 +66,14 @@ export default async function ProductsPage({
       <div className="flex items-center justify-between">
         <h1 className="font-heading text-xl font-semibold">Productos</h1>
         <div className="flex gap-2">
-          <Link href="/dashboard/products/import">
-            <Button variant="outline">
-              <Upload className="size-4" />
-              Importar Excel
-            </Button>
-          </Link>
+          {canImport && (
+            <Link href="/dashboard/products/import">
+              <Button variant="outline">
+                <Upload className="size-4" />
+                Importar Excel
+              </Button>
+            </Link>
+          )}
           <Link href="/dashboard/products/new">
             <Button>
               <Plus className="size-4" />

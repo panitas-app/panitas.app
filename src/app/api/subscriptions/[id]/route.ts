@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { csrfGuard } from "@/lib/csrf"
+import { enviar2doPagoConfirmado } from "@/lib/email"
+import { formatDate } from "@/lib/email-helpers"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
@@ -59,5 +61,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.storeSubscription.findUnique({ where: { id } })
+
+  // Send second payment confirmed email
+  if (updated && updated.status === "active" && updated.endDate) {
+    const store = await prisma.store.findUnique({ where: { id: updated.storeId }, select: { name: true, userId: true } })
+    if (store?.userId) {
+      const owner = await prisma.user.findUnique({ where: { id: store.userId }, select: { email: true } })
+      if (owner?.email) {
+        enviar2doPagoConfirmado(owner.email, {
+          tiendaNombre: store.name || "Tu tienda",
+          plan: updated.plan,
+          nuevaExpiracion: formatDate(updated.endDate),
+        }).catch(e => console.error("[subscription email] 2nd payment confirmed error:", e))
+      }
+    }
+  }
+
   return NextResponse.json(updated)
 }

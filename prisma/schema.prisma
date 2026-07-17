@@ -375,6 +375,7 @@ model Product {
   stock       Int      @default(0)
   isActive    Boolean  @default(true)
   featured    Boolean  @default(false)
+  lastStockAlert DateTime?
   unidadBase  String   @default("Unidad")
   
   // Wholesale fields
@@ -434,6 +435,8 @@ model Customer {
   state         String?
   documentId    String?  // RIF, cédula, pasaporte
   notes         String?
+  isActive      Boolean  @default(true)
+  lastAutomationContactedAt DateTime?
   totalSpent    Float    @default(0)
   totalOrders   Int      @default(0)
   lastPurchaseAt DateTime?
@@ -490,6 +493,8 @@ model Order {
   notes           String?
   clientNotified  Boolean  @default(false)
   paymentStatus   String   @default("pending") // pending, paid, failed, refunded
+  deliveredAt     DateTime?
+  automationPostPurchaseSent Boolean @default(false)
   bcvRateAtOrder  Float?   // BCV rate frozen at order creation time
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -732,6 +737,7 @@ model StoreSubscription {
   paidAt        DateTime?
   receiptImage  String?
   paymentProofHash String?  // SHA-256 del comprobante para detectar duplicados
+  renewalSentAt DateTime?
 
   // 2-cuotas installment mode
   paymentMode             String?    // "single" | "installment"
@@ -940,6 +946,7 @@ model Appointment {
   id              String   @id @default(cuid())
   customerName    String
   customerPhone   String
+  customerEmail   String?
   date            DateTime // YYYY-MM-DD (sin hora)
   time            String   // "09:30"
   status          String   @default("pending") // pending, confirmed, cancelled, completed

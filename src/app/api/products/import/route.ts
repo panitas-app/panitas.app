@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { parseFile, mapRows, type DetectedColumn, type MappedRow } from "@/lib/import-engine"
+import { resolvePlanType } from "@/lib/plans"
 
 const PLAN_LIMITS: Record<string, number> = {
-  agenda: 50,
   comercio: 200,
-  emprendedor: 200,
   mayorista: 500,
-  empresarial: 500,
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +27,14 @@ export async function POST(req: NextRequest) {
 
     if (!store) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 })
+    }
+
+    const resolvedPlan = resolvePlanType(store.planType || "comercio")
+    if (resolvedPlan !== "comercio" && resolvedPlan !== "mayorista") {
+      return NextResponse.json(
+        { error: "La importación de productos no está disponible en tu plan. Actualiza a Emprendedor o Mayorista." },
+        { status: 403 }
+      )
     }
 
     const formData = await req.formData()
@@ -76,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     // Check product limit
     const currentCount = await prisma.product.count({ where: { storeId: store.id } })
-    const planLimit = PLAN_LIMITS[store.planType || "comercio"] ?? 200
+    const planLimit = PLAN_LIMITS[resolvedPlan] ?? 200
     const remaining = planLimit === -1 ? Infinity : planLimit - currentCount
 
     if (remaining <= 0) {
