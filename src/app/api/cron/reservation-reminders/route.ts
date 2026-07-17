@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { sendEmail } from "@/lib/email"
-import { templateReservationReminder } from "@/lib/email-templates"
+import { enviarRecordatorioCita } from "@/lib/email"
+import { formatDate, formatTime } from "@/lib/email-helpers"
 import { timingSafeEqual } from "crypto"
 
 function safeTokenMatch(provided: string, expected: string): boolean {
@@ -35,8 +35,10 @@ export async function POST(request: NextRequest) {
       where: {
         date: new Date(tomorrowStr),
         status: { in: ["pending", "confirmed"] },
+        customerEmail: { not: null },
       },
       include: {
+        service: { select: { name: true } },
         agenda: { select: { nombre: true } },
         negocio: { select: { nombre: true } },
       },
@@ -44,11 +46,22 @@ export async function POST(request: NextRequest) {
 
     let sent = 0
     for (const apt of appointments) {
-      // Try to find customer email from agenda or negocio
-      const agendaName = apt.agenda?.nombre || apt.negocio?.nombre || ""
-      // Send reminder — we don't have customer email on appointments, only phone
-      // For now, we log the reminder. If there's a way to find email, it would go here
-      console.log(`[reservation-reminder] ${apt.customerName} — ${agendaName} — ${apt.date.toISOString().split("T")[0]} ${apt.time}`)
+      if (!apt.customerEmail) continue
+
+      const tiendaNombre = apt.negocio?.nombre || apt.agenda?.nombre || "Tu negocio"
+      const servicioNombre = apt.service?.name || "Sin servicio"
+      const fecha = formatDate(apt.date)
+      const hora = formatTime(apt.time)
+
+      await enviarRecordatorioCita(apt.customerEmail, {
+        clienteNombre: apt.customerName,
+        tiendaNombre,
+        fecha,
+        hora,
+        servicioNombre,
+        direccion: apt.address || undefined,
+      }).catch(e => console.error(`[cron reservation-reminder] error apt ${apt.id}:`, e))
+
       sent++
     }
 

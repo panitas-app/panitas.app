@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { sendEmail } from "@/lib/email"
+import { enviarPlanExpirado } from "@/lib/email"
+import { getPlanModules } from "@/lib/plans"
+import { formatDate } from "@/lib/email-helpers"
 import { timingSafeEqual } from "crypto"
 
 function safeTokenMatch(provided: string, expected: string): boolean {
@@ -33,7 +35,13 @@ export async function POST(request: NextRequest) {
         planEstado: "activo",
         planVencimiento: { lte: now },
       },
-      select: { id: true, nombre: true, store: { select: { email: true } } },
+      select: {
+        id: true,
+        nombre: true,
+        planId: true,
+        planVencimiento: true,
+        store: { select: { name: true, email: true, userId: true } },
+      },
     })
 
     let deactivated = 0
@@ -43,14 +51,16 @@ export async function POST(request: NextRequest) {
         data: { planEstado: "suspendido" },
       })
 
-      const storeEmail = neg.store?.email
-      if (storeEmail) {
-        sendEmail(
-          storeEmail,
-          "Tu plan ha expirado — Panitas",
-          `<p>Hola ${neg.nombre},</p><p>Tu plan ha expirado. Para reactivarlo, realiza un nuevo pago desde tu panel de suscripción.</p><p>Equipo Panitas</p>`,
-          "plan_expired"
-        ).catch(() => {})
+      // Send proper template email
+      const ownerEmail = neg.store?.email
+      if (ownerEmail && neg.store?.userId) {
+        const modulos = getPlanModules(neg.planId).join(", ") || "módulos básicos"
+        enviarPlanExpirado(ownerEmail, {
+          tiendaNombre: neg.store.name || neg.nombre,
+          plan: neg.planId,
+          fechaExpiracion: neg.planVencimiento ? formatDate(neg.planVencimiento) : "desconocida",
+          modulosPerdidos: modulos,
+        }).catch(() => {})
       }
 
       deactivated++

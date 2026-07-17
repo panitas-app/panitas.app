@@ -2,6 +2,7 @@ import { Resend } from "resend"
 import { prisma } from "@/lib/prisma"
 import {
   templateWelcome,
+  templateWelcomeVerified,
   templateNewOrderToMerchant,
   templateVerifyEmail,
   templatePaymentPending,
@@ -9,10 +10,21 @@ import {
   templatePaymentRejected,
   templateOrderConfirmation,
   templateOrderShipped,
-  templateNewReservation,
-  templateReservationReminder,
+  templateAppointmentConfirmation,
+  templateAppointmentToMerchant,
+  templateAppointmentReminder,
+  templateAppointmentCompleted,
+  templateTeamInvitation,
+  templateTeamInvitationAccepted,
+  templateTeamRoleChanged,
+  templateSubscriptionExpired,
+  templateSubscriptionSecondPaymentReminder,
+  templateSubscriptionSecondPaymentConfirmed,
+  templateSubscriptionRenewalSuccess,
   templateInstallmentReminder,
   templateLowStock,
+  templatePostPurchaseFollowUp,
+  templateInactiveClientReactivation,
 } from "@/lib/email-templates"
 
 const resend = new Resend(process.env.RESEND_API_KEY || "")
@@ -53,6 +65,10 @@ export async function enviarBienvenida(email: string, nombre: string) {
   return sendEmail(email, "¡Bienvenido a Panitas!", templateWelcome(nombre), "welcome")
 }
 
+export async function enviarEmailVerificado(email: string, nombre: string, linkDashboard: string) {
+  return sendEmail(email, "¡Tu correo ha sido verificado!", templateWelcomeVerified(nombre, linkDashboard), "welcome_verified")
+}
+
 export async function enviarAlertaNuevoPedido(emailComerciante: string, nombreTienda: string, idPedido: string, total: number) {
   return sendEmail(
     emailComerciante,
@@ -61,6 +77,119 @@ export async function enviarAlertaNuevoPedido(emailComerciante: string, nombreTi
     "new_order_merchant"
   )
 }
+
+export async function enviarConfirmacionCita(email: string, params: {
+  clienteNombre: string; tiendaNombre: string; fecha: string; hora: string;
+  servicioNombre: string; duracion: number; tipo: string; direccion?: string; notas?: string;
+}) {
+  return sendEmail(email, `Confirmación de cita — ${params.tiendaNombre}`,
+    templateAppointmentConfirmation(params.clienteNombre, params.tiendaNombre, params.fecha, params.hora,
+      params.servicioNombre, params.duracion, params.tipo, params.direccion, params.notas),
+    "appointment_confirmation")
+}
+
+export async function enviarNuevaCitaNegocio(email: string, params: {
+  tiendaNombre: string; clienteNombre: string; telefono: string; email: string | null;
+  fecha: string; hora: string; servicio: string; duracion: number; tipo: string; notas?: string;
+}) {
+  return sendEmail(email, `Nueva cita agendada — ${params.tiendaNombre}`,
+    templateAppointmentToMerchant(params.tiendaNombre, params.clienteNombre, params.telefono,
+      params.email, params.fecha, params.hora, params.servicio, params.duracion, params.tipo, params.notas),
+    "appointment_new")
+}
+
+export async function enviarRecordatorioCita(email: string, params: {
+  clienteNombre: string; tiendaNombre: string; fecha: string; hora: string;
+  servicioNombre: string; direccion?: string;
+}) {
+  return sendEmail(email, `Recordatorio: tu cita es mañana — ${params.tiendaNombre}`,
+    templateAppointmentReminder(params.clienteNombre, params.tiendaNombre, params.fecha, params.hora,
+      params.servicioNombre, params.direccion),
+    "appointment_reminder")
+}
+
+export async function enviarCitaCompletada(email: string, params: {
+  clienteNombre: string; tiendaNombre: string; fecha: string; hora: string; servicioNombre: string;
+}) {
+  return sendEmail(email, `¡Tu cita ha sido completada! — ${params.tiendaNombre}`,
+    templateAppointmentCompleted(params.clienteNombre, params.tiendaNombre, params.fecha, params.hora,
+      params.servicioNombre),
+    "appointment_completed")
+}
+
+export async function enviarInvitacionEquipo(email: string, params: {
+  tiendaNombre: string; invitadoPor: string; rol: string; linkInvitacion: string;
+}) {
+  return sendEmail(email, `Invitación a equipo — ${params.tiendaNombre}`,
+    templateTeamInvitation(params.tiendaNombre, params.invitadoPor, params.rol, params.linkInvitacion),
+    "team_invitation")
+}
+
+export async function enviarMiembroAceptado(email: string, params: {
+  tiendaNombre: string; nombreMiembro: string; emailMiembro: string; rol: string;
+}) {
+  return sendEmail(email, `Nuevo miembro en tu equipo — ${params.tiendaNombre}`,
+    templateTeamInvitationAccepted(params.tiendaNombre, params.nombreMiembro, params.emailMiembro, params.rol),
+    "team_accepted")
+}
+
+export async function enviarCambioRol(email: string, params: {
+  tiendaNombre: string; rolAnterior: string; rolNuevo: string; cambiadoPor: string;
+}) {
+  return sendEmail(email, `Tu rol ha sido actualizado — ${params.tiendaNombre}`,
+    templateTeamRoleChanged(params.tiendaNombre, params.rolAnterior, params.rolNuevo, params.cambiadoPor),
+    "team_role_changed")
+}
+
+export async function enviarPlanExpirado(email: string, params: {
+  tiendaNombre: string; plan: string; fechaExpiracion: string; modulosPerdidos: string;
+}) {
+  return sendEmail(email, `Tu plan ha expirado — ${params.tiendaNombre}`,
+    templateSubscriptionExpired(params.tiendaNombre, params.plan, params.fechaExpiracion, params.modulosPerdidos),
+    "subscription_expired")
+}
+
+export async function enviarRecordatorio2doPago(email: string, params: {
+  tiendaNombre: string; plan: string; monto: number; fechaVencimiento: string;
+}) {
+  return sendEmail(email, `Recordatorio: segundo pago pendiente — ${params.tiendaNombre}`,
+    templateSubscriptionSecondPaymentReminder(params.tiendaNombre, params.plan, params.monto, params.fechaVencimiento),
+    "subscription_second_payment_reminder")
+}
+
+export async function enviar2doPagoConfirmado(email: string, params: {
+  tiendaNombre: string; plan: string; nuevaExpiracion: string;
+}) {
+  return sendEmail(email, `Segundo pago confirmado — ${params.tiendaNombre}`,
+    templateSubscriptionSecondPaymentConfirmed(params.tiendaNombre, params.plan, params.nuevaExpiracion),
+    "subscription_second_payment_confirmed")
+}
+
+export async function enviarRenovacionExitosa(email: string, params: {
+  tiendaNombre: string; plan: string; periodo: string; nuevaExpiracion: string; monto: number;
+}) {
+  return sendEmail(email, `¡Tu plan ha sido renovado! — ${params.tiendaNombre}`,
+    templateSubscriptionRenewalSuccess(params.tiendaNombre, params.plan, params.periodo, params.nuevaExpiracion, params.monto),
+    "subscription_renewal")
+}
+
+export async function enviarPostCompra(email: string, params: {
+  clienteNombre: string; tiendaNombre: string; idPedido: string; productoNombre: string;
+}) {
+  return sendEmail(email, `¿Cómo te fue con tu compra? — ${params.tiendaNombre}`,
+    templatePostPurchaseFollowUp(params.clienteNombre, params.tiendaNombre, params.idPedido, params.productoNombre),
+    "post_purchase")
+}
+
+export async function enviarClienteInactivo(email: string, params: {
+  clienteNombre: string; tiendaNombre: string; ultimaCompra: string;
+}) {
+  return sendEmail(email, `¡Te extrañamos! — ${params.tiendaNombre}`,
+    templateInactiveClientReactivation(params.clienteNombre, params.tiendaNombre, params.ultimaCompra),
+    "inactive_client")
+}
+
+// ─── CORE SEND ─────────────────────────────────────────────────────
 
 export async function sendEmail(to: string, subject: string, htmlBody: string, template?: string) {
   const log = await prisma.emailLog.create({

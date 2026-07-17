@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
 import { createAuditEntry } from "@/lib/audit"
+import { enviarRenovacionExitosa } from "@/lib/email"
+import { formatDate } from "@/lib/email-helpers"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getLocalSuperadmin()
@@ -62,6 +64,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     userId: admin.id,
     metadata: { userId: id, daysAdded: days, newEndDate: currentEnd.toISOString() },
   })
+
+  // Send renewal success email
+  const store = await prisma.store.findUnique({ where: { negocioId: negocio.id }, select: { name: true, userId: true } })
+  if (store?.userId) {
+    const owner = await prisma.user.findUnique({ where: { id: store.userId }, select: { email: true } })
+    if (owner?.email) {
+      enviarRenovacionExitosa(owner.email, {
+        tiendaNombre: store.name || "Tu tienda",
+        plan: negocio.planId,
+        periodo: "monthly",
+        nuevaExpiracion: formatDate(currentEnd),
+        monto: 0,
+      }).catch(e => console.error("[renew email] renewal error:", e))
+    }
+  }
 
   return NextResponse.json({ success: true, newEndDate: currentEnd.toISOString() })
 }

@@ -4,6 +4,8 @@ import { getCurrentNegocio } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
 import { safeStr, safeFloat, safeInt, LIMITS } from "@/lib/validate"
 import { requireAccesoModulo } from "@/lib/plans"
+import { enviarConfirmacionCita, enviarNuevaCitaNegocio } from "@/lib/email"
+import { formatDate, formatTime } from "@/lib/email-helpers"
 
 export async function GET(request: NextRequest) {
   const negocio = await getCurrentNegocio()
@@ -107,6 +109,55 @@ export async function POST(request: NextRequest) {
     },
     include: { service: true },
   })
+
+  // ─── Send emails ────────────────────────────────────────────────
+  const fecha = formatDate(appointment.date)
+  const hora = formatTime(appointment.time)
+  const servicioNombre = appointment.service?.name || "Sin servicio"
+  const duracion = appointment.service?.durationMin || 30
+  const customerEmail = body.customerEmail ? safeStr(body.customerEmail, 200) : null
+
+  // Update appointment with customerEmail if provided
+  if (customerEmail && !appointment.customerEmail) {
+    await prisma.appointment.update({ where: { id: appointment.id }, data: { customerEmail } })
+  }
+
+  const negocio = await prisma.negocio.findUnique({ where: { id: negocioId }, select: { nombre: true, userId: true } })
+  const tiendaNombre = negocio?.nombre || "Tu negocio"
+
+  // Email confirmation to client
+  if (customerEmail) {
+    enviarConfirmacionCita(customerEmail, {
+      clienteNombre: customerName,
+      tiendaNombre,
+      fecha,
+      hora,
+      servicioNombre,
+      duracion,
+      tipo: appointmentType,
+      direccion: appointment.address || undefined,
+      notas: appointment.notes || undefined,
+    }).catch(e => console.error("[appointment email] confirmation error:", e))
+  }
+
+  // Email alert to merchant
+  if (negocio?.userId) {
+    const owner = await prisma.user.findUnique({ where: { id: negocio.userId }, select: { email: true } })
+    if (owner?.email) {
+      enviarNuevaCitaNegocio(owner.email, {
+        tiendaNombre,
+        clienteNombre: customerName,
+        telefono: customerPhone,
+        email: customerEmail,
+        fecha,
+        hora,
+        servicio: servicioNombre,
+        duracion,
+        tipo: appointmentType,
+        notas: appointment.notes || undefined,
+      }).catch(e => console.error("[appointment email] merchant alert error:", e))
+    }
+  }
 
   return NextResponse.json(appointment, { status: 201 })
 }

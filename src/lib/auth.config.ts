@@ -20,11 +20,12 @@ export const authConfig = {
           // Manually link Google account if not already linked
           const hasGoogleAccount = existingUser.accounts.some(a => a.provider === "google")
           if (!hasGoogleAccount && account.providerAccountId) {
+            let linked = false
             try {
               await prisma.account.create({
                 data: {
                   userId: existingUser.id,
-                  type: account.type || "oauth",
+                  type: account.type || "OAuth",
                   provider: "google",
                   providerAccountId: account.providerAccountId,
                   refresh_token: account.refresh_token,
@@ -36,14 +37,18 @@ export const authConfig = {
                   session_state: typeof account.session_state === "string" ? account.session_state : null,
                 },
               })
+              linked = true
             } catch (err: any) {
               if (err?.code !== "P2002") {
                 console.error("[auth] Failed to link Google account:", err)
               }
             }
+            // Only send welcome email on the FIRST Google sign-in (when linking)
+            if (linked) {
+              enviarBienvenida(profile.email, profile.name || "Usuario")
+                .catch(e => console.error("[welcome email error]", e))
+            }
           }
-          enviarBienvenida(profile.email, profile.name || "Usuario")
-            .catch(e => console.error("[welcome email error]", e))
         }
         return true
       }

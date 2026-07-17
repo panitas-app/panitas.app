@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { enviarEmailVerificado } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  // Send welcome verified email
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+  enviarEmailVerificado(user.email!, user.name || "Usuario", `${baseUrl}/dashboard`)
+    .catch(e => console.error("[verify-email] welcome verified error:", e))
+
   return NextResponse.json({ success: true })
 }
 
@@ -93,6 +99,13 @@ export async function GET(req: NextRequest) {
       token_expires_at: null,
     },
   })
+
+  // Send welcome verified email
+  if (user.email) {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    enviarEmailVerificado(user.email, user.name || "Usuario", `${baseUrl}/dashboard`)
+      .catch(e => console.error("[verify-email] welcome verified error:", e))
+  }
 
   return NextResponse.redirect(new URL("/onboarding?verified=true", req.url))
 }

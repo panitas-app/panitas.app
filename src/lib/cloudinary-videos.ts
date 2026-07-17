@@ -1,7 +1,7 @@
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dxgqv585u"
 
 export function getVideoUrl(publicId: string): string {
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/${publicId}`
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/f_auto,q_auto/${publicId}`
 }
 
 export function getVideoPosterUrl(publicId: string, options?: { width?: number; quality?: number }): string {
