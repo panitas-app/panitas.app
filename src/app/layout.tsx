@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B. Sin complicaciones técnicas, adaptado a Venezuela.",
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/faviconnew.jpeg", type: "image/jpeg" }],
-    apple: "/faviconnew.jpeg",
-    shortcut: "/faviconnew.jpeg",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.png",
   },
   appleWebApp: {
     capable: true,

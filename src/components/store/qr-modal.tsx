@@ -75,7 +75,7 @@ export function QrModal({ open, onClose, storeName, storeUrl, storeLogo }: QrMod
           {/* Panitas logo */}
           <div className="relative z-10 pt-10 pb-3 flex items-center justify-center">
             <img
-              src="/panitas-logo.png"
+              src="/logo.png"
               alt="Panitas"
               className="h-9 w-auto"
             />

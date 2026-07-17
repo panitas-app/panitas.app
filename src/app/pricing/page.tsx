@@ -92,7 +92,7 @@ export default function PricingPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-bold text-[#050505]">
             <span className="flex size-8 items-center justify-center rounded-lg bg-primary">
-              <img src="/favicon.jpg" alt="Panitas" className="size-5 object-contain" />
+              <img src="/favicon.png" alt="Panitas" className="size-5 object-contain" />
             </span>
             PANITAS
           </Link>

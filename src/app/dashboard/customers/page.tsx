@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,11 +43,13 @@ export default function CustomersPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
+  const debouncedSearch = useDebounce(search, 300)
+
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ sort, order, page: String(page) })
-      if (search) params.set("q", search)
+      if (debouncedSearch) params.set("q", debouncedSearch)
       const res = await fetch(`/api/customers?${params}`)
       if (res.ok) {
         const json = await res.json()
@@ -57,7 +60,7 @@ export default function CustomersPage() {
     } catch (e) { console.error("[unhandled error]", e) } finally {
       setLoading(false)
     }
-  }, [search, sort, order, page])
+  }, [debouncedSearch, sort, order, page])
 
   useEffect(() => { fetchCustomers() }, [fetchCustomers])
 
