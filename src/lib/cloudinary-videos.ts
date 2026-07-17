@@ -1,37 +1,11 @@
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dxgqv585u"
 
-export interface VideoTransformOptions {
-  width?: number
-  quality?: "auto" | number
-  format?: "auto" | "mp4" | "webm" | "av1"
-  dpr?: "auto" | number
-}
-
-export function getVideoUrl(publicId: string, options?: VideoTransformOptions): string {
-  const transformations: string[] = []
-
-  // Format auto - serves best format for browser (WebM/AV1/MP4)
-  transformations.push(`f_${options?.format || "auto"}`)
-
-  // Quality auto - adapts to content complexity
-  transformations.push(`q_${options?.quality || "auto"}`)
-
-  // DPR auto - adapts to device pixel ratio
-  transformations.push(`dpr_${options?.dpr || "auto"}`)
-
-  // Width constraint (optional)
-  if (options?.width) {
-    transformations.push(`w_${options.width}`)
-  }
-
-  const tf = transformations.join(",")
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/${tf}/${publicId}`
+export function getVideoUrl(publicId: string): string {
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/video/upload/${publicId}`
 }
 
 export function getVideoPosterUrl(publicId: string, options?: { width?: number; quality?: number }): string {
-  const transformations: string[] = []
-  transformations.push("f_webp")
-  transformations.push(`q_${options?.quality || 60}`)
+  const transformations: string[] = ["f_webp", `q_${options?.quality || 60}`]
   if (options?.width) transformations.push(`w_${options.width}`)
   else transformations.push("w_400")
 
