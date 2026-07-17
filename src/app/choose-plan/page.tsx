@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react"
 const CLOUDINARY_CLOUD = "dxgqv585u"
 
 function cv(publicId: string): string {
-  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/f_auto,q_auto,dpr_auto/${publicId}`
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/${publicId}`
 }
 
 const plans = [
