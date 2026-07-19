@@ -8,10 +8,15 @@ export default async function NewProductPage() {
   const current = await getCurrentStore()
   if (!current) redirect("/choose-plan")
 
-  const categories = await prisma.category.findMany({
-    where: { storeId: current.store.id },
-    orderBy: { name: "asc" },
-  })
+  let categories: any[] = []
+  try {
+    categories = await prisma.category.findMany({
+      where: { storeId: current.store.id },
+      orderBy: { name: "asc" },
+    })
+  } catch (e) {
+    console.error("[new product page] categories", e)
+  }
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-4 md:p-8 bg-slate-50/50">

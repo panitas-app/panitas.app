@@ -28,10 +28,15 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   }
   if (!current) redirect("/choose-plan")
 
-  const freshStore = await prisma.store.findUnique({
-    where: { id: current.store.id },
-    select: { planType: true, plan: true },
-  })
+  let freshStore: { planType: string; plan: string } | null = null
+  try {
+    freshStore = await prisma.store.findUnique({
+      where: { id: current.store.id },
+      select: { planType: true, plan: true },
+    })
+  } catch (e) {
+    console.error("[dashboard page freshStore]", e)
+  }
   const planType = freshStore?.planType || freshStore?.plan || current.store.plan || "tienda"
   const rate = await getEffectiveRate()
 

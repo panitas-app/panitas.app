@@ -5,6 +5,7 @@ import { sendEmail, enviar2doPagoConfirmado, enviarRenovacionExitosa } from "@/l
 import { templatePaymentVerified, templatePaymentRejected } from "@/lib/email-templates"
 import { formatDate } from "@/lib/email-helpers"
 import { createAuditEntry } from "@/lib/audit"
+import { planIdToStorePlanType } from "@/lib/plans"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getLocalSuperadmin()
@@ -54,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     await prisma.store.update({
       where: { id: existing.storeId },
-      data: { plan: existing.plan, planStatus: "activo" },
+      data: { plan: existing.plan, planType: planIdToStorePlanType(existing.plan), planStatus: "activo" },
     })
 
     const store = await prisma.store.findUnique({ where: { id: existing.storeId } })

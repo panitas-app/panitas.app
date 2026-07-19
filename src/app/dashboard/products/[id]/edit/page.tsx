@@ -14,13 +14,23 @@ export default async function EditProductPage({
   const current = await getCurrentStore()
   if (!current) redirect("/choose-plan")
 
-  const product = await prisma.product.findUnique({ where: { id } })
+  let product: any = null
+  try {
+    product = await prisma.product.findUnique({ where: { id } })
+  } catch (e) {
+    console.error("[edit product page] product", e)
+  }
   if (!product || product.storeId !== current.store.id) notFound()
 
-  const categories = await prisma.category.findMany({
-    where: { storeId: current.store.id },
-    orderBy: { name: "asc" },
-  })
+  let categories: any[] = []
+  try {
+    categories = await prisma.category.findMany({
+      where: { storeId: current.store.id },
+      orderBy: { name: "asc" },
+    })
+  } catch (e) {
+    console.error("[edit product page] categories", e)
+  }
 
   return (
     <div className="w-full flex flex-col items-center p-4 md:p-8 bg-slate-50/50">
