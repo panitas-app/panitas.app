@@ -14,9 +14,10 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 export function safeStr(v: unknown, max: number = MAX_SHORT, min: number = 0): string | null {
   if (v === undefined || v === null) return null
-  if (typeof v !== "string") return undefined as any
+  if (typeof v === "number" || typeof v === "boolean") v = String(v)
+  if (typeof v !== "string") return null
   const trimmed = v.trim()
-  if (trimmed.length < min) return undefined as any
+  if (trimmed.length < min) return null
   return trimmed.slice(0, max)
 }
 
@@ -29,18 +30,35 @@ export function requireStr(v: unknown, max: number, min: number = 1): string | u
 
 export function safeFloat(v: unknown, max: number = MAX_PRICE, min: number = 0): number | null {
   if (v === undefined || v === null || v === "") return null
-  const n = typeof v === "number" ? v : parseFloat(String(v))
-  if (!Number.isFinite(n)) return null
-  if (n < min || n > max) return null
+  if (typeof v === "number") {
+    if (!Number.isFinite(v) || v < min || v > max) return null
+    return v
+  }
+  let s = String(v).trim()
+  // Strip currency symbols and common prefixes: $, €, Bs., Bs/S, USD
+  s = s.replace(/[\$\€\£]/g, "").replace(/Bs\.?\s*\/?\s*S?/gi, "").replace(/USD/gi, "").trim()
+  // Handle comma as decimal separator: "15,50" → "15.50" (only if comma is last separator)
+  if (/^\d{1,3}(\.\d{3})*,\d{1,2}$/.test(s)) {
+    s = s.replace(/\./g, "").replace(",", ".")
+  } else if (/^\d+,\d+$/.test(s)) {
+    s = s.replace(",", ".")
+  }
+  const n = parseFloat(s)
+  if (!Number.isFinite(n) || n < min || n > max) return null
   return n
 }
 
 export function safeInt(v: unknown, max: number = MAX_STOCK, min: number = 0): number | null {
   if (v === undefined || v === null || v === "") return null
-  const n = typeof v === "number" ? v : parseInt(String(v), 10)
-  if (!Number.isFinite(n)) return null
-  if (!Number.isInteger(n)) return null
-  if (n < min || n > max) return null
+  if (typeof v === "number") {
+    if (!Number.isFinite(v) || !Number.isInteger(v) || v < min || v > max) return null
+    return v
+  }
+  let s = String(v).trim()
+  // Strip commas used as thousands separator: "1,500" → "1500"
+  if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, "")
+  const n = parseInt(s, 10)
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < min || n > max) return null
   return n
 }
 

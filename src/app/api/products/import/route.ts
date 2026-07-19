@@ -5,8 +5,8 @@ import { parseFile, mapRows, type DetectedColumn, type MappedRow } from "@/lib/i
 import { resolvePlanType } from "@/lib/plans"
 
 const PLAN_LIMITS: Record<string, number> = {
-  comercio: 200,
-  mayorista: 500,
+  comercio: 500,
+  mayorista: -1,
 }
 
 export async function POST(req: NextRequest) {
