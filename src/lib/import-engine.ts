@@ -5,19 +5,19 @@ import { safeStr, safeFloat, safeInt, safeBool } from "./validate"
 
 // Known product field names (Spanish + English aliases)
 export const FIELD_ALIASES: Record<string, string[]> = {
-  name: ["nombre", "producto", "name", "product", "articulo", "artículo", "descripcion", "descripción", "description"],
-  price: ["precio", "price", "venta", "pvp", "pvp usd", "precio venta"],
-  costPrice: ["costo", "cost", "costo usd", "precio costo", "cost price", "costo unitario"],
-  sku: ["sku", "codigo", "código", "code", "cod", "ref", "referencia"],
-  stock: ["stock", "cantidad", "qty", "quantity", "inventario", "existencias", "disponible"],
-  unidadBase: ["unidad", "unit", "medida", "um", "unidad base", "unid"],
-  description: ["detalle", "detalles", "info", "informacion", "información", "obs", "observaciones"],
-  isActive: ["activo", "active", "estado", "habilitado", "disponible"],
-  featured: ["destacado", "featured", "promocion", "promoción"],
-  isWholesale: ["mayorista", "wholesale", "mayoreo"],
-  wholesalePrice: ["precio mayorista", "wholesale price", "precio mayoreo"],
-  wholesaleLabel: ["etiqueta mayorista", "wholesale label", "minimo mayoreo"],
-  categoryId: ["categoria", "categoría", "category", "cat", "grupo"],
+  name: ["nombre", "producto", "name", "product", "articulo", "artículo", "descripcion", "descripción", "description", "denominacion", "denominación", "item", "articulo name", "nombre del producto", "producto nombre", "producto name"],
+  price: ["precio", "price", "venta", "pvp", "pvp usd", "precio venta", "precio de venta", "precio usd", "precio final", "precio venta usd", "pv", "pvps", "sell price", "retail price", "public price", "precio publico", "precio público"],
+  costPrice: ["costo", "cost", "costo usd", "precio costo", "cost price", "costo unitario", "costo unitario usd", "precio de costo", "costo base", "cost base", "purchase price", "precio compra", "precio de compra", "costo de compra", "costo promedio"],
+  sku: ["sku", "codigo", "código", "code", "cod", "ref", "referencia", "cod. barras", "código de barras", "barcode", "codigo de barras", "referencia producto", "cod producto", "cod. producto"],
+  stock: ["stock", "cantidad", "qty", "quantity", "inventario", "existencias", "disponible", "existencia", "stock actual", "cantidad disponible", "inventario actual", "disponibilidad", "stock disponible", "unidades"],
+  unidadBase: ["unidad", "unit", "medida", "um", "unidad base", "unid", "unidades", "unit of measure", "uom", "medida base", "tipo unidad", "unidad de medida"],
+  description: ["detalle", "detalles", "info", "informacion", "información", "obs", "observaciones", "notas", "note", "notes", "comments", "comentarios", "descripcion producto", "descripción del producto", "product description"],
+  isActive: ["activo", "active", "estado", "habilitado", "disponible", "status", "estatus", "habilitada", "enabled", "is active"],
+  featured: ["destacado", "featured", "promocion", "promoción", "promoted", "es destacado", "principal", "highlight"],
+  isWholesale: ["mayorista", "wholesale", "mayoreo", "mayorista activo", "wholesale enabled", "venta al mayor"],
+  wholesalePrice: ["precio mayorista", "wholesale price", "precio mayoreo", "precio mayoreo usd", "wholesale usd", "precio al mayor", "mayorista precio"],
+  wholesaleLabel: ["etiqueta mayorista", "wholesale label", "minimo mayoreo", "min mayoreo", "cantidad minima mayoreo", "mínimo mayoreo"],
+  categoryId: ["categoria", "categoría", "category", "cat", "grupo", "grupo producto", "tipo", "type", "category id", "id categoria"],
 }
 
 export interface DetectedColumn {
@@ -66,7 +66,7 @@ function createFuzzyMatcher() {
     }
   }
 
-  return { allAliases, aliasToField, fuse: new Fuse(allAliases, { threshold: 0.4, includeScore: true }) }
+  return { allAliases, aliasToField, fuse: new Fuse(allAliases, { threshold: 0.45, includeScore: true }) }
 }
 
 const matcher = createFuzzyMatcher()
@@ -78,6 +78,15 @@ function detectColumn(header: string): { field: string | null; confidence: numbe
   for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
     if (aliases.includes(normalized)) {
       return { field, confidence: 1.0 }
+    }
+  }
+
+  // Contains check: if header contains an alias as a whole word
+  for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+    for (const alias of aliases) {
+      if (normalized.includes(alias) && alias.length >= 3) {
+        return { field, confidence: 0.9 }
+      }
     }
   }
 
