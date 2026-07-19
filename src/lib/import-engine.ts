@@ -20,6 +20,16 @@ export const FIELD_ALIASES: Record<string, string[]> = {
   categoryId: ["categoria", "categoría", "category", "cat", "grupo", "grupo producto", "tipo", "type", "category id", "id categoria"],
 }
 
+// All known field keywords for header detection
+const ALL_FIELD_KEYWORDS = new Set<string>()
+for (const aliases of Object.values(FIELD_ALIASES)) {
+  for (const alias of aliases) {
+    ALL_FIELD_KEYWORDS.add(alias.toLowerCase())
+  }
+}
+// Extra keywords that appear in header rows but aren't field aliases
+const HEADER_SIGNAL_KEYWORDS = ["foto", "image", "imagen", "img", "codigo", "código", "cod"]
+
 export interface DetectedColumn {
   header: string
   mappedField: string | null
@@ -36,6 +46,8 @@ export interface ImportPreview {
   rows: ParsedRow[]
   totalRows: number
   errors: string[]
+  categories: string[]
+  headerRowIndex: number
 }
 
 export interface MappedRow {
@@ -52,9 +64,93 @@ export interface MappedRow {
   wholesalePrice: number | null
   wholesaleLabel: string | null
   categoryId: string | null
+  category: string | null
 }
 
-// Fuzzy matcher for column headers
+// ─── Smart Header Detection ───────────────────────────────────────────────
+
+function isHeaderKeyword(val: string): boolean {
+  const lower = val.toLowerCase().trim()
+  if (ALL_FIELD_KEYWORDS.has(lower)) return true
+  for (const kw of HEADER_SIGNAL_KEYWORDS) {
+    if (lower.includes(kw)) return true
+  }
+  return false
+}
+
+export function detectHeaderRow(rawRows: (string | number | null)[][]): number {
+  for (let i = 0; i < Math.min(rawRows.length, 30); i++) {
+    const row = rawRows[i]
+    if (!row) continue
+    let matches = 0
+    for (const cell of row) {
+      if (cell !== null && cell !== undefined && cell !== "") {
+        if (isHeaderKeyword(String(cell))) matches++
+      }
+    }
+    if (matches >= 2) return i
+  }
+  return 0 // Fallback: use first row
+}
+
+export function extractCategories(rawRows: (string | number | null)[][], headerRowIndex: number): { name: string; startRow: number }[] {
+  const categories: { name: string; startRow: number }[] = []
+
+  for (let i = headerRowIndex + 1; i < rawRows.length; i++) {
+    const row = rawRows[i]
+    if (!row) continue
+
+    const colA = row[0] != null ? String(row[0]).trim() : ""
+    const hasOtherData = row.slice(1).some((c) => c !== null && c !== undefined && c !== "")
+
+    // Category header: first column has text, rest is empty
+    if (colA.length >= 3 && !hasOtherData) {
+      // Skip if it looks like metadata (address, phone, etc.)
+      if (/^\d/.test(colA)) continue // starts with number
+      if (/TEL|FONO|CEL|PHONE|DIR|INSTAGRAM|FACEBOOK/i.test(colA)) continue
+      categories.push({ name: colA, startRow: i })
+    }
+  }
+
+  return categories
+}
+
+function assignCategoryToRow(
+  rowIndex: number,
+  categories: { name: string; startRow: number }[],
+): string | null {
+  let currentCat: string | null = null
+  for (const cat of categories) {
+    if (rowIndex >= cat.startRow) {
+      currentCat = cat.name
+    } else {
+      break
+    }
+  }
+  return currentCat
+}
+
+// ─── Raw row extraction (for AI parsing) ──────────────────────────────────
+
+export function extractRawRows(buffer: Buffer, filename: string): (string | number | null)[][] {
+  const ext = filename.toLowerCase().split(".").pop()
+
+  if (ext === "csv") {
+    const text = buffer.toString("utf-8")
+    const result = Papa.parse(text, { header: false, skipEmptyLines: true, dynamicTyping: false })
+    return result.data as (string | number | null)[][]
+  }
+
+  const workbook = XLSX.read(buffer, { type: "buffer" })
+  const sheetName = workbook.SheetNames[0]
+  if (!sheetName) return []
+
+  const sheet = workbook.Sheets[sheetName]
+  return XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: null })
+}
+
+// ─── Fuzzy Matcher ────────────────────────────────────────────────────────
+
 function createFuzzyMatcher() {
   const allAliases: string[] = []
   const aliasToField: Record<string, string> = {}
@@ -102,45 +198,121 @@ function detectColumn(header: string): { field: string | null; confidence: numbe
   return { field: null, confidence: 0 }
 }
 
+// ─── Main Parse Function ──────────────────────────────────────────────────
+
 export function parseFile(buffer: Buffer, filename: string): ImportPreview {
   const ext = filename.toLowerCase().split(".").pop()
-  let workbook: XLSX.WorkBook
+  const isExcel = ext === "xlsx" || ext === "xls"
 
   if (ext === "csv") {
-    // Parse CSV with papaparse
-    const text = buffer.toString("utf-8")
-    const result = Papa.parse(text, { header: true, skipEmptyLines: true, dynamicTyping: false })
-    const ws = XLSX.utils.json_to_sheet(result.data as Record<string, unknown>[])
-    workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, ws, "Sheet1")
-  } else {
-    // Parse Excel
-    workbook = XLSX.read(buffer, { type: "buffer" })
+    return parseCSV(buffer)
   }
 
-  const sheetName = workbook.SheetNames[0]
-  if (!sheetName) {
-    return { columns: [], rows: [], totalRows: 0, errors: ["El archivo está vacío"] }
-  }
+  return parseExcel(buffer)
+}
 
-  const sheet = workbook.Sheets[sheetName]
+function parseCSV(buffer: Buffer): ImportPreview {
+  const text = buffer.toString("utf-8")
+  const result = Papa.parse(text, { header: true, skipEmptyLines: true, dynamicTyping: false })
+  const ws = XLSX.utils.json_to_sheet(result.data as Record<string, unknown>[])
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, ws, "Sheet1")
+  const sheet = workbook.Sheets["Sheet1"]
   const jsonData = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { defval: null })
   const headers = Object.keys(jsonData[0] || {})
 
-  // Detect columns
   const columns: DetectedColumn[] = headers.map((header) => {
     const { field, confidence } = detectColumn(header)
     const sampleValues = jsonData.slice(0, 5).map((row) => String(row[header] ?? "")).filter(Boolean)
     return { header, mappedField: field, confidence, sampleValues }
   })
 
+  return { columns, rows: jsonData, totalRows: jsonData.length, errors: [], categories: [], headerRowIndex: 0 }
+}
+
+function parseExcel(buffer: Buffer): ImportPreview {
+  const workbook = XLSX.read(buffer, { type: "buffer" })
+  const sheetName = workbook.SheetNames[0]
+  if (!sheetName) {
+    return { columns: [], rows: [], totalRows: 0, errors: ["El archivo está vacío"], categories: [], headerRowIndex: 0 }
+  }
+
+  const sheet = workbook.Sheets[sheetName]
+
+  // Get raw rows for smart detection
+  const rawRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, { header: 1, defval: null })
+  if (rawRows.length === 0) {
+    return { columns: [], rows: [], totalRows: 0, errors: ["El archivo está vacío"], categories: [], headerRowIndex: 0 }
+  }
+
+  // Smart header detection
+  const headerRowIndex = detectHeaderRow(rawRows)
+  const headerRow = rawRows[headerRowIndex]
+  if (!headerRow) {
+    return { columns: [], rows: [], totalRows: 0, errors: ["No se encontraron encabezados"], categories: [], headerRowIndex: 0 }
+  }
+
+  // Extract headers from the detected row (filter out nulls)
+  const headers: string[] = []
+  const headerIndices: number[] = []
+  for (let c = 0; c < headerRow.length; c++) {
+    const val = headerRow[c]
+    if (val !== null && val !== undefined && val !== "") {
+      headers.push(String(val).trim())
+      headerIndices.push(c)
+    }
+  }
+
+  if (headers.length === 0) {
+    return { columns: [], rows: [], totalRows: 0, errors: ["No se encontraron encabezados"], categories: [], headerRowIndex: 0 }
+  }
+
+  // Extract categories
+  const categories = extractCategories(rawRows, headerRowIndex)
+  const categoryNames = categories.map((c) => c.name)
+
+  // Build data rows starting from header row + 1
+  const dataRows: ParsedRow[] = []
+  for (let r = headerRowIndex + 1; r < rawRows.length; r++) {
+    const rawRow = rawRows[r]
+    if (!rawRow) continue
+
+    // Skip empty rows
+    const hasData = rawRow.some((c) => c !== null && c !== undefined && c !== "")
+    if (!hasData) continue
+
+    // Skip category separator rows (only col A has text, rest empty)
+    const colA = rawRow[0] != null ? String(rawRow[0]).trim() : ""
+    const hasOtherData = rawRow.slice(1).some((c) => c !== null && c !== undefined && c !== "")
+    if (colA.length >= 3 && !hasOtherData) continue
+
+    // Build ParsedRow using detected headers
+    const parsedRow: ParsedRow = { _category: assignCategoryToRow(r, categories) }
+    for (let h = 0; h < headers.length; h++) {
+      const colIdx = headerIndices[h]
+      parsedRow[headers[h]] = rawRow[colIdx] ?? null
+    }
+    dataRows.push(parsedRow)
+  }
+
+  // Detect columns
+  const columns: DetectedColumn[] = headers.map((header) => {
+    const { field, confidence } = detectColumn(header)
+    const sampleValues = dataRows.slice(0, 5).map((row) => String(row[header] ?? "")).filter(Boolean)
+    return { header, mappedField: field, confidence, sampleValues }
+  })
+
   return {
     columns,
-    rows: jsonData,
-    totalRows: jsonData.length,
+    rows: dataRows,
+    totalRows: dataRows.length,
     errors: [],
+    categories: categoryNames,
+    headerRowIndex,
   }
 }
+
+// ─── Row Mapping ──────────────────────────────────────────────────────────
 
 export function mapRows(rows: ParsedRow[], columns: DetectedColumn[]): { mapped: MappedRow[]; errors: string[] } {
   const mapped: MappedRow[] = []
@@ -171,6 +343,8 @@ export function mapRows(rows: ParsedRow[], columns: DetectedColumn[]): { mapped:
       continue
     }
 
+    const category = row._category as string | null
+
     mapped.push({
       name,
       price,
@@ -185,6 +359,7 @@ export function mapRows(rows: ParsedRow[], columns: DetectedColumn[]): { mapped:
       wholesalePrice: extractWholesalePrice(row, fieldMap),
       wholesaleLabel: extractWholesaleLabel(row, fieldMap),
       categoryId: null, // Will be resolved by caller
+      category,
     })
   }
 
