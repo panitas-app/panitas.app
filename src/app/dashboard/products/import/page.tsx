@@ -41,8 +41,14 @@ export default async function ImportPage() {
   }
 
   return (
-    <div className="p-6">
-      <ImportWizard storeId={store.id} categories={categories} />
+    <div className="relative min-h-full">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute top-0 left-1/4 size-96 rounded-full bg-primary/[0.04] blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 size-96 rounded-full bg-primary/[0.03] blur-3xl" />
+      </div>
+      <div className="p-6">
+        <ImportWizard storeId={store.id} categories={categories} />
+      </div>
     </div>
   )
 }
