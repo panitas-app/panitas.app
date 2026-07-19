@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     } else if (existing.period === "yearly") {
       endDate.setFullYear(endDate.getFullYear() + 1)
     } else {
-      endDate.setMonth(endDate.getMonth() + 1)
+      endDate.setDate(endDate.getDate() + 30)
     }
 
     updateData.status = status

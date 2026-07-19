@@ -30,46 +30,60 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const body = await req.json()
-  const { reference, bankOrigin, paidAt, receiptImage } = body
+  const { reference, bankOrigin, paidAt, receiptImage, paymentType } = body
 
-  // Extend endDate by 15 days if subscription is active
+  // paymentType: "installment" (2nd cuota, +15 days) or "full" (upgrade to full payment, +30 days)
+  const isFullPayment = paymentType === "full"
+  const daysToAdd = isFullPayment ? 30 : 15
+
+  const now = new Date()
+
+  // Update subscription: mark 2nd payment paid
+  const updateData: any = {
+    secondPaymentPaid: true,
+    secondPaymentPaidAt: paidAt ? new Date(paidAt) : now,
+    secondPaymentReference: reference || null,
+    secondPaymentBankOrigin: bankOrigin || null,
+    secondPaymentReceipt: receiptImage || null,
+  }
+
   if (subscription.status === "active" && subscription.endDate) {
     const extendedEnd = new Date(subscription.endDate)
-    extendedEnd.setDate(extendedEnd.getDate() + 15)
-    await prisma.storeSubscription.update({
-      where: { id },
-      data: {
-        secondPaymentPaid: true,
-        secondPaymentPaidAt: paidAt ? new Date(paidAt) : new Date(),
-        secondPaymentReference: reference || null,
-        secondPaymentBankOrigin: bankOrigin || null,
-        secondPaymentReceipt: receiptImage || null,
-        endDate: extendedEnd,
-      },
-    })
-  } else {
-    await prisma.storeSubscription.update({
-      where: { id },
-      data: {
-        secondPaymentPaid: true,
-        secondPaymentPaidAt: paidAt ? new Date(paidAt) : new Date(),
-        secondPaymentReference: reference || null,
-        secondPaymentBankOrigin: bankOrigin || null,
-        secondPaymentReceipt: receiptImage || null,
-      },
-    })
+    extendedEnd.setDate(extendedEnd.getDate() + daysToAdd)
+    updateData.endDate = extendedEnd
+    if (isFullPayment) {
+      updateData.paymentMode = "single"
+      updateData.amount = subscription.amount + (subscription.installmentAmount || 0)
+    }
+  }
+
+  await prisma.storeSubscription.update({ where: { id }, data: updateData })
+
+  // Update Negocio.planVencimiento — add days to remaining
+  const store = await prisma.store.findUnique({ where: { id: subscription.storeId }, select: { negocioId: true } })
+  if (store?.negocioId) {
+    const negocio = await prisma.negocio.findUnique({ where: { id: store.negocioId }, select: { planVencimiento: true, planEstado: true } })
+    if (negocio?.planEstado === "activo") {
+      const base = negocio.planVencimiento && negocio.planVencimiento > now ? negocio.planVencimiento : now
+      const newEnd = new Date(base)
+      newEnd.setDate(newEnd.getDate() + daysToAdd)
+      await prisma.negocio.update({
+        where: { id: store.negocioId },
+        data: { planVencimiento: newEnd },
+      })
+    }
   }
 
   const updated = await prisma.storeSubscription.findUnique({ where: { id } })
 
   // Send second payment confirmed email
   if (updated && updated.status === "active" && updated.endDate) {
-    const store = await prisma.store.findUnique({ where: { id: updated.storeId }, select: { name: true, userId: true } })
-    if (store?.userId) {
-      const owner = await prisma.user.findUnique({ where: { id: store.userId }, select: { email: true } })
+    const storeInfo = await prisma.store.findUnique({ where: { id: updated.storeId }, select: { name: true, userId: true } })
+    if (storeInfo?.userId) {
+      const owner = await prisma.user.findUnique({ where: { id: storeInfo.userId }, select: { email: true } })
       if (owner?.email) {
         enviar2doPagoConfirmado(owner.email, {
-          tiendaNombre: store.name || "Tu tienda",
+          tiendaNombre: storeInfo.name || "Tu tienda",
           plan: updated.plan,
           nuevaExpiracion: formatDate(updated.endDate),
         }).catch(e => console.error("[subscription email] 2nd payment confirmed error:", e))

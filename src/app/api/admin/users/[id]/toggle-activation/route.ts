@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const { id } = await params
-  let body: { active?: unknown; secret?: unknown; includeRevenue?: unknown }
+  let body: { active?: unknown; secret?: unknown; includeRevenue?: unknown; trialDays?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 }) }
 
   const secret = typeof body.secret === "string" ? body.secret : ""
@@ -23,12 +23,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const active = body.active === true
   const includeRevenue = body.includeRevenue === true
+  const trialDays = typeof body.trialDays === "number" && body.trialDays > 0 ? Math.min(body.trialDays, 365) : 30
 
   const user = await prisma.user.findUnique({
     where: { id },
     include: { store: true, negocio: true },
   })
   if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+
+  const now = new Date()
 
   if (user.store) {
     await prisma.store.update({
@@ -39,9 +42,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (active && includeRevenue && user.store) {
       const planId = resolvePlanId(user.store.planType)
       const amount = getPlanPrice(planId, "monthly")
-      const now = new Date()
       const endDate = new Date(now)
-      endDate.setMonth(endDate.getMonth() + 1)
+      endDate.setDate(endDate.getDate() + trialDays)
       await prisma.storeSubscription.create({
         data: {
           plan: planId,
@@ -51,18 +53,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           startDate: now,
           endDate,
           storeId: user.store.id,
-          notes: "Activación manual por admin con registro de ganancias",
+          notes: `Activación manual por admin — ${trialDays} días de prueba`,
         },
       })
     }
   }
 
   if (user.negocio) {
+    const planVencimiento = active ? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000) : null
     await prisma.negocio.update({
       where: { id: user.negocio.id },
       data: {
         planEstado: active ? "activo" : "cancelado",
-        ...(active ? {} : { planVencimiento: null }),
+        planVencimiento,
       },
     })
   }
@@ -77,8 +80,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       negocioId: user.negocio?.id,
       plan: user.store?.plan || user.negocio?.planId,
       includeRevenue: active ? includeRevenue : undefined,
+      trialDays: active ? trialDays : undefined,
     },
   })
 
-  return NextResponse.json({ success: true, active, includeRevenue: active ? includeRevenue : false })
+  return NextResponse.json({ success: true, active, includeRevenue: active ? includeRevenue : false, trialDays: active ? trialDays : 0 })
 }
