@@ -96,6 +96,20 @@ export function detectHeaderRow(rawRows: (string | number | null)[][]): number {
 export function extractCategories(rawRows: (string | number | null)[][], headerRowIndex: number): { name: string; startRow: number }[] {
   const categories: { name: string; startRow: number }[] = []
 
+  // Also scan rows BEFORE the header for category-like rows (e.g. "CONECTORES RAPIDOS" at row 7)
+  for (let i = 0; i < headerRowIndex; i++) {
+    const row = rawRows[i]
+    if (!row) continue
+    const colA = row[0] != null ? String(row[0]).trim() : ""
+    const hasOtherData = row.slice(1).some((c) => c !== null && c !== undefined && c !== "")
+    if (colA.length >= 3 && !hasOtherData) {
+      if (/^\d/.test(colA)) continue
+      if (/TEL|FONO|CEL|PHONE|DIR|INSTAGRAM|FACEBOOK/i.test(colA)) continue
+      categories.push({ name: colA, startRow: headerRowIndex }) // Assign to header row so all data gets this category
+    }
+  }
+
+  // Then scan after header for normal category separators
   for (let i = headerRowIndex + 1; i < rawRows.length; i++) {
     const row = rawRows[i]
     if (!row) continue
@@ -113,6 +127,19 @@ export function extractCategories(rawRows: (string | number | null)[][], headerR
   }
 
   return categories
+}
+
+function isRepeatedHeaderRow(row: (string | number | null)[]): boolean {
+  let matches = 0
+  let nonEmpty = 0
+  for (const cell of row) {
+    if (cell !== null && cell !== undefined && cell !== "") {
+      nonEmpty++
+      if (isHeaderKeyword(String(cell))) matches++
+    }
+  }
+  // If most non-empty cells match header keywords, it's a repeated header row
+  return nonEmpty >= 2 && matches >= Math.ceil(nonEmpty * 0.5)
 }
 
 function assignCategoryToRow(
@@ -285,6 +312,9 @@ function parseExcel(buffer: Buffer): ImportPreview {
     const colA = rawRow[0] != null ? String(rawRow[0]).trim() : ""
     const hasOtherData = rawRow.slice(1).some((c) => c !== null && c !== undefined && c !== "")
     if (colA.length >= 3 && !hasOtherData) continue
+
+    // Skip repeated header rows (e.g. "FOTO | DESCRIPCION | STOCK | PRECIO..." inside category sections)
+    if (isRepeatedHeaderRow(rawRow)) continue
 
     // Build ParsedRow using detected headers
     const parsedRow: ParsedRow = { _category: assignCategoryToRow(r, categories) }
