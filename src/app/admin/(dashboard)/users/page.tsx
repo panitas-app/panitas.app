@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Search, ExternalLink, Lock } from "lucide-react"
+import { Search, ExternalLink, Lock, AlertTriangle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -46,6 +46,8 @@ export default function AdminUsersPage() {
   const [toggleTarget, setToggleTarget] = useState(false)
   const [adminPassword, setAdminPassword] = useState("")
   const [toggling, setToggling] = useState(false)
+  const [includeRevenue, setIncludeRevenue] = useState(false)
+  const [confirmStep, setConfirmStep] = useState<"input" | "confirm">("input")
 
   const debouncedSearch = useDebounce(search, 300)
 
@@ -69,20 +71,32 @@ export default function AdminUsersPage() {
 
   async function handleToggle() {
     if (!toggleUser || !adminPassword.trim()) { toast.error("Escribe la contraseña"); return }
+
+    if (toggleTarget && !confirmStep) {
+      setConfirmStep("confirm")
+      return
+    }
+
     setToggling(true)
     const res = await fetch(`/api/admin/users/${toggleUser.id}/toggle-activation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: toggleTarget, secret: adminPassword }),
+      body: JSON.stringify({ active: toggleTarget, secret: adminPassword, includeRevenue: toggleTarget && includeRevenue }),
     })
     setToggling(false)
     const json = await res.json()
     if (!res.ok) { toast.error(json.error || "Error al cambiar estado"); return }
     toast.success(toggleTarget ? "Cuenta activada" : "Cuenta desactivada")
+    resetToggle()
+    fetchData()
+  }
+
+  function resetToggle() {
     setToggleOpen(false)
     setAdminPassword("")
     setToggleUser(null)
-    fetchData()
+    setIncludeRevenue(false)
+    setConfirmStep("input")
   }
 
   function getPlanLabel(planType: string): string {
@@ -212,6 +226,8 @@ export default function AdminUsersPage() {
                             setToggleUser(u)
                             setToggleTarget(!isActive(u))
                             setAdminPassword("")
+                            setIncludeRevenue(false)
+                            setConfirmStep("input")
                             setToggleOpen(true)
                           }}
                           className={cn(
@@ -241,24 +257,60 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={toggleOpen} onOpenChange={setToggleOpen}>
+      <Dialog open={toggleOpen} onOpenChange={(open) => { if (!open) resetToggle(); else setToggleOpen(true) }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Lock className="size-4" /> Confirmar cambio</DialogTitle>
             <DialogDescription>
-              Ingresa tu contraseña de Super Admin para {toggleTarget ? "activar" : "desactivar"} la cuenta de <strong>{toggleUser?.name || toggleUser?.email}</strong>.
+              {confirmStep === "confirm"
+                ? `¿Estás seguro de activar la cuenta de ${toggleUser?.name || toggleUser?.email} y sumar a ganancias?`
+                : toggleTarget
+                  ? `Ingresa tu contraseña para activar la cuenta de ${toggleUser?.name || toggleUser?.email}.`
+                  : `Ingresa tu contraseña para desactivar la cuenta de ${toggleUser?.name || toggleUser?.email}.`
+              }
             </DialogDescription>
           </DialogHeader>
-          <div className="py-2">
-            <Input type="password" placeholder="Contraseña del Super Admin..." value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleToggle()} />
-          </div>
+
+          {confirmStep === "confirm" ? (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>Esta acción creará una suscripción activa y se registrará en las ganancias de la plataforma.</span>
+            </div>
+          ) : toggleTarget ? (
+            <div className="space-y-3 py-2">
+              <Input type="password" placeholder="Contraseña del Super Admin..." value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleToggle()} />
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={includeRevenue}
+                  onChange={(e) => setIncludeRevenue(e.target.checked)}
+                  className="size-4 rounded border-gray-300" />
+                <span>Sumar a ganancias de la plataforma</span>
+              </label>
+            </div>
+          ) : (
+            <div className="py-2">
+              <Input type="password" placeholder="Contraseña del Super Admin..." value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleToggle()} />
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setToggleOpen(false); setAdminPassword("") }}>Cancelar</Button>
-            <Button onClick={handleToggle} disabled={toggling || !adminPassword.trim()}>
-              {toggling ? "Procesando..." : toggleTarget ? "Activar" : "Desactivar"}
-            </Button>
+            <Button variant="outline" onClick={resetToggle}>Cancelar</Button>
+            {confirmStep === "confirm" ? (
+              <Button onClick={handleToggle} disabled={toggling}>
+                {toggling ? "Procesando..." : "Confirmar activación"}
+              </Button>
+            ) : toggleTarget ? (
+              <Button onClick={handleToggle} disabled={toggling || !adminPassword.trim()}>
+                {toggling ? "Procesando..." : "Activar"}
+              </Button>
+            ) : (
+              <Button onClick={handleToggle} disabled={toggling || !adminPassword.trim()} variant="destructive">
+                {toggling ? "Procesando..." : "Desactivar"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -30,16 +30,31 @@ export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/stats").then(r => r.json()),
-      fetch("/api/admin/analytics").then(r => r.json()),
-    ]).then(([s, a]) => { setStats(s); setAnalytics(a); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+  const [error, setError] = useState(false)
+
+  const fetchAll = () => {
+    setLoading(true)
+    setError(false)
+    fetch("/api/admin/stats")
+      .then(async r => { if (!r.ok) throw new Error("stats"); return r.json() })
+      .then(s => setStats(s))
+      .catch(() => setError(true))
+    fetch("/api/admin/analytics")
+      .then(async r => { if (!r.ok) throw new Error("analytics"); return r.json() })
+      .then(a => setAnalytics(a))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchAll() }, [])
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Cargando...</div>
-  if (!stats) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Error al cargar</div>
+  if (error || !stats) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-muted-foreground gap-4">
+      <p>Error al cargar el panel</p>
+      <Button variant="outline" onClick={fetchAll}>Intentar de nuevo</Button>
+    </div>
+  )
 
   const alerts: string[] = []
   if (stats.pendingSubscriptions > 5) alerts.push(`${stats.pendingSubscriptions} pagos pendientes de verificación`)

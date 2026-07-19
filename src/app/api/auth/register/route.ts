@@ -141,40 +141,6 @@ export async function POST(req: Request) {
           role: "admin",
         },
       })
-
-      enviarBienvenida(trimmedEmail, trimmedName)
-        .catch(e => console.error("[welcome email error]", e))
-
-      // Send verification email automatically on registration
-      try {
-        const codigo = Math.floor(100000 + Math.random() * 900000).toString()
-        const token = crypto.randomUUID()
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
-
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            verification_token: JSON.stringify({ codigo, token }),
-            token_expires_at: expiresAt,
-          },
-        })
-
-        const link = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`
-        sendEmail(
-          trimmedEmail,
-          "Verifica tu correo electrónico — Panitas",
-          templateVerifyEmail(trimmedName, codigo, link),
-          "verify_email"
-        ).catch(e => console.error("[verify email error]", e))
-      } catch (err: any) {
-        console.error("[register verify email setup error]", err)
-      }
-
-      const phog = getPostHogClient()
-      phog.identify({ distinctId: user.id, properties: { plan: planKey } })
-      phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
-      phog.flush().catch(e => console.error("[posthog flush error]", e))
-
     } catch (creationError: any) {
       console.error("[register creation crash]", creationError)
       try {
@@ -192,6 +158,39 @@ export async function POST(req: Request) {
       // Opción A: No relanzar si el User ya fue creado.
       // getCurrentStore() auto-healeará Store/Negocio faltantes en el siguiente login.
     }
+
+    // Always send welcome + verification emails + track even if Store/Negocio creation fails
+    enviarBienvenida(trimmedEmail, trimmedName)
+      .catch(e => console.error("[welcome email error]", e))
+
+    try {
+      const codigo = Math.floor(100000 + Math.random() * 900000).toString()
+      const token = crypto.randomUUID()
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verification_token: JSON.stringify({ codigo, token }),
+          token_expires_at: expiresAt,
+        },
+      })
+
+      const link = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`
+      sendEmail(
+        trimmedEmail,
+        "Verifica tu correo electrónico — Panitas",
+        templateVerifyEmail(trimmedName, codigo, link),
+        "verify_email"
+      ).catch(e => console.error("[verify email error]", e))
+    } catch (err: any) {
+      console.error("[register verify email setup error]", err)
+    }
+
+    const phog = getPostHogClient()
+    phog.identify({ distinctId: user.id, properties: { plan: planKey } })
+    phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
+    phog.flush().catch(e => console.error("[posthog flush error]", e))
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
