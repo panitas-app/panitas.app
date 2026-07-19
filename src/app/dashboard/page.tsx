@@ -207,17 +207,19 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
 
   const orders = salesData?.orders || []
   const defaultVisitor = { today: 0, week: 0, month: 0, trend: "up" as const, trendPct: 0, sources: [] }
+  const defaultSales = { orders: [], totalRevenue: 0, todayOrders: [], weekOrders: [], productCount: 0, totalOrders: 0, todayRevenue: 0, weekRevenue: 0 }
   const cp = { store: current.store, rate, planType, visitorData: visitorData || defaultVisitor }
 
   if (planType === "agenda") {
     if (!appointmentData) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Error al cargar datos</div>
     return <DashboardAgenda {...cp} data={appointmentData} orders={orders} serviceStats={serviceStats || []} />
   }
+  const defaultAppt = { appointments: [] as any[], todayApps: [] as any[], pending: 0, confirmed: 0, completed: 0, cancelled: 0, serviceCount: 0 }
   if (planType === "negocio") {
-    return <DashboardNegocio {...cp} sales={salesData!} appointments={appointmentData!} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
+    return <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
   }
   if (planType === "empresa" || planType === "empresarial") {
-    return <DashboardEmpresa {...cp} sales={salesData!} appointments={appointmentData!} crm={crmData!} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
+    return <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
   }
-  return <DashboardTienda {...cp} data={salesData!} orders={orders} categoryStats={categoryStats || []} />
+  return <DashboardTienda {...cp} data={salesData || defaultSales} orders={orders} categoryStats={categoryStats || []} />
 }
