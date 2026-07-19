@@ -29,16 +29,26 @@ export default async function SettingsPage(props: Props) {
   const validTabs = ["general", "payments", "verification", ...(isAdmin ? ["subscription"] : []), ...(isNegocio && isAdmin ? ["team"] : []), ...(isEnterprise ? ["credit"] : [])]
   const defaultTab = validTabs.includes(searchParams?.tab || "") ? searchParams!.tab! : "general"
 
-  const paymentAccounts = await prisma.paymentAccount.findMany({
-    where: { storeId: current.store.id },
-  })
+  let paymentAccounts: any[] = []
+  try {
+    paymentAccounts = await prisma.paymentAccount.findMany({
+      where: { storeId: current.store.id },
+    })
+  } catch (e) {
+    console.error("[settings page] paymentAccounts", e)
+  }
 
   const storeWithAccounts = { ...current.store, paymentAccounts }
 
-  const userData = current.userId ? await prisma.user.findUnique({
-    where: { id: current.userId },
-    select: { email: true, is_email_verified: true, phone: true, phoneVerified: true },
-  }) : null
+  let userData: { email: string | null; is_email_verified: boolean; phone: string | null; phoneVerified: boolean } | null = null
+  try {
+    userData = current.userId ? await prisma.user.findUnique({
+      where: { id: current.userId },
+      select: { email: true, is_email_verified: true, phone: true, phoneVerified: true },
+    }) : null
+  } catch (e) {
+    console.error("[settings page] userData", e)
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

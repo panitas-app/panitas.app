@@ -8,14 +8,19 @@ export default async function ImportPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
 
-  const member = await prisma.storeMember.findFirst({
-    where: { userId: session.user.id },
-    select: { store: { select: { id: true, planType: true } } },
-  })
-  const store = member?.store ?? await prisma.store.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true, planType: true },
-  })
+  let store: { id: string; planType: string } | null = null
+  try {
+    const member = await prisma.storeMember.findFirst({
+      where: { userId: session.user.id },
+      select: { store: { select: { id: true, planType: true } } },
+    })
+    store = member?.store ?? await prisma.store.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, planType: true },
+    })
+  } catch (e) {
+    console.error("[import page] store lookup", e)
+  }
 
   if (!store) redirect("/choose-plan")
 
@@ -24,11 +29,16 @@ export default async function ImportPage() {
     redirect("/dashboard/products")
   }
 
-  const categories = await prisma.category.findMany({
-    where: { storeId: store.id },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  })
+  let categories: { id: string; name: string }[] = []
+  try {
+    categories = await prisma.category.findMany({
+      where: { storeId: store.id },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    })
+  } catch (e) {
+    console.error("[import page] categories", e)
+  }
 
   return (
     <div className="p-6">

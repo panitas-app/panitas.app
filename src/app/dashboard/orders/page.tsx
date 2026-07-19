@@ -62,15 +62,23 @@ export default async function OrdersPage({
   const where: any = { storeId: current.store.id, creditTerm: null }
   if (status && status !== "all") where.status = status
 
-  const [orders, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PER_PAGE,
-      take: PER_PAGE,
-    }),
-    prisma.order.count({ where }),
-  ])
+  let orders: any[] = []
+  let total = 0
+  try {
+    const result = await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * PER_PAGE,
+        take: PER_PAGE,
+      }),
+      prisma.order.count({ where }),
+    ])
+    orders = result[0]
+    total = result[1]
+  } catch (e) {
+    console.error("[orders page]", e)
+  }
 
   const totalPages = Math.ceil(total / PER_PAGE)
 

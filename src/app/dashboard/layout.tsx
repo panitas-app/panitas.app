@@ -124,7 +124,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                 } : null}
               />
                 <main className="flex-1 p-4 md:p-6">
-                  {activeInstallment && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount!} />}
+                  {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
                   <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
                     {children}
                   </UpgradeBannerWrapper>

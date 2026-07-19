@@ -43,23 +43,31 @@ export default async function ProductsPage({
   if (q) where.name = { contains: q, mode: "insensitive" }
   if (category) where.categoryId = category
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PER_PAGE,
-      take: PER_PAGE,
-    }),
-    prisma.product.count({ where }),
-  ])
+  let products: any[] = []
+  let total = 0
+  let categories: any[] = []
+  try {
+    const result = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * PER_PAGE,
+        take: PER_PAGE,
+      }),
+      prisma.product.count({ where }),
+    ])
+    products = result[0]
+    total = result[1]
+    categories = await prisma.category.findMany({
+      where: { storeId: current.store.id },
+      orderBy: { name: "asc" },
+    })
+  } catch (e) {
+    console.error("[products page]", e)
+  }
 
   const totalPages = Math.ceil(total / PER_PAGE)
-
-  const categories = await prisma.category.findMany({
-    where: { storeId: current.store.id },
-    orderBy: { name: "asc" },
-  })
 
   return (
     <div className="space-y-6">

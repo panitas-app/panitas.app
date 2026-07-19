@@ -158,6 +158,13 @@ export function resolvePlanType(type: string): string {
   return planTypeMap[type] || legacyPlanMap[type] || type
 }
 
+export function planIdToStorePlanType(planId: string): string {
+  const resolved = resolvePlanId(planId)
+  if (resolved === "agenda") return "agenda"
+  if (resolved === "mayorista") return "empresa"
+  return "tienda"
+}
+
 export function planDisplayLabel(idOrType: string): string {
   const resolved = resolvePlanType(idOrType)
   return getPlan(resolved)?.label || getPlan(resolvePlanId(idOrType))?.label || idOrType

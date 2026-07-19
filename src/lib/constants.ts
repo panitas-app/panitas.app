@@ -46,4 +46,7 @@ export const PLAN_LIMITS = {
   free: { products: 30, orders: true },
   basic: { products: 100, orders: true },
   advanced: { products: -1, orders: true },
+  agenda: { products: 0, orders: false },
+  comercio: { products: -1, orders: true },
+  mayorista: { products: -1, orders: true },
 } as const

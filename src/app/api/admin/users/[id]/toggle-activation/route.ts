@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin, validateAdminSecret } from "@/lib/local-only"
 import { createAuditEntry } from "@/lib/audit"
 import { csrfGuard } from "@/lib/csrf"
-import { resolvePlanId, getPlanPrice } from "@/lib/plans"
+import { resolvePlanId, getPlanPrice, planIdToStorePlanType } from "@/lib/plans"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
@@ -32,21 +32,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
 
   const now = new Date()
+  const resolvedPlanId = resolvePlanId(user.negocio?.planId || "comercio")
 
   if (user.store) {
+    const storeUpdate: Record<string, unknown> = {
+      planStatus: active ? "activo" : "pendiente",
+    }
+
+    if (active) {
+      storeUpdate.plan = "advanced"
+      storeUpdate.planType = planIdToStorePlanType(resolvedPlanId)
+    } else {
+      storeUpdate.plan = "free"
+      storeUpdate.planType = "tienda"
+    }
+
     await prisma.store.update({
       where: { id: user.store.id },
-      data: { planStatus: active ? "activo" : "pendiente" },
+      data: storeUpdate,
     })
 
     if (active && includeRevenue && user.store) {
-      const planId = resolvePlanId(user.store.planType)
-      const amount = getPlanPrice(planId, "monthly")
+      const amount = getPlanPrice(resolvedPlanId, "monthly")
       const endDate = new Date(now)
       endDate.setDate(endDate.getDate() + trialDays)
       await prisma.storeSubscription.create({
         data: {
-          plan: planId,
+          plan: resolvedPlanId,
           status: "active",
           amount,
           period: "monthly",
