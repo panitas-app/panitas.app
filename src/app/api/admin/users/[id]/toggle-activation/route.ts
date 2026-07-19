@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin, validateAdminSecret } from "@/lib/local-only"
 import { createAuditEntry } from "@/lib/audit"
 import { csrfGuard } from "@/lib/csrf"
+import { resolvePlanId, getPlanPrice } from "@/lib/plans"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const { id } = await params
-  let body: { active?: unknown; secret?: unknown }
+  let body: { active?: unknown; secret?: unknown; includeRevenue?: unknown }
   try { body = await req.json() } catch { return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 }) }
 
   const secret = typeof body.secret === "string" ? body.secret : ""
@@ -21,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const active = body.active === true
+  const includeRevenue = body.includeRevenue === true
 
   const user = await prisma.user.findUnique({
     where: { id },
@@ -33,6 +35,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { id: user.store.id },
       data: { planStatus: active ? "activo" : "pendiente" },
     })
+
+    if (active && includeRevenue && user.store) {
+      const planId = resolvePlanId(user.store.planType)
+      const amount = getPlanPrice(planId, "monthly")
+      const now = new Date()
+      const endDate = new Date(now)
+      endDate.setMonth(endDate.getMonth() + 1)
+      await prisma.storeSubscription.create({
+        data: {
+          plan: planId,
+          status: "active",
+          amount,
+          period: "monthly",
+          startDate: now,
+          endDate,
+          storeId: user.store.id,
+          notes: "Activación manual por admin con registro de ganancias",
+        },
+      })
+    }
   }
 
   if (user.negocio) {
@@ -54,8 +76,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       storeId: user.store?.id,
       negocioId: user.negocio?.id,
       plan: user.store?.plan || user.negocio?.planId,
+      includeRevenue: active ? includeRevenue : undefined,
     },
   })
 
-  return NextResponse.json({ success: true, active })
+  return NextResponse.json({ success: true, active, includeRevenue: active ? includeRevenue : false })
 }

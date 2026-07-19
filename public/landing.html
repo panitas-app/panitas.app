@@ -803,17 +803,19 @@
       const password = e.target.querySelector('[name="password"]').value;
       if (!email || !password) { toast('Completa todos los campos', 'error'); return; }
       try {
-        const csrf = await (await fetch('/api/auth/csrf')).json();
+        const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
+        if (!csrfRes.ok) { toast('Error de conexión', 'error'); return; }
+        const { csrfToken } = await csrfRes.json();
         const res = await fetch('/api/auth/callback/credentials', {
-          method:'POST',
-          headers:{'Content-Type':'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({ csrfToken:csrf.csrfToken, email, password, callbackUrl:'/dashboard', json:'true' })
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+          body: new URLSearchParams({ csrfToken, email, password, callbackUrl: '/dashboard', json: 'true' })
         });
         const data = await res.json();
         if (data.url && !data.url.includes('error=')) { window.location.href = data.url; }
-        else if (data.url && data.url.includes('error=')) { toast('Credenciales inv\u00e1lidas', 'error'); }
-        else { toast('Credenciales inv\u00e1lidas', 'error'); }
-      } catch { toast('Error de conexi\u00f3n', 'error'); }
+        else { toast('Credenciales inválidas', 'error'); }
+      } catch (err) { console.error('[login error]', err); toast('Error de conexión', 'error'); }
     }
     if (e.target.id === 'contacto-form') {
       e.preventDefault(); e.stopPropagation();
@@ -839,16 +841,19 @@
     if (googleBtn) {
       e.preventDefault(); e.stopPropagation();
       try {
-        const csrf = await (await fetch('/api/auth/csrf')).json();
+        const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
+        if (!csrfRes.ok) { toast('Error de conexión', 'error'); return; }
+        const { csrfToken } = await csrfRes.json();
         const res = await fetch('/api/auth/signin/google', {
-          method:'POST',
-          headers:{'Content-Type':'application/x-www-form-urlencoded','X-Auth-Return-Redirect':'true'},
-          body: new URLSearchParams({ csrfToken:csrf.csrfToken, callbackUrl:'/dashboard' })
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-Auth-Return-Redirect': 'true' },
+          body: new URLSearchParams({ csrfToken, callbackUrl: '/dashboard' })
         });
         const data = await res.json();
         if (data.url) { window.location.href = data.url; }
-        else { toast('Error al iniciar sesi\u00f3n con Google', 'error'); }
-      } catch { toast('Error al iniciar sesi\u00f3n con Google', 'error'); }
+        else { toast('Error al iniciar sesión con Google', 'error'); }
+      } catch (err) { console.error('[google login error]', err); toast('Error al iniciar sesión con Google', 'error'); }
       return;
     }
     const regLink = e.target.closest('.login_register_text a');
