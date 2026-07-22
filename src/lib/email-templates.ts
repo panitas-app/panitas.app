@@ -474,3 +474,18 @@ export function templateInactiveClientReactivation(
     </p>
   `
 }
+
+// ─── PASSWORD RESET ──────────────────────────────────────────────────
+
+export function templatePasswordReset(nombre: string, codigo: string, link: string) {
+  return `
+    <h2>Recupera tu contraseña</h2>
+    <p>Hola <strong>${nombre}</strong>,</p>
+    <p>Has solicitado restablecer tu contraseña en Panitas. Usa el siguiente código para crear una nueva contraseña:</p>
+    <div class="code">${codigo}</div>
+    <p>Este código expira en <strong>15 minutos</strong>.</p>
+    <p>O haz clic en el siguiente enlace para restablecer automáticamente:</p>
+    <p style="text-align:center"><a class="btn" href="${link}">Restablecer contraseña</a></p>
+    <p style="color:#e11d48;font-size:12px;font-weight:600">Si no solicitaste esto, puedes ignorar este mensaje. Tu contraseña actual no ha cambiado.</p>
+  `
+}

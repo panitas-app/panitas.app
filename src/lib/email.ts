@@ -25,6 +25,7 @@ import {
   templateLowStock,
   templatePostPurchaseFollowUp,
   templateInactiveClientReactivation,
+  templatePasswordReset,
 } from "@/lib/email-templates"
 
 const resend = new Resend(process.env.RESEND_API_KEY || "")
@@ -187,6 +188,12 @@ export async function enviarClienteInactivo(email: string, params: {
   return sendEmail(email, `¡Te extrañamos! — ${params.tiendaNombre}`,
     templateInactiveClientReactivation(params.clienteNombre, params.tiendaNombre, params.ultimaCompra),
     "inactive_client")
+}
+
+export async function enviarRecuperarContrasena(email: string, nombre: string, codigo: string, link: string) {
+  return sendEmail(email, "Recupera tu contraseña — Panitas",
+    templatePasswordReset(nombre, codigo, link),
+    "password_reset")
 }
 
 // ─── CORE SEND ─────────────────────────────────────────────────────
