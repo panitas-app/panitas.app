@@ -95,17 +95,7 @@ function RestablecerForm() {
   }
 
   return (
-    <div
-      className="relative min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ background: "linear-gradient(135deg, #f8fafc 0%, #ffffff 40%, #eff6ff 100%)" }}
-    >
-      {/* Background orbs */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -right-20 size-80 rounded-full bg-[#06f] opacity-[0.04] blur-3xl" />
-        <div className="absolute top-1/2 -left-20 size-72 rounded-full bg-[#3b82f6] opacity-[0.05] blur-3xl" />
-        <div className="absolute -bottom-20 right-1/3 size-64 rounded-full bg-[#06f] opacity-[0.03] blur-3xl" />
-      </div>
-
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
       {/* Logo top-left */}
       <Link href="/" className="absolute top-6 left-6 z-10">
         <Image src="/logonuevo.png" alt="Panitas" width={120} height={32} className="h-7 w-auto" priority />
@@ -250,7 +240,7 @@ export default function RestablecerPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center" style={{ background: "linear-gradient(135deg, #f8fafc 0%, #ffffff 40%, #eff6ff 100%)" }}>
+        <div className="flex min-h-screen items-center justify-center">
           <div className="size-8 border-2 border-[#06f] border-t-transparent rounded-full animate-spin" />
         </div>
       }
