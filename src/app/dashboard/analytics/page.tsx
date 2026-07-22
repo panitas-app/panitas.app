@@ -5,15 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BarChart3, TrendingUp, TrendingDown, Minus, Package, Receipt, Download, CalendarCheck, Banknote, ChevronRight, Phone, Search, Store, ShoppingCart } from "lucide-react"
+import { BarChart3, TrendingUp, TrendingDown, Minus, Package, Receipt, Download, CalendarCheck, Banknote, ChevronRight, Phone, Search, Store, ShoppingCart, Target } from "lucide-react"
 import { downloadCsv } from "@/lib/export-csv"
 import GastosPage from "@/components/dashboard/gastos-page"
+import PuntoEquilibrioTab from "@/components/dashboard/punto-equilibrio-tab"
 import { formatBCV } from "@/lib/bcv/format"
 
 const ALL_TABS = [
   { key: "balance", label: "Balance", icon: BarChart3 },
   { key: "inventario", label: "Valor Inventario", icon: Package },
   { key: "gastos", label: "Gastos", icon: Receipt },
+  { key: "punto-equilibrio", label: "Punto de Equilibrio", icon: Target },
   { key: "cierres", label: "Cierres", icon: CalendarCheck },
 ]
 
@@ -115,6 +117,7 @@ export default function AnalyticsPage() {
       {tab === "balance" && balance && <BalanceTab data={balance} period={period} setPeriod={setPeriod} />}
       {tab === "inventario" && inventario && <InventarioTab data={inventario} />}
       {tab === "gastos" && <GastosPage />}
+      {tab === "punto-equilibrio" && <PuntoEquilibrioTab />}
       {tab === "cierres" && <CierresTab />}
     </div>
   )
