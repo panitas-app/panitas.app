@@ -67,7 +67,8 @@ export default function CierresTab() {
     setLoading(true)
     setDayDetails(new Map())
     setExpandedDay(null)
-    fetch(`/api/reports/cierres?year=${year}`)
+    const tzOffset = new Date().getTimezoneOffset()
+    fetch(`/api/reports/cierres?year=${year}&tzOffset=${tzOffset}`)
       .then((r) => r.json())
       .then((data) => setDays(data.days || []))
       .catch(() => setDays([]))
@@ -221,12 +222,12 @@ export default function CierresTab() {
             <div key={month.key} className="rounded-xl border border-border overflow-hidden">
               <button
                 onClick={() => toggleMonth(month.key)}
-                className="w-full flex items-center gap-3 px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3.5 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
               >
                 {isMonthExpanded ? (
-                  <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+                  <ChevronDown className="size-5 text-muted-foreground shrink-0" />
                 ) : (
-                  <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                  <ChevronRight className="size-5 text-muted-foreground shrink-0" />
                 )}
                 <span className="font-semibold text-sm">{month.label}</span>
                 <span className="text-xs text-muted-foreground ml-auto">
@@ -242,15 +243,15 @@ export default function CierresTab() {
                       <div key={week.key}>
                         <button
                           onClick={() => toggleWeek(week.key)}
-                          className="w-full flex items-center gap-3 px-6 py-2.5 hover:bg-muted/20 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-6 py-3 hover:bg-muted/20 transition-colors text-left"
                         >
                           {isWeekExpanded ? (
-                            <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+                            <ChevronDown className="size-4 text-muted-foreground shrink-0" />
                           ) : (
-                            <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+                            <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                           )}
-                          <span className="text-xs font-medium">{week.label}</span>
-                          <span className="text-[10px] text-muted-foreground ml-auto">
+                          <span className="text-sm font-medium">{week.label}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
                             {week.weekOrders} órdenes · ${week.weekTotal.toFixed(2)}
                           </span>
                         </button>
@@ -263,16 +264,16 @@ export default function CierresTab() {
                                 <div key={day.date}>
                                   <button
                                     onClick={() => handleToggleDay(day.date)}
-                                    className="w-full flex items-center gap-3 px-8 py-2.5 hover:bg-muted/10 transition-colors text-left"
+                                    className="w-full flex items-center gap-3 px-8 py-3 hover:bg-muted/10 transition-colors text-left"
                                   >
                                     {loadingDay === day.date ? (
-                                      <div className="size-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent shrink-0" />
+                                      <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent shrink-0" />
                                     ) : isDayExpanded ? (
-                                      <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
+                                      <ChevronDown className="size-4 text-muted-foreground shrink-0" />
                                     ) : (
-                                      <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
+                                      <ChevronRight className="size-4 text-muted-foreground shrink-0" />
                                     )}
-                                    <span className="text-xs">
+                                    <span className="text-sm">
                                       Cierre del día{" "}
                                       {new Date(day.date + "T12:00:00").toLocaleDateString("es-ES", {
                                         day: "2-digit",
@@ -326,25 +327,25 @@ function DayDetail({ data }: { data: any }) {
       <div className="grid gap-2 sm:grid-cols-4">
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase">Ventas</p>
+            <p className="text-xs text-muted-foreground uppercase">Ventas</p>
             <p className="text-lg font-bold">${(data.totalRevenue || 0).toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase">Órdenes</p>
+            <p className="text-xs text-muted-foreground uppercase">Órdenes</p>
             <p className="text-lg font-bold">{data.totalOrders || 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase">Tienda online</p>
+            <p className="text-xs text-muted-foreground uppercase">Tienda online</p>
             <p className="text-lg font-bold">{data.storeSales || 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground uppercase">POS / Tienda</p>
+            <p className="text-xs text-muted-foreground uppercase">POS / Tienda</p>
             <p className="text-lg font-bold">{data.posSales || 0}</p>
           </CardContent>
         </Card>
@@ -355,7 +356,7 @@ function DayDetail({ data }: { data: any }) {
           {Object.entries(data.paymentsBreakdown).map(([method, amount]: [string, any]) => (
             <span
               key={method}
-              className={`text-xs px-2 py-0.5 rounded font-medium ${paymentColors[method] || "bg-gray-100 text-gray-700"}`}
+              className={`text-sm px-2.5 py-1 rounded font-medium ${paymentColors[method] || "bg-gray-100 text-gray-700"}`}
             >
               {paymentLabels[method] || method}: ${Number(amount).toFixed(2)}
             </span>
@@ -375,24 +376,24 @@ function DayDetail({ data }: { data: any }) {
 
       <div className="space-y-2">
         {data.orders.map((o: any) => (
-          <div key={o.id} className="rounded-lg border border-border p-3 space-y-2 text-xs">
+          <div key={o.id} className="rounded-lg border border-border p-3 space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <div
-                className={`flex size-6 items-center justify-center rounded-full ${
+                className={`flex size-7 items-center justify-center rounded-full ${
                   o.posPin || o.shippingMethod === "pickup_store"
                     ? "bg-indigo-100 text-indigo-600"
                     : "bg-sky-100 text-sky-600"
                 }`}
               >
                 {o.posPin || o.shippingMethod === "pickup_store" ? (
-                  <Store className="size-3" />
+                  <Store className="size-4" />
                 ) : (
-                  <ShoppingCart className="size-3" />
+                  <ShoppingCart className="size-4" />
                 )}
               </div>
               <span className="font-semibold">{o.customerName}</span>
               <span className="text-muted-foreground">#{o.orderNumber}</span>
-              {o.creditTerm && <Badge className="bg-amber-100 text-amber-700 text-[9px]">Crédito</Badge>}
+              {o.creditTerm && <Badge className="bg-amber-100 text-amber-700 text-xs">Crédito</Badge>}
               <span className="text-muted-foreground ml-auto">
                 {new Date(o.createdAt).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" })}
               </span>
@@ -415,7 +416,7 @@ function DayDetail({ data }: { data: any }) {
                 {o.payments.map((p: any) => (
                   <span
                     key={p.id}
-                    className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${paymentColors[p.method] || "bg-gray-100"}`}
+                    className={`text-xs px-2 py-1 rounded font-medium ${paymentColors[p.method] || "bg-gray-100"}`}
                   >
                     {paymentLabels[p.method] || p.method} ${(p.amount || 0).toFixed(2)}
                   </span>
