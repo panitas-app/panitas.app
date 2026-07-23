@@ -16,10 +16,12 @@ export async function GET(request: Request) {
   const startDate = new Date(`${year}-01-01T00:00:00.000Z`)
   const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`)
 
+  // Traer órdenes con sus pagos y cuotas
   const orders = await prisma.order.findMany({
     where: {
       storeId: current.store.id,
       createdAt: { gte: startDate, lt: endDate },
+      status: { not: "cancelled" },
     },
     select: {
       id: true,
@@ -29,7 +31,8 @@ export async function GET(request: Request) {
       posPin: true,
       shippingMethod: true,
       createdAt: true,
-      payments: { select: { method: true, amount: true } },
+      payments: { select: { id: true, method: true, amount: true, status: true, paidAt: true, createdAt: true } },
+      installments: { select: { status: true, paidAmount: true, amount: true, paidAt: true } },
     },
     orderBy: { createdAt: "asc" },
   })
@@ -43,23 +46,53 @@ export async function GET(request: Request) {
     creditSales: number
   }>()
 
+  // Helper: obtener fecha (YYYY-MM-DD) shifting por tzOffset
+  const toDateKey = (d: Date) => new Date(d.getTime() - tzOffsetMs).toISOString().split("T")[0]
+
   for (const order of orders) {
-    const dateKey = new Date(order.createdAt.getTime() - tzOffsetMs).toISOString().split("T")[0]
-    let day = dayMap.get(dateKey)
-    if (!day) {
-      day = { totalRevenue: 0, totalOrders: 0, paymentsBreakdown: {}, storeSales: 0, posSales: 0, creditSales: 0 }
-      dayMap.set(dateKey, day)
+    const createdKey = toDateKey(order.createdAt)
+    let createdDay = dayMap.get(createdKey)
+    if (!createdDay) {
+      createdDay = { totalRevenue: 0, totalOrders: 0, paymentsBreakdown: {}, storeSales: 0, posSales: 0, creditSales: 0 }
+      dayMap.set(createdKey, createdDay)
     }
-    day.totalRevenue += Number(order.total)
-    day.totalOrders++
+    createdDay.totalOrders++
     if (order.posPin || order.shippingMethod === "pickup_store" || order.shippingMethod === "store") {
-      day.posSales++
+      createdDay.posSales++
     } else {
-      day.storeSales++
+      createdDay.storeSales++
     }
-    if (order.creditTerm) day.creditSales++
-    for (const pm of order.payments) {
-      day.paymentsBreakdown[pm.method] = (day.paymentsBreakdown[pm.method] || 0) + Number(pm.amount)
+    if (order.creditTerm) createdDay.creditSales++
+
+    // Para órdenes a crédito, el dinero se contabiliza por cada pago efectivo;
+    // las cuotas pendientes no suman al balance hoy.
+    if (order.creditTerm) {
+      for (const pm of order.payments) {
+        if (pm.status !== "verified") continue
+        const pmDate = pm.paidAt || pm.createdAt
+        const pmKey = toDateKey(pmDate)
+        let day = dayMap.get(pmKey)
+        if (!day) {
+          day = { totalRevenue: 0, totalOrders: 0, paymentsBreakdown: {}, storeSales: 0, posSales: 0, creditSales: 0 }
+          dayMap.set(pmKey, day)
+        }
+        day.totalRevenue += Number(pm.amount)
+        day.paymentsBreakdown[pm.method] = (day.paymentsBreakdown[pm.method] || 0) + Number(pm.amount)
+      }
+    } else {
+      // Órdenes normales: contabilizar por pagos verificados
+      for (const pm of order.payments) {
+        if (pm.status !== "verified") continue
+        const pmDate = pm.paidAt || pm.createdAt
+        const pmKey = toDateKey(pmDate)
+        let day = dayMap.get(pmKey)
+        if (!day) {
+          day = { totalRevenue: 0, totalOrders: 0, paymentsBreakdown: {}, storeSales: 0, posSales: 0, creditSales: 0 }
+          dayMap.set(pmKey, day)
+        }
+        day.totalRevenue += Number(pm.amount)
+        day.paymentsBreakdown[pm.method] = (day.paymentsBreakdown[pm.method] || 0) + Number(pm.amount)
+      }
     }
   }
 

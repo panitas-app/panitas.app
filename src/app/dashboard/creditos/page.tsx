@@ -34,6 +34,9 @@ export default function CreditosPage() {
   const [search, setSearch] = useState("")
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [payingId, setPayingId] = useState<string | null>(null)
+  const [payingInstallment, setPayingInstallment] = useState<Installment | null>(null)
+  const [payMethod, setPayMethod] = useState("cash")
+  const [payReference, setPayReference] = useState("")
 
   useEffect(() => { fetchCreditos() }, [filter])
 
@@ -44,17 +47,25 @@ export default function CreditosPage() {
     } catch { toast.error("Error al cargar créditos") }
   }
 
-  async function markAsPaid(installment: Installment) {
-    setPayingId(installment.id)
+  async function markAsPaid() {
+    if (!payingInstallment) return
+    setPayingId(payingInstallment.id)
     try {
       const res = await fetch("/api/installments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: installment.id, paidAmount: installment.amount }),
+        body: JSON.stringify({
+          id: payingInstallment.id,
+          paidAmount: payingInstallment.amount,
+          method: payMethod,
+          reference: payReference || null,
+        }),
       })
       if (!res.ok) { const err = await res.json(); throw new Error(err.error) }
-      toast.success(`Cuota #${installment.number} marcada como pagada`)
+      toast.success(`Cuota #${payingInstallment.number} marcada como pagada`)
       fetchCreditos()
+      setPayingInstallment(null)
+      setPayReference("")
     } catch (e: any) { toast.error(e.message) }
     finally { setPayingId(null) }
   }
@@ -169,7 +180,7 @@ export default function CreditosPage() {
                             </div>
                             <div className="flex gap-1 shrink-0">
                               {!isPaid && (
-                                <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => markAsPaid(inst)} disabled={payingId === inst.id}>
+                                <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => { setPayingInstallment(inst); setPayReference(""); setPayMethod("cash") }} disabled={payingId === inst.id}>
                                   <CheckCircle className="size-3" /> {payingId === inst.id ? "..." : "Pagar"}
                                 </Button>
                               )}
@@ -199,6 +210,49 @@ export default function CreditosPage() {
           })
         )}
       </div>
+
+      {payingInstallment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPayingInstallment(null)}>
+          <div className="bg-background rounded-xl shadow-2xl max-w-sm w-full mx-4 p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-sm">Pago de cuota #{payingInstallment.number}</h3>
+            <p className="text-xs text-muted-foreground">Monto: <strong className="text-foreground">${payingInstallment.amount.toFixed(2)}</strong></p>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold">Método de pago</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: "cash", l: "Efectivo" },
+                  { v: "bank_transfer", l: "Transferencia" },
+                  { v: "pago_movil", l: "Pago Móvil" },
+                  { v: "binancepay", l: "Binance Pay" },
+                ].map((m) => (
+                  <button
+                    key={m.v}
+                    onClick={() => setPayMethod(m.v)}
+                    className={`h-9 text-xs font-bold rounded-lg border transition-colors ${payMethod === m.v ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border hover:border-primary/50"}`}
+                  >
+                    {m.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Input
+              placeholder="Referencia (opcional)"
+              value={payReference}
+              onChange={(e) => setPayReference(e.target.value)}
+              className="h-9 text-sm"
+            />
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setPayingInstallment(null)}>Cancelar</Button>
+              <Button className="flex-1" onClick={markAsPaid} disabled={payingId === payingInstallment.id}>
+                {payingId === payingInstallment.id ? "Procesando..." : `Confirmar $${payingInstallment.amount.toFixed(2)}`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

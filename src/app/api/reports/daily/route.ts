@@ -27,7 +27,12 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
   })
 
-  const totalRevenue = orders.reduce((s, o) => s + o.total, 0)
+  const totalRevenue = orders
+    .map((o) => (o.creditTerm
+      ? (o.downPayment ?? 0) + o.installments.filter((i) => i.status === "paid").reduce((s, i) => s + (i.paidAmount ?? i.amount), 0)
+      : o.payments.filter((p) => p.status === "verified").reduce((s, p) => s + p.amount, 0)
+    ))
+    .reduce((s, x) => s + x, 0)
   const totalOrders = orders.length
   const paymentsBreakdown: Record<string, number> = {}
   let storeSales = 0
@@ -38,6 +43,7 @@ export async function GET(request: NextRequest) {
     else storeSales++
     if (o.creditTerm) creditSales++
     for (const p of o.payments) {
+      if (p.status !== "verified") continue
       paymentsBreakdown[p.method] = (paymentsBreakdown[p.method] || 0) + p.amount
     }
   }

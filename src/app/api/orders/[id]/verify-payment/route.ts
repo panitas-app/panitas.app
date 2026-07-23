@@ -34,7 +34,7 @@ export async function POST(
 
     await prisma.orderPayment.update({
       where: { id: paymentId },
-      data: { status: "verified" },
+      data: { status: "verified", paidAt: new Date() },
     })
 
     // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately

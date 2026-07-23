@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { id, paidAmount } = body
+    const { id, paidAmount, method, paymentAccountId, reference } = body
 
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 })
 
@@ -48,12 +48,26 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Cuota ya pagada" }, { status: 400 })
     }
 
+    const payAmount = paidAmount ? parseFloat(paidAmount) : installment.amount
+
     const updated = await prisma.installment.update({
       where: { id },
       data: {
         status: "paid",
         paidAt: new Date(),
-        paidAmount: paidAmount ? parseFloat(paidAmount) : installment.amount,
+        paidAmount: payAmount,
+      },
+    })
+
+    await prisma.orderPayment.create({
+      data: {
+        orderId: installment.orderId,
+        method: method || "cash",
+        amount: payAmount,
+        reference: reference || null,
+        paymentAccountId: paymentAccountId || null,
+        paidAt: new Date(),
+        status: "verified",
       },
     })
 
