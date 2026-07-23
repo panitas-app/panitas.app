@@ -35,31 +35,31 @@ export async function POST(request: NextRequest) {
 
   const modalidadAnterior = negocio.modalidad
 
-  const [updated] = await prisma.$transaction([
-    prisma.negocio.update({
-      where: { id: negocio.id },
-      data: {
-        planId: "negocio",
-        modalidad: null,
-        planEstado: "activo",
-        planInicio: new Date(),
-        planVencimiento: null,
-      },
-    }),
-    prisma.negocioPlanHistory.create({
-      data: {
-        negocioId: negocio.id,
-        planId: "negocio",
-        planNombre: planDestino.label,
-        modalidad: modalidadAnterior,
-        precio: planDestino.precioUsd,
-        periodo: "monthly",
-        estadoAnterior: `basico_${modalidadAnterior || "ambas"}`,
-        estadoNuevo: "negocio_activo",
-        notas: `Upgrade de Básico (${modalidadAnterior || "sin modalidad"}) a Negocio. Se habilita el módulo ${modalidadAnterior === "tienda" ? "Agenda" : "Tienda"}.`,
-      },
-    }),
-  ])
+  // Sequential (Neon HTTP doesn't support transactions)
+  const updated = await prisma.negocio.update({
+    where: { id: negocio.id },
+    data: {
+      planId: "negocio",
+      modalidad: null,
+      planEstado: "activo",
+      planInicio: new Date(),
+      planVencimiento: null,
+    },
+  })
+
+  await prisma.negocioPlanHistory.create({
+    data: {
+      negocioId: negocio.id,
+      planId: "negocio",
+      planNombre: planDestino.label,
+      modalidad: modalidadAnterior,
+      precio: planDestino.precioUsd,
+      periodo: "monthly",
+      estadoAnterior: `basico_${modalidadAnterior || "ambas"}`,
+      estadoNuevo: "negocio_activo",
+      notas: `Upgrade de Básico (${modalidadAnterior || "sin modalidad"}) a Negocio. Se habilita el módulo ${modalidadAnterior === "tienda" ? "Agenda" : "Tienda"}.`,
+    },
+  })
 
   return NextResponse.json({
     success: true,

@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse payments array or single payment
-    let paymentsInput = body.payments as Array<{ method: string; amount: number; reference?: string; bankOrigin?: string; status?: string }> | undefined
+    let paymentsInput = body.payments as Array<{ method: string; amount: number; reference?: string; bankOrigin?: string; paidAt?: string; receiptImage?: string; paymentAccountId?: string; status?: string }> | undefined
     if (!paymentsInput && body.payment) {
       paymentsInput = [body.payment]
     }
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
       paymentStatus = allVerified ? "paid" : "pending"
     }
 
-    // ─── Create order ───
+    // ─── Create order (sequential: no nested creates, Neon HTTP doesn't support implicit transactions) ───
     const order = await prisma.order.create({
       data: {
         orderNumber: generateOrderNumber(),
@@ -289,35 +289,56 @@ export async function POST(request: NextRequest) {
         downPayment: downPayment > 0 ? downPayment : null,
         creditTerm,
         totalCredito: totalCredito > 0 ? totalCredito : null,
-        items: {
-          create: itemsData.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-            price: i.price,
-            subtotal: i.subtotal,
-            productName: i.productName,
-          })),
+      },
+    })
+
+    // ─── Create order items (sequential) ───
+    for (const item of itemsData) {
+      await prisma.orderItem.create({
+        data: {
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.subtotal,
+          productName: item.productName,
         },
-        payments: paymentsInput && paymentsInput.length > 0 ? {
-          create: paymentsInput.map((p: any) => ({
+      })
+    }
+
+    // ─── Create payments (sequential) ───
+    if (paymentsInput && paymentsInput.length > 0) {
+      for (const p of paymentsInput) {
+        await prisma.orderPayment.create({
+          data: {
+            orderId: order.id,
             method: p.method,
-            amount: parseFloat(p.amount),
+            amount: parseFloat(String(p.amount)),
             reference: p.reference || null,
             bankOrigin: p.bankOrigin || null,
             paidAt: p.paidAt ? new Date(p.paidAt) : null,
             receiptImage: p.receiptImage || null,
             paymentAccountId: p.paymentAccountId || null,
             status: p.status || (p.method === "credit" ? "verified" : "pending"),
-          })),
-        } : undefined,
-        installments: installmentsCreate ? { create: installmentsCreate } : undefined,
-      },
-      include: {
-        items: { include: { product: true } },
-        payments: true,
-        installments: true,
-      },
-    })
+          },
+        })
+      }
+    }
+
+    // ─── Create installments (sequential) ───
+    if (installmentsCreate) {
+      for (const inst of installmentsCreate) {
+        await prisma.installment.create({
+          data: {
+            orderId: order.id,
+            number: inst.number,
+            amount: inst.amount,
+            dueDate: inst.dueDate,
+            status: inst.status,
+          },
+        })
+      }
+    }
 
     // ─── Decrement stock + stock movements + low stock alerts ───
     for (const item of itemsData) {
@@ -402,7 +423,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation to customer
     if (order.customerEmail) {
-      const itemsHtml = order.items.map(i =>
+      const itemsHtml = itemsData.map(i =>
         `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
       ).join("")
       const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
@@ -414,7 +435,17 @@ export async function POST(request: NextRequest) {
       ).catch(e => console.error("[order confirmation email error]", e))
     }
 
-    return NextResponse.json(order, { status: 201 })
+    // ─── Fetch complete order with relations for response ───
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        items: { include: { product: true } },
+        payments: true,
+        installments: true,
+      },
+    })
+
+    return NextResponse.json(fullOrder || order, { status: 201 })
   } catch (error: any) {
     if (error?.message?.includes("No tienes")) {
       return NextResponse.json({ error: error.message }, { status: 403 })

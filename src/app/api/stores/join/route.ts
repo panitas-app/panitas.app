@@ -45,19 +45,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ya eres miembro de esta tienda" }, { status: 409 })
     }
 
-    await prisma.$transaction([
-      prisma.storeMember.create({
-        data: {
-          storeId: invitation.storeId,
-          userId: session.user.id,
-          role: invitation.role,
-        },
-      }),
-      prisma.invitation.update({
-        where: { id: invitation.id },
-        data: { accepted: true, acceptedBy: session.user.id },
-      }),
-    ])
+    // Sequential (Neon HTTP doesn't support transactions)
+    await prisma.storeMember.create({
+      data: {
+        storeId: invitation.storeId,
+        userId: session.user.id,
+        role: invitation.role,
+      },
+    })
+    await prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { accepted: true, acceptedBy: session.user.id },
+    })
 
     const store = await prisma.store.findUnique({
       where: { id: invitation.storeId },
