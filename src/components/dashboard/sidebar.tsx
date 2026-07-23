@@ -203,7 +203,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
       lastViewedRef.current = new Date().toISOString()
       setPendingCount(0)
     }
-  }, [isOnOrders])
+  }, [isOnOrders, pendingCount])
 
   const planLabel = sidebarPlanLabel(planId || legacyPlanType, modalidad)
   const navItems = getNavItems(legacyPlanType)
