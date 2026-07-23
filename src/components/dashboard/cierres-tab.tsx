@@ -148,9 +148,12 @@ export default function CierresTab() {
     }
 
     for (const y of Object.keys(years)) {
-      years[Number(y)].months.sort((a, b) => a.num - b.num)
+      years[Number(y)].months.sort((a, b) => b.num - a.num)
       for (const month of years[Number(y)].months) {
-        month.weeks.sort((a, b) => a.key.localeCompare(b.key))
+        month.weeks.sort((a, b) => b.key.localeCompare(a.key))
+        month.weeks.forEach((week) => {
+          week.days.sort((a, b) => b.date.localeCompare(a.date))
+        })
       }
     }
 
