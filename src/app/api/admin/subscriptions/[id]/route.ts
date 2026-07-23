@@ -79,8 +79,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   await prisma.storeSubscription.update({ where: { id }, data: updateData })
   const subscription = await prisma.storeSubscription.findUnique({
     where: { id },
-    include: { store: { select: { name: true, slug: true, plan: true, email: true } } },
+    include: {
+      store: { select: { id: true, name: true, slug: true, plan: true, email: true, phone: true, createdAt: true } },
+      verifiedBy: { select: { name: true, email: true } },
+    },
   })
+  if (!subscription) return NextResponse.json({ error: "No encontrada" }, { status: 404 })
 
     await createAuditEntry({ action: `subscription.${status}`, entity: "StoreSubscription", entityId: id, userId: admin.id, storeId: existing.storeId })
 
