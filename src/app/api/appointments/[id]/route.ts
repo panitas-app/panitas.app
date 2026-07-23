@@ -50,6 +50,7 @@ export async function PATCH(
   // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
   await prisma.appointment.update({ where: { id }, data })
   const updated = await prisma.appointment.findUnique({ where: { id }, include: { service: true } })
+  if (!updated) return NextResponse.json({ error: "Cita no encontrada" }, { status: 404 })
 
   // Send email when appointment is completed
   if (data.status === "completed" && appointment.customerEmail) {

@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
     },
   })
   const appointment = await prisma.appointment.findUnique({ where: { id: created.id }, include: { service: true } })
+  if (!appointment) return NextResponse.json({ error: "Cita no encontrada" }, { status: 404 })
 
   // ─── Send emails ────────────────────────────────────────────────
   const fecha = formatDate(appointment.date)
