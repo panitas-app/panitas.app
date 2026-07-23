@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     return jsonError(`Demasiadas solicitudes. Intenta en ${Math.ceil(rl.resetIn / 1000)}s`, 429, { "Retry-After": String(Math.ceil(rl.resetIn / 1000)) })
   }
 
+  let itemsData: Array<{ productId: string; quantity: number; price: number; subtotal: number; productName: string }> = []
+  let couponId: string | null = null
+
   try {
     let body: any
     try { body = await request.json() } catch { return jsonError("JSON inválido", 400) }
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (missingIds.length > 0) return jsonError("Algunos productos en tu carrito ya no están disponibles. Intenta recargar la página.", 400)
 
     // Validate quantities and build item items
-    const itemsData: Array<{ productId: string; quantity: number; price: number; subtotal: number; productName: string }> = []
+    itemsData = []
     for (const item of body.items) {
       const product = productMap.get(item.productId)!
       if (!product.isActive) return jsonError(`El producto "${product.name}" ya no está disponible.`, 400)
@@ -96,7 +99,6 @@ export async function POST(request: NextRequest) {
     }
 
     let discount = 0
-    let couponId: string | null = null
 
     // Validate Coupon
     if (body.couponId && typeof body.couponId === "string" && body.couponId.length <= 64) {
@@ -303,6 +305,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(finalOrder, { status: 201 })
   } catch (error: any) {
+    // Restore stock and coupon on failure to prevent orphaned data
+    for (const item of itemsData) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: { stock: { increment: item.quantity } },
+      }).catch(() => {})
+    }
+    if (couponId) {
+      await prisma.coupon.update({
+        where: { id: couponId },
+        data: { usedCount: { decrement: 1 } },
+      }).catch(() => {})
+    }
     // Allow user-facing stock/concurrency messages to bubble up
     if (error instanceof Error) {
       const msg = error.message
