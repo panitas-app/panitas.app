@@ -151,6 +151,7 @@ if (success) {
   const selected = methods.find(m => m.id === selectedMethod)
 
   async function handleSubmit(e: React.FormEvent) {
+    if (submitting) return
     e.preventDefault()
     if (!selectedMethod || !reference.trim()) {
       toast.error("Selecciona un método de pago y escribe la referencia")

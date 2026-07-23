@@ -179,6 +179,7 @@ export function ProductForm({
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (uploading) return
     const files = e.target.files
     if (!files || files.length === 0) return
 
@@ -219,6 +220,7 @@ export function ProductForm({
 
   // Inline Category Creator
   async function handleCreateCategory() {
+    if (savingCategory) return
     if (!newCategoryName.trim()) {
       toast.error("El nombre de la categoría es obligatorio")
       return
@@ -280,6 +282,7 @@ export function ProductForm({
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (loading) return
     e.preventDefault()
     setLoading(true)
 

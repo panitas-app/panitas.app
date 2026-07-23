@@ -48,6 +48,7 @@ export default function CreditosPage() {
   }
 
   async function markAsPaid() {
+    if (payingId === payingInstallment?.id) return
     if (!payingInstallment) return
     setPayingId(payingInstallment.id)
     try {

@@ -21,6 +21,7 @@ export function DeleteProductButton({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(false)
 
   async function handleDelete() {
+    if (loading) return
     if (!confirm("¿Estás seguro? Esta acción no se puede deshacer.")) return
     setLoading(true)
     try {

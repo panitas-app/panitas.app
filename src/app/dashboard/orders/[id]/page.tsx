@@ -161,6 +161,7 @@ export default function OrderDetailPage() {
   }, [id])
 
   async function handleVerifyPayment(paymentId: string) {
+    if (verifying) return
     setVerifying(true)
     try {
       const res = await fetch(`/api/orders/${id}/verify-payment`, {
@@ -184,6 +185,7 @@ export default function OrderDetailPage() {
   }
 
   async function handleUpdateStatus(newStatus: string) {
+    if (updatingStatus) return
     setUpdatingStatus(true)
     try {
       const res = await fetch(`/api/orders/${id}/status`, {
@@ -433,6 +435,7 @@ export default function OrderDetailPage() {
               className="w-full gap-2 h-12 text-base text-muted-foreground border-dashed"
               disabled={notifying}
               onClick={async () => {
+                if (notifying) return
                 setNotifying(true)
                 try {
                   const res = await fetch(`/api/orders/${id}/notify`, { method: "PATCH" })
