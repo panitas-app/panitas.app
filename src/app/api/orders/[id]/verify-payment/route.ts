@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
 import { sendEmail } from "@/lib/email"
-import { templatePaymentVerified } from "@/lib/email-templates"
+import { templateOrderPaymentVerified } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 
@@ -65,7 +65,7 @@ export async function POST(
       sendEmail(
         updated.customerEmail,
         "Pago verificado — Panitas",
-        templatePaymentVerified(updated.customerName, updated.store.name, ""),
+        templateOrderPaymentVerified(updated.customerName, updated.orderNumber, updated.store.name),
         "payment_verified"
       ).catch(e => console.error("Email error:", e))
     }

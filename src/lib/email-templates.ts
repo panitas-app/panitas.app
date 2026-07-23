@@ -81,6 +81,20 @@ export function templatePaymentVerified(nombre: string, tienda: string, plan: st
   `
 }
 
+// ─── PAYMENT VERIFIED (order) ────────────────────────────────────────
+
+export function templateOrderPaymentVerified(nombre: string, orderNumber: string, storeName: string) {
+  return `
+    <h2>¡Pago verificado con éxito!</h2>
+    <p>Hola <strong>${nombre}</strong>,</p>
+    <p>El pago de tu pedido <strong>#${orderNumber}</strong> en <strong>${storeName}</strong> ha sido verificado exitosamente.</p>
+    <p>Tu pedido ya está siendo procesado y pronto recibirás actualizaciones sobre su estado.</p>
+    <p style="text-align:center">
+      <a class="btn" href="${baseUrl()}/store/${storeName.toLowerCase().replace(/\s+/g, "-")}">Seguir comprando</a>
+    </p>
+  `
+}
+
 // ─── PAYMENT REJECTED (subscription) ────────────────────────────────
 
 export function templatePaymentRejected(nombre: string, tienda: string, plan: string, motivo?: string) {
