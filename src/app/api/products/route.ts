@@ -165,12 +165,16 @@ export async function POST(request: NextRequest) {
         sizes: sizes ? JSON.stringify(sizes) : null,
         storeId: current.store.id,
       },
+    })
+
+    const productWithCategory = await prisma.product.findUnique({
+      where: { id: product.id },
       include: { category: true },
     })
 
     await createAuditEntry({ action: "product.created", entity: "Product", entityId: product.id, storeId: current.store.id, userId: current.userId })
 
-    return NextResponse.json(product, { status: 201 })
+    return NextResponse.json(productWithCategory, { status: 201 })
   } catch (err) {
     console.error("[Product Create Error]", err)
     const message = err instanceof Error ? err.message : "Error desconocido"
