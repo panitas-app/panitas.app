@@ -13,6 +13,8 @@ export async function GET(request: Request) {
   const where: Record<string, unknown> = { storeId: current.store.id }
   if (status) where.status = status
   if (after) where.createdAt = { gt: new Date(after) }
+  const excludePos = searchParams.get("excludePos") === "true"
+  if (excludePos) where.posPin = false
 
   const total = await prisma.order.count({ where })
   if (status || after) {
