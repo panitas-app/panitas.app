@@ -79,6 +79,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (error instanceof Error && error.message.includes("No tienes")) {
       return NextResponse.json({ error: error.message }, { status: 403 })
     }
+    if (error instanceof Error && (error.message.includes("pendiente de pago") || error.message.includes("plan"))) {
+      return NextResponse.json({ error: error.message }, { status: 402 })
+    }
     console.error("Error updating order status:", error)
     return NextResponse.json({ error: "Error al actualizar el estado" }, { status: 500 })
   }

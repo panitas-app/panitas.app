@@ -191,7 +191,10 @@ export default function OrderDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       })
-      if (!res.ok) throw new Error("Error al actualizar el estado")
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Error al actualizar el estado")
+      }
       const updated = await res.json()
       setOrder(updated)
       toast.success(newStatus === "cancelled" ? "Pedido cancelado y stock restaurado" : `Pedido marcado como "${statusOptions.find((s) => s.key === newStatus)?.label}"`)
