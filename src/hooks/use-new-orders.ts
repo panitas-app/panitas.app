@@ -13,7 +13,7 @@ export function useNewOrders() {
 
   const checkOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders/count")
+      const res = await fetch("/api/orders/count?excludePos=true")
       if (!res.ok) return
       const data = await res.json()
 

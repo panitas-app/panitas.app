@@ -356,6 +356,7 @@ export default function POSPage() {
     setSubmitting(true)
     try {
       const body: any = {
+        source: "pos",
         customerName: customer.name,
         customerPhone: customer.phone,
         customerDocumentId: customer.documentId || null,

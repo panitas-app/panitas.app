@@ -1,33 +1,51 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, Suspense } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { KeyRound, ArrowLeft, Loader2, CheckCircle2, Eye, EyeOff, Shield, Mail } from "lucide-react"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
+const glassStyle = {
+  background: "rgba(255,255,255,0.7)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(0,0,0,0.06)",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+}
+
+const iconStyle = {
+  background: "rgba(0,102,255,0.08)",
+  border: "1px solid rgba(0,102,255,0.15)",
+  boxShadow: "inset 0 2px 4px rgba(0,0,0,0.04)",
+  color: "#06f",
+}
+
 function RestablecerForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
-  const [email, setEmail] = useState("")
-  const [code, setCode] = useState("")
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return params.get("email") ?? ""
+    }
+    return ""
+  })
+  const [code, setCode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return params.get("token") ?? params.get("code") ?? ""
+    }
+    return ""
+  })
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-
-  useEffect(() => {
-    const emailParam = searchParams?.get("email")
-    const tokenParam = searchParams?.get("token")
-    if (emailParam) setEmail(emailParam)
-    if (tokenParam) setCode(tokenParam)
-  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,21 +97,6 @@ function RestablecerForm() {
     }
   }
 
-  const glassStyle = {
-    background: "rgba(255,255,255,0.7)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    border: "1px solid rgba(0,0,0,0.06)",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-  }
-
-  const iconStyle = {
-    background: "rgba(0,102,255,0.08)",
-    border: "1px solid rgba(0,102,255,0.15)",
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.04)",
-    color: "#06f",
-  }
-
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
       {/* Logo top-left */}
@@ -110,24 +113,15 @@ function RestablecerForm() {
         Reenviar código
       </Link>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md" style={{ animation: "fadeInUp 0.5s ease-out" }}>
         {done ? (
-          /* ─── Success ─── */
           <div className="rounded-3xl p-8 text-center space-y-6" style={glassStyle}>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            <div
               className="mx-auto flex size-16 items-center justify-center rounded-2xl"
               style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }}
             >
               <CheckCircle2 className="size-8 text-emerald-500" />
-            </motion.div>
+            </div>
             <div className="space-y-2">
               <h1 className="text-2xl font-extrabold text-[#050505]" style={{ fontFamily: "'Polymath Display', Georgia, serif" }}>
                 ¡Contraseña actualizada!
@@ -149,7 +143,6 @@ function RestablecerForm() {
             </div>
           </div>
         ) : (
-          /* ─── Form ─── */
           <div className="rounded-3xl p-8 space-y-6" style={glassStyle}>
             <div className="text-center space-y-4">
               <div className="mx-auto flex size-16 items-center justify-center rounded-2xl" style={iconStyle}>
@@ -231,7 +224,7 @@ function RestablecerForm() {
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

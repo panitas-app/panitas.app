@@ -175,7 +175,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
 
   const fetchPendingCount = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ status: "pending" })
+      const params = new URLSearchParams({ status: "pending", excludePos: "true" })
       if (lastViewedRef.current) params.set("after", lastViewedRef.current)
       const res = await fetch(`/api/orders/count?${params}`)
       if (res.ok) {

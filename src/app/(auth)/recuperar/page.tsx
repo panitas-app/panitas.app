@@ -4,9 +4,16 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Mail, ArrowLeft, Loader2, CheckCircle2, ShieldCheck } from "lucide-react"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
+const glassStyle = {
+  background: "rgba(255,255,255,0.7)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(0,0,0,0.06)",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+}
 
 export default function RecuperarPage() {
   const [email, setEmail] = useState("")
@@ -62,33 +69,15 @@ export default function RecuperarPage() {
         />
       </Link>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md" style={{ animation: "fadeInUp 0.5s ease-out" }}>
         {sent ? (
-          /* ─── Sent State ─── */
-          <div
-            className="rounded-3xl p-8 text-center space-y-6"
-            style={{
-              background: "rgba(255,255,255,0.7)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(0,0,0,0.06)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          <div className="rounded-3xl p-8 text-center space-y-6" style={glassStyle}>
+            <div
               className="mx-auto flex size-16 items-center justify-center rounded-2xl"
               style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }}
             >
               <CheckCircle2 className="size-8 text-emerald-500" />
-            </motion.div>
+            </div>
 
             <div className="space-y-2">
               <h1 className="text-2xl font-extrabold text-[#050505]" style={{ fontFamily: "'Polymath Display', Georgia, serif" }}>
@@ -126,17 +115,7 @@ export default function RecuperarPage() {
             </div>
           </div>
         ) : (
-          /* ─── Form State ─── */
-          <div
-            className="rounded-3xl p-8 space-y-6"
-            style={{
-              background: "rgba(255,255,255,0.7)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(0,0,0,0.06)",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-            }}
-          >
+          <div className="rounded-3xl p-8 space-y-6" style={glassStyle}>
             {/* Icon */}
             <div className="text-center space-y-4">
               <div
@@ -210,7 +189,7 @@ export default function RecuperarPage() {
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
     const current = await requireRole(["admin", "manager", "seller"])
     const body = await request.json()
 
+    const isPosOrder = body.source === "pos"
+
     let storeId = body.storeId
 
     if (!storeId) {
@@ -284,6 +286,7 @@ export async function POST(request: NextRequest) {
         sellerId,
         sellerName,
         storeId: storeId,
+        posPin: isPosOrder,
         creditDays,
         dueDate,
         downPayment: downPayment > 0 ? downPayment : null,
@@ -412,27 +415,29 @@ export async function POST(request: NextRequest) {
 
     await createAuditEntry({ action: "order.created", entity: "Order", entityId: order.id, storeId: current.store.id, userId: current.userId })
 
-    if (current.store.email) {
-      enviarAlertaNuevoPedido(
-        current.store.email,
-        current.store.name,
-        order.orderNumber,
-        order.total
-      ).catch(e => console.error("[order email error]", e))
-    }
+    if (!isPosOrder) {
+      if (current.store.email) {
+        enviarAlertaNuevoPedido(
+          current.store.email,
+          current.store.name,
+          order.orderNumber,
+          order.total
+        ).catch(e => console.error("[order email error]", e))
+      }
 
-    // Send confirmation to customer
-    if (order.customerEmail) {
-      const itemsHtml = itemsData.map(i =>
-        `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
-      ).join("")
-      const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
-      sendEmail(
-        order.customerEmail,
-        `Confirmación de tu pedido #${order.orderNumber} — ${current.store.name}`,
-        templateOrderConfirmation(order.customerName, order.orderNumber, current.store.name, itemsTable, order.total),
-        "order_confirmation"
-      ).catch(e => console.error("[order confirmation email error]", e))
+      // Send confirmation to customer
+      if (order.customerEmail) {
+        const itemsHtml = itemsData.map(i =>
+          `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
+        ).join("")
+        const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
+        sendEmail(
+          order.customerEmail,
+          `Confirmación de tu pedido #${order.orderNumber} — ${current.store.name}`,
+          templateOrderConfirmation(order.customerName, order.orderNumber, current.store.name, itemsTable, order.total),
+          "order_confirmation"
+        ).catch(e => console.error("[order confirmation email error]", e))
+      }
     }
 
     // ─── Fetch complete order with relations for response ───
