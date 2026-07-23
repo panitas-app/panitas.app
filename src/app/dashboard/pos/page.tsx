@@ -402,13 +402,12 @@ async function processSale() {
       setLastOrder(order)
       setPaymentOpen(false)
       setReceiptOpen(true)
-      // Fast flow: don't clear yet, wait for receipt
+      resetSaleState()
     } catch (e: any) { toast.error(e.message) }
     finally { setSubmitting(false) }
   }
 
-  function handleNewSale() {
-    setReceiptOpen(false)
+  function resetSaleState() {
     setCart([])
     setCartDiscount(0)
     setCouponDiscount(0)
@@ -434,8 +433,14 @@ async function processSale() {
     setShippingAgency("")
     setShippingAgencyAddress("")
     setShippingAddress("")
+    setSplitPayments([])
+    setCashReceived("")
+  }
+
+  function handleNewSale() {
+    setReceiptOpen(false)
     setLastOrder(null)
-    fetchTodaySales()
+    resetSaleState()
   }
 
   function handlePrint() {

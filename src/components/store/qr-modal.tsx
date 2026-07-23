@@ -27,7 +27,7 @@ export function QrModal({ open, onClose, storeName, storeUrl, storeLogo }: QrMod
     QRCode.toCanvas(canvas, storeUrl, {
       width: 180,
       margin: 1,
-      color: { dark: "#ffffff", light: "transparent" },
+      color: { dark: "#000000", light: "#ffffff" },
     }, (err) => {
       if (err) console.error(err)
     })
