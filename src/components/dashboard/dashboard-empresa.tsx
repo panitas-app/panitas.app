@@ -4,10 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, ShoppingCart, Calendar, Users, TrendingUp, CheckCircle, Clock, Zap, Receipt } from "lucide-react"
 import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
-import { TrafficSources } from "@/components/dashboard/traffic-sources"
-import { VisitorsPanel } from "@/components/dashboard/visitors-panel"
 import { formatBCV } from "@/lib/bcv/format"
-import { RecentOrdersWidget } from "@/components/dashboard/recent-orders-widget"
 import { CategoryStats } from "@/components/dashboard/category-stats"
 
 interface Props {
@@ -191,16 +188,8 @@ export function DashboardEmpresa({ store, rate: initialRate, sales, appointments
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div data-tour="visitors-panel"><VisitorsPanel {...visitorData} /></div>
-        <div data-tour="recent-orders"><RecentOrdersWidget orders={orders} /></div>
-        <div data-tour="category-stats"><CategoryStats type="category" items={categoryStats} /></div>
-      </div>
       <div data-tour="sales-chart"><SalesChart orders={orders} bcvRate={rate} /></div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div data-tour="traffic-sources"><TrafficSources sources={visitorData.sources} /></div>
-        <div data-tour="service-stats"><CategoryStats type="service" items={serviceStats} /></div>
-      </div>
+      <div data-tour="service-stats"><CategoryStats type="service" items={serviceStats} /></div>
     </div>
   )
 }
