@@ -59,6 +59,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [changingRole, setChangingRole] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
 
   const fetchMembers = useCallback(async () => {
     try {
@@ -78,6 +79,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
   useEffect(() => { fetchMembers() }, [fetchMembers])
 
   async function handleInvite() {
+    if (inviting) return
     if (!inviteEmail.trim()) return
     setInviting(true)
     setInviteLink(null)
@@ -103,6 +105,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
   }
 
   async function handleChangeRole(memberId: string, newRole: string) {
+    if (changingRole === memberId) return
     setChangingRole(memberId)
     try {
       const res = await fetch(`/api/stores/members/${memberId}`, {
@@ -125,7 +128,9 @@ export function TeamSettings({ storeId }: { storeId: string }) {
   }
 
   async function handleRemove(memberId: string) {
+    if (removing === memberId) return
     if (!confirm("¿Eliminar este miembro del equipo? Perderá acceso al panel.")) return
+    setRemoving(memberId)
     try {
       const res = await fetch(`/api/stores/members/${memberId}`, { method: "DELETE" })
       if (res.ok) {
@@ -138,6 +143,8 @@ export function TeamSettings({ storeId }: { storeId: string }) {
       }
     } catch {
       toast.error("Error al eliminar")
+    } finally {
+      setRemoving(null)
     }
   }
 
@@ -334,7 +341,7 @@ export function TeamSettings({ storeId }: { storeId: string }) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmRemove(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => confirmRemove && handleRemove(confirmRemove)}>
+            <Button variant="destructive" disabled={removing === confirmRemove} onClick={() => confirmRemove && handleRemove(confirmRemove)}>
               Eliminar
             </Button>
           </DialogFooter>

@@ -347,6 +347,7 @@ export default function CheckoutPage() {
   }
 
   async function handleSubmit() {
+    if (submitting) return
     setSubmitting(true)
     try {
       let receiptImageUrl = null
@@ -1099,6 +1100,7 @@ _¡Muchas gracias por su compra!_`
                           className="h-9 shrink-0"
                           disabled={!couponCode || couponLoading}
                           onClick={async () => {
+                            if (couponLoading) return
                             setCouponLoading(true)
                             setCouponError("")
                             try {

@@ -245,6 +245,7 @@ export default function POSPage() {
 
   // Coupon
   async function applyCoupon() {
+    if (applyingCoupon) return
     const code = couponCode.trim()
     if (!code) { toast.error("Ingresa un código"); return }
     setApplyingCoupon(true)

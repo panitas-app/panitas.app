@@ -42,6 +42,7 @@ function PaymentAccountForm({
   const selectedBank = BANKS_VENEZUELA.find((b) => b.code === bankCode)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (loading) return
     e.preventDefault()
     setLoading(true)
     const form = new FormData(e.currentTarget)
@@ -265,16 +266,21 @@ function PaymentAccountForm({
 
 export function SettingsPayments({ store }: { store: Store & { paymentAccounts: PaymentAccount[] } }) {
   const [open, setOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  async function deleteAccount(id: string) {
+  async function deleteAccount(accountId: string) {
+    if (deletingId === accountId) return
     if (!confirm("¿Eliminar esta cuenta?")) return
+    setDeletingId(accountId)
     try {
-      const res = await fetch(`/api/payment-accounts/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/payment-accounts/${accountId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Error")
       toast.success("Cuenta eliminada")
       window.location.reload()
     } catch {
       toast.error("Error al eliminar")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -329,7 +335,7 @@ export function SettingsPayments({ store }: { store: Store & { paymentAccounts: 
                     {account.type === "binancepay" ? account.accountHolder : `${account.accountHolder} — ${account.documentId}`}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon-sm" onClick={() => deleteAccount(account.id)}>
+                <Button variant="ghost" size="icon-sm" disabled={deletingId === account.id} onClick={() => deleteAccount(account.id)}>
                   <Trash2 className="size-3.5 text-destructive" />
                 </Button>
               </div>
