@@ -341,8 +341,9 @@ export default function POSPage() {
     return { downPaymentAmt: dp, eachAmount: n > 0 ? remaining / n : 0, count: n }
   }
 
-  async function processSale() {
-    if (splitPayments.length === 0) { toast.error("Agrega al menos un método de pago"); return }
+async function processSale() {
+    if (submitting) return
+    if (splitPayments.length === 0) { toast.error("Agrega al menos un mǸtodo de pago"); return }
     if (!customer) { toast.error("Selecciona un cliente"); return }
 
     // Validate split payments cover total
