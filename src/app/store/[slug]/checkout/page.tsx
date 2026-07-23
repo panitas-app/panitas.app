@@ -358,7 +358,10 @@ export default function CheckoutPage() {
           method: "POST",
           body: formData,
         })
-        if (!uploadRes.ok) throw new Error("Error al subir el comprobante de pago")
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}))
+          throw new Error(errData.error || "Error al subir el comprobante de pago")
+        }
         const uploadData = await uploadRes.json()
         receiptImageUrl = uploadData.url
       }
@@ -1359,7 +1362,7 @@ _¡Muchas gracias por su compra!_`
                             </div>
                             <div className="text-center">
                               <p className="text-sm font-medium">Haz clic o arrastra tu comprobante</p>
-                              <p className="text-xs text-muted-foreground mt-1">PNG, JPG o PDF (máx. 10MB)</p>
+                              <p className="text-xs text-muted-foreground mt-1">PNG, JPG o PDF (máx. 3MB)</p>
                             </div>
                           </>
                         )}
