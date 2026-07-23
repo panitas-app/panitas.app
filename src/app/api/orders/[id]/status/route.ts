@@ -50,9 +50,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
 
-    const updated = await prisma.order.update({
+    // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
+    await prisma.order.update({
       where: { id },
       data: { status },
+    })
+
+    const updated = await prisma.order.findUnique({
+      where: { id },
       include: {
         items: { include: { product: { select: { name: true } } } },
         payments: {
@@ -61,6 +66,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         store: { select: { name: true, whatsapp: true } },
       },
     })
+
+    if (!updated) {
+      return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
+    }
 
     await createAuditEntry({ action: "order.status_changed", entity: "Order", entityId: id, metadata: { oldStatus: existing.status, newStatus: status }, storeId: store.id, userId })
 

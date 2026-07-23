@@ -37,18 +37,27 @@ export async function POST(
       data: { status: "verified" },
     })
 
-    const updated = await prisma.order.update({
+    // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
+    await prisma.order.update({
       where: { id },
       data: {
         paymentStatus: "paid",
         status: orderStatus || "confirmed",
       },
+    })
+
+    const updated = await prisma.order.findUnique({
+      where: { id },
       include: {
         items: { include: { product: true } },
         payments: { include: { paymentAccount: true } },
         store: true,
       },
     })
+
+    if (!updated) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
 
     await createAuditEntry({ action: "payment.verified", entity: "OrderPayment", entityId: paymentId, storeId: current.store.id, userId: current.userId })
 
