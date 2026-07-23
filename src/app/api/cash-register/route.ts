@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
   const current = await getCurrentStore()
   if (!current) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const body = await request.json()
+  let body
+  try { body = await request.json() } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }) }
 
   if (body.action === "open") {
     const active = await prisma.cashRegisterSession.findFirst({

@@ -32,7 +32,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!current) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const { id } = await params
-  const body = await request.json()
+  let body
+  try { body = await request.json() } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }) }
 
   const session = await prisma.cashRegisterSession.findFirst({
     where: { id, storeId: current.store.id, status: "open" },
