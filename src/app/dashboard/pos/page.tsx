@@ -347,7 +347,7 @@ export default function POSPage() {
 
     // Validate split payments cover total
     const totalPaid = splitPayments.reduce((s, p) => s + p.amount, 0)
-    const isCredit = selectedCreditTerm?.startsWith("cuotas_")
+    const isCredit = !!selectedCreditTerm
     if (!isCredit && Math.abs(totalPaid - total) > 0.01) {
       toast.error(`Los pagos suman $${totalPaid.toFixed(2)} pero el total es $${total.toFixed(2)}`)
       return
