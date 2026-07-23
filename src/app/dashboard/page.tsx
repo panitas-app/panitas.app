@@ -117,7 +117,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
       const totalSource = Object.values(sourceMap).reduce((a, b) => a + b, 0) || 1
       const trafficSources = Object.entries(sourceMap).map(([key, val]) => ({
         id: key,
-        label: key === "direct" ? "Directo" : key === "social" ? "Redes Sociales" : key === "search" ? "Buscadores" : key === "whatsapp" ? "WhatsApp" : key === "email" ? "Email / CRM" : key,
+        label: key === "direct" ? "Directo" : key === "social" ? "Redes Sociales" : key === "search" ? "Buscadores" : key === "whatsapp" ? "WhatsApp" : key === "email" ? "Email / CRM" : key === "qr" ? "QR" : key,
         percentage: Math.round((val / totalSource) * 100),
       }))
 

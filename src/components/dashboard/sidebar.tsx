@@ -173,6 +173,21 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
   const isEnterprise = legacyPlanType === "empresa" || legacyPlanType === "empresarial"
   const isOnOrders = pathname === "/dashboard/orders" || pathname.startsWith("/dashboard/orders/")
 
+  const lastViewedKey = `panitas:lastViewed:${store.id}`
+
+  const markOrdersViewed = useCallback(() => {
+    const now = new Date().toISOString()
+    lastViewedRef.current = now
+    try { localStorage.setItem(lastViewedKey, now) } catch {}
+  }, [lastViewedKey])
+
+  if (typeof window !== "undefined" && !lastViewedRef.current) {
+    try {
+      const stored = localStorage.getItem(lastViewedKey)
+      if (stored) lastViewedRef.current = stored
+    } catch {}
+  }
+
   const fetchPendingCount = useCallback(async () => {
     try {
       const params = new URLSearchParams({ status: "pending", excludePos: "true" })
@@ -200,10 +215,10 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
 
   useEffect(() => {
     if (isOnOrders && pendingCount > 0) {
-      lastViewedRef.current = new Date().toISOString()
+      markOrdersViewed()
       setPendingCount(0)
     }
-  }, [isOnOrders, pendingCount])
+  }, [isOnOrders, pendingCount, markOrdersViewed])
 
   const planLabel = sidebarPlanLabel(planId || legacyPlanType, modalidad)
   const navItems = getNavItems(legacyPlanType)
