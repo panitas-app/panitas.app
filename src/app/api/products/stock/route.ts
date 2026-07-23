@@ -71,23 +71,23 @@ export async function POST(request: NextRequest) {
     newStock = quantity
   }
 
-  const [movement] = await prisma.$transaction([
-    prisma.stockMovement.create({
-      data: {
-        type,
-        quantity: type === "increase" ? quantity : -quantity,
-        balance: newStock,
-        concept: safeStr(body.concept, 500) || null,
-        reference: safeStr(body.reference, 200) || null,
-        productId,
-        storeId: current.store.id,
-      },
-    }),
-    prisma.product.update({
-      where: { id: productId },
-      data: { stock: newStock },
-    }),
-  ])
+  // Sequential: create movement then update product (Neon HTTP doesn't support transactions)
+  const movement = await prisma.stockMovement.create({
+    data: {
+      type,
+      quantity: type === "increase" ? quantity : -quantity,
+      balance: newStock,
+      concept: safeStr(body.concept, 500) || null,
+      reference: safeStr(body.reference, 200) || null,
+      productId,
+      storeId: current.store.id,
+    },
+  })
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { stock: newStock },
+  })
 
   await createAuditEntry({ action: `stock.${type}`, entity: "StockMovement", entityId: movement.id, storeId: current.store.id, userId: current.userId })
 

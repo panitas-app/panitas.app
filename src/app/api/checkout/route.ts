@@ -123,125 +123,138 @@ export async function POST(request: NextRequest) {
     // Fetch exchange rate from local DB (highly efficient)
     const latestRate = await prisma.bcvRate.findFirst({ orderBy: { date: "desc" } })
 
-    // ─── Execute Atomics inside transaction ───
-    const order = await prisma.$transaction(async (tx) => {
-      // 1. Find or create customer (for CRM)
-      let customerId: string
-      const existingCustomer = await tx.customer.findUnique({
-        where: { storeId_phone: { storeId, phone: customerPhone } },
-      })
+    // ─── Create order sequentially (Neon HTTP doesn't support transactions) ───
 
-      if (existingCustomer) {
-        customerId = existingCustomer.id
-        await tx.customer.update({
-          where: { id: existingCustomer.id },
-          data: {
-            name: customerName, // Update name if it changed
-            lastPurchaseAt: new Date(),
-            totalSpent: { increment: total },
-            totalOrders: { increment: 1 },
-          },
-        })
-      } else {
-        const newCustomer = await tx.customer.create({
-          data: {
-            storeId,
-            name: customerName,
-            phone: customerPhone,
-            email: body.customerEmail || null,
-            address: body.customerAddress || null,
-            city: body.customerCity || null,
-            state: body.customerState || null,
-            totalSpent: total,
-            totalOrders: 1,
-            lastPurchaseAt: new Date(),
-          },
-        })
-        customerId = newCustomer.id
-      }
-
-      // 2. Validate and decrement stock again within transaction to prevent race conditions
-      for (const item of itemsData) {
-        const prod = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { name: true, stock: true },
-        })
-        if (!prod || prod.stock < item.quantity) {
-          throw new Error(`Stock insuficiente para "${item.productName}" debido a una compra concurrente.`)
-        }
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        })
-      }
-
-      // 3. Increment coupon usage
-      if (couponId) {
-        const couponCheck = await tx.coupon.findUnique({
-          where: { id: couponId },
-          select: { maxUses: true, usedCount: true },
-        })
-        if (couponCheck && couponCheck.maxUses > 0 && couponCheck.usedCount >= couponCheck.maxUses) {
-          throw new Error("El cupón ya ha alcanzado su límite de usos.")
-        }
-        await tx.coupon.update({
-          where: { id: couponId },
-          data: { usedCount: { increment: 1 } },
-        })
-      }
-
-      // 4. Create Order with items and payment details
-      return tx.order.create({
-        data: {
-          orderNumber: generateOrderNumber(),
-          status: "pending",
-          subtotal,
-          discount,
-          shippingCost,
-          total,
-          bcvRateAtOrder: latestRate?.rate || null,
-          currency: typeof body.currency === "string" && (body.currency === "USD" || body.currency === "VES") ? body.currency : "USD",
-          customerName: customerName,
-          customerPhone: customerPhone,
-          customerEmail: typeof body.customerEmail === "string" && body.customerEmail.length > 0 ? body.customerEmail.slice(0, 254) : null,
-          customerAddress: typeof body.customerAddress === "string" ? body.customerAddress.slice(0, 500) : null,
-          customerCity: typeof body.customerCity === "string" ? body.customerCity.slice(0, 100) : null,
-          customerState: typeof body.customerState === "string" ? body.customerState.slice(0, 100) : null,
-          customerId,
-          couponId,
-          shippingMethod: shippingMethod,
-          shippingAgency: typeof body.shippingAgency === "string" ? body.shippingAgency.slice(0, 100) : null,
-          shippingAgencyAddress: typeof body.shippingAgencyAddress === "string" ? body.shippingAgencyAddress.slice(0, 500) : null,
-          shippingAddress: typeof body.shippingAddress === "string" ? body.shippingAddress.slice(0, 500) : null,
-          storeId: storeId,
-          items: {
-            create: itemsData.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-              price: i.price,
-              subtotal: i.subtotal,
-              productName: i.productName,
-            })),
-          },
-          payments: body.payment ? {
-            create: {
-              method: typeof body.payment.method === "string" ? body.payment.method.slice(0, 50) : "manual",
-              amount: Number.isFinite(parseFloat(body.payment.amount)) ? Math.min(MAX_TOTAL, Math.max(0, parseFloat(body.payment.amount))) : total,
-              reference: typeof body.payment.reference === "string" ? body.payment.reference.slice(0, 100) : null,
-              bankOrigin: typeof body.payment.bankOrigin === "string" ? body.payment.bankOrigin.slice(0, 100) : null,
-              paidAt: body.payment.paidAt ? new Date(body.payment.paidAt) : null,
-              receiptImage: typeof body.payment.receiptImage === "string" ? body.payment.receiptImage.slice(0, 2048) : null,
-              paymentAccountId: typeof body.payment.paymentAccountId === "string" ? body.payment.paymentAccountId.slice(0, 64) : null,
-              status: "pending",
-            },
-          } : undefined,
-        },
-        include: {
-          items: true,
-          payments: true,
-        },
-      })
+    // 1. Find or create customer
+    let customerId: string
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { storeId_phone: { storeId, phone: customerPhone } },
     })
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id
+      await prisma.customer.update({
+        where: { id: existingCustomer.id },
+        data: {
+          name: customerName,
+          lastPurchaseAt: new Date(),
+          totalSpent: { increment: total },
+          totalOrders: { increment: 1 },
+        },
+      })
+    } else {
+      const newCustomer = await prisma.customer.create({
+        data: {
+          storeId,
+          name: customerName,
+          phone: customerPhone,
+          email: body.customerEmail || null,
+          address: body.customerAddress || null,
+          city: body.customerCity || null,
+          state: body.customerState || null,
+          totalSpent: total,
+          totalOrders: 1,
+          lastPurchaseAt: new Date(),
+        },
+      })
+      customerId = newCustomer.id
+    }
+
+    // 2. Validate and decrement stock sequentially
+    for (const item of itemsData) {
+      const prod = await prisma.product.findUnique({
+        where: { id: item.productId },
+        select: { name: true, stock: true },
+      })
+      if (!prod || prod.stock < item.quantity) {
+        return jsonError(`Stock insuficiente para "${item.productName}" debido a una compra concurrente.`, 400)
+      }
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } },
+      })
+    }
+
+    // 3. Increment coupon usage
+    if (couponId) {
+      const couponCheck = await prisma.coupon.findUnique({
+        where: { id: couponId },
+        select: { maxUses: true, usedCount: true },
+      })
+      if (couponCheck && couponCheck.maxUses > 0 && couponCheck.usedCount >= couponCheck.maxUses) {
+        return jsonError("El cupón ya ha alcanzado su límite de usos.", 400)
+      }
+      await prisma.coupon.update({
+        where: { id: couponId },
+        data: { usedCount: { increment: 1 } },
+      })
+    }
+
+    // 4. Create Order (no nested creates)
+    const order = await prisma.order.create({
+      data: {
+        orderNumber: generateOrderNumber(),
+        status: "pending",
+        subtotal,
+        discount,
+        shippingCost,
+        total,
+        bcvRateAtOrder: latestRate?.rate || null,
+        currency: typeof body.currency === "string" && (body.currency === "USD" || body.currency === "VES") ? body.currency : "USD",
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerEmail: typeof body.customerEmail === "string" && body.customerEmail.length > 0 ? body.customerEmail.slice(0, 254) : null,
+        customerAddress: typeof body.customerAddress === "string" ? body.customerAddress.slice(0, 500) : null,
+        customerCity: typeof body.customerCity === "string" ? body.customerCity.slice(0, 100) : null,
+        customerState: typeof body.customerState === "string" ? body.customerState.slice(0, 100) : null,
+        customerId,
+        couponId,
+        shippingMethod: shippingMethod,
+        shippingAgency: typeof body.shippingAgency === "string" ? body.shippingAgency.slice(0, 100) : null,
+        shippingAgencyAddress: typeof body.shippingAgencyAddress === "string" ? body.shippingAgencyAddress.slice(0, 500) : null,
+        shippingAddress: typeof body.shippingAddress === "string" ? body.shippingAddress.slice(0, 500) : null,
+        storeId: storeId,
+      },
+    })
+
+    // 5. Create order items (sequential)
+    for (const item of itemsData) {
+      await prisma.orderItem.create({
+        data: {
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.subtotal,
+          productName: item.productName,
+        },
+      })
+    }
+
+    // 6. Create payment (sequential)
+    if (body.payment) {
+      await prisma.orderPayment.create({
+        data: {
+          orderId: order.id,
+          method: typeof body.payment.method === "string" ? body.payment.method.slice(0, 50) : "manual",
+          amount: Number.isFinite(parseFloat(body.payment.amount)) ? Math.min(MAX_TOTAL, Math.max(0, parseFloat(body.payment.amount))) : total,
+          reference: typeof body.payment.reference === "string" ? body.payment.reference.slice(0, 100) : null,
+          bankOrigin: typeof body.payment.bankOrigin === "string" ? body.payment.bankOrigin.slice(0, 100) : null,
+          paidAt: body.payment.paidAt ? new Date(body.payment.paidAt) : null,
+          receiptImage: typeof body.payment.receiptImage === "string" ? body.payment.receiptImage.slice(0, 2048) : null,
+          paymentAccountId: typeof body.payment.paymentAccountId === "string" ? body.payment.paymentAccountId.slice(0, 64) : null,
+          status: "pending",
+        },
+      })
+    }
+
+    // 7. Fetch complete order with relations
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: { items: true, payments: true },
+    })
+
+    const finalOrder = fullOrder || order
 
     await createAuditEntry({ action: "order.created", entity: "Order", entityId: order.id, metadata: { orderNumber: order.orderNumber, total: order.total }, storeId: storeExists.id })
 
@@ -257,7 +270,7 @@ export async function POST(request: NextRequest) {
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
         shipping_cost_usd: order.shippingCost,
-        item_count: order.items.reduce((s: number, i: { quantity: number }) => s + i.quantity, 0),
+        item_count: itemsData.reduce((s, i) => s + i.quantity, 0),
         shipping_method: order.shippingMethod,
         coupon_applied: !!order.couponId,
         currency: order.currency,
@@ -276,7 +289,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation to customer
     if (order.customerEmail) {
-      const itemsHtml = order.items.map(i =>
+      const itemsHtml = itemsData.map(i =>
         `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`
       ).join("")
       const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
@@ -288,7 +301,7 @@ export async function POST(request: NextRequest) {
       ).catch(e => console.error("[checkout confirmation email error]", e))
     }
 
-    return NextResponse.json(order, { status: 201 })
+    return NextResponse.json(finalOrder, { status: 201 })
   } catch (error: any) {
     // Allow user-facing stock/concurrency messages to bubble up
     if (error instanceof Error) {
