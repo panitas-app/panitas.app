@@ -52,10 +52,23 @@ export async function GET(request: Request) {
     productAgg,
     recentOrders,
   ] = await Promise.all([
-    prisma.order.aggregate({ where: todayNonCancelled, _sum: { total: true } }),
-    prisma.order.aggregate({ where: weekNonCancelled, _sum: { total: true } }),
-    prisma.order.aggregate({ where: monthNonCancelled, _sum: { total: true } }),
-    prisma.order.aggregate({ where: nonCancelled, _sum: { total: true } }),
+    // Revenue = suma de OrderPayment verificados (paidAt o createdAt fallback) en el período
+    prisma.orderPayment.aggregate({
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: todayStart } }, { paidAt: null, createdAt: { gte: todayStart } }] },
+      _sum: { amount: true },
+    }),
+    prisma.orderPayment.aggregate({
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: weekStart } }, { paidAt: null, createdAt: { gte: weekStart } }] },
+      _sum: { amount: true },
+    }),
+    prisma.orderPayment.aggregate({
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: monthStart } }, { paidAt: null, createdAt: { gte: monthStart } }] },
+      _sum: { amount: true },
+    }),
+    prisma.orderPayment.aggregate({
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified" },
+      _sum: { amount: true },
+    }),
     prisma.expense.aggregate({ where: { ...baseWhere, date: { gte: todayStart } }, _sum: { amount: true } }),
     prisma.expense.aggregate({ where: { ...baseWhere, date: { gte: weekStart } }, _sum: { amount: true } }),
     prisma.expense.aggregate({ where: { ...baseWhere, date: { gte: monthStart } }, _sum: { amount: true } }),
@@ -96,10 +109,10 @@ export async function GET(request: Request) {
   for (const s of statusCounts) statusCountMap[s.status] = s._count.id
 
   return NextResponse.json({
-    todayRevenue: todayRevenue._sum.total || 0,
-    weekRevenue: weekRevenue._sum.total || 0,
-    monthRevenue: monthRevenue._sum.total || 0,
-    totalRevenue: totalRet._sum.total || 0,
+    todayRevenue: todayRevenue._sum.amount || 0,
+    weekRevenue: weekRevenue._sum.amount || 0,
+    monthRevenue: monthRevenue._sum.amount || 0,
+    totalRevenue: totalRet._sum.amount || 0,
     todayExpenses: todayExp._sum.amount || 0,
     weekExpenses: weekExp._sum.amount || 0,
     monthExpenses: monthExp._sum.amount || 0,
