@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
   if (!agenda) return NextResponse.json({ error: "Agenda no encontrada" }, { status: 404 })
 
   const [ay, am, ad] = dateStr.split("-").map(Number)
-  const appointment = await prisma.appointment.create({
+  // NOTE: create + include triggers interactive transactions in Neon HTTP — do them separately
+  const created = await prisma.appointment.create({
     data: {
       customerName,
       customerPhone,
@@ -107,8 +108,8 @@ export async function POST(request: NextRequest) {
       serviceId: body.serviceId || null,
       employeeId: body.employeeId || null,
     },
-    include: { service: true },
   })
+  const appointment = await prisma.appointment.findUnique({ where: { id: created.id }, include: { service: true } })
 
   // ─── Send emails ────────────────────────────────────────────────
   const fecha = formatDate(appointment.date)

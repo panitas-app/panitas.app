@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   const store = await prisma.store.findUnique({ where: { userId: session.user.id } })
   if (!store) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 })
   const body = await req.json()
-  const employee = await prisma.employee.create({
+  // NOTE: create + include triggers interactive transactions in Neon HTTP — do them separately
+  const created = await prisma.employee.create({
     data: {
       name: body.name,
       email: body.email,
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
       branchId: body.branchId,
       storeId: store.id,
     },
-    include: { branch: { select: { id: true, name: true } } },
   })
+  const employee = await prisma.employee.findUnique({ where: { id: created.id }, include: { branch: { select: { id: true, name: true } } } })
   return NextResponse.json(employee, { status: 201 })
 }

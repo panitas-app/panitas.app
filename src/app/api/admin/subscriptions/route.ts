@@ -36,8 +36,12 @@ export async function POST(req: NextRequest) {
   const { storeId, plan, amount, currency, period, notes } = body
   if (!storeId || !plan || !amount) return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
 
-  const subscription = await prisma.storeSubscription.create({
+  // NOTE: create + include triggers interactive transactions in Neon HTTP — do them separately
+  const created = await prisma.storeSubscription.create({
     data: { storeId, plan, amount, currency: currency || "USD", period: period || "monthly", status: "pending", notes },
+  })
+  const subscription = await prisma.storeSubscription.findUnique({
+    where: { id: created.id },
     include: { store: { select: { name: true, slug: true } } },
   })
 

@@ -47,11 +47,9 @@ export async function PATCH(
   }
   if (body.notes !== undefined) data.notes = String(body.notes).slice(0, 1000)
 
-  const updated = await prisma.appointment.update({
-    where: { id },
-    data,
-    include: { service: true },
-  })
+  // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
+  await prisma.appointment.update({ where: { id }, data })
+  const updated = await prisma.appointment.findUnique({ where: { id }, include: { service: true } })
 
   // Send email when appointment is completed
   if (data.status === "completed" && appointment.customerEmail) {

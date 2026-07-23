@@ -75,11 +75,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (notes !== undefined) updateData.notes = notes
 
-  const subscription = await prisma.storeSubscription.update({
+  // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
+  await prisma.storeSubscription.update({ where: { id }, data: updateData })
+  const subscription = await prisma.storeSubscription.findUnique({
     where: { id },
-    data: updateData,
     include: { store: { select: { name: true, slug: true, plan: true, email: true } } },
-    })
+  })
 
     await createAuditEntry({ action: `subscription.${status}`, entity: "StoreSubscription", entityId: id, userId: admin.id, storeId: existing.storeId })
 

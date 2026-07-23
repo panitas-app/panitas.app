@@ -52,15 +52,19 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.amount - a.amount)
 
     // Sales revenue for the selected month (excluye canceladas)
-    const salesAgg = await prisma.order.aggregate({
+    // Suma de pagos verificados (paidAt o createdAt fallback) dentro del mes
+    const salesAgg = await prisma.orderPayment.aggregate({
       where: {
-        storeId: store.id,
-        status: { not: "cancelled" },
-        createdAt: { gte: start, lte: end },
+        order: { storeId: store.id, status: { not: "cancelled" } },
+        status: "verified",
+        OR: [
+          { paidAt: { gte: start, lte: end } },
+          { paidAt: null, createdAt: { gte: start, lte: end } },
+        ],
       },
-      _sum: { total: true },
+      _sum: { amount: true },
     })
-    const ventasMes = salesAgg._sum.total || 0
+    const ventasMes = salesAgg._sum.amount || 0
 
     // Balance
     const balance = ventasMes - puntoEquilibrio
