@@ -10,6 +10,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()))
+  const tzOffset = parseInt(searchParams.get("tzOffset") || "0")
+  const tzOffsetMs = tzOffset * 60 * 1000
 
   const startDate = new Date(`${year}-01-01T00:00:00.000Z`)
   const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`)
@@ -42,7 +44,7 @@ export async function GET(request: Request) {
   }>()
 
   for (const order of orders) {
-    const dateKey = order.createdAt.toISOString().split("T")[0]
+    const dateKey = new Date(order.createdAt.getTime() - tzOffsetMs).toISOString().split("T")[0]
     let day = dayMap.get(dateKey)
     if (!day) {
       day = { totalRevenue: 0, totalOrders: 0, paymentsBreakdown: {}, storeSales: 0, posSales: 0, creditSales: 0 }
