@@ -142,11 +142,9 @@ export async function PUT(
     data.sizes = sizes ? JSON.stringify(sizes) : null
   }
 
-  const updated = await prisma.product.update({
-    where: { id },
-    data,
-    include: { category: true },
-  })
+  // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
+  await prisma.product.update({ where: { id }, data })
+  const updated = await prisma.product.findUnique({ where: { id }, include: { category: true } })
 
   await createAuditEntry({ action: "product.updated", entity: "Product", entityId: id, storeId: current.store.id, userId: current.userId })
 
