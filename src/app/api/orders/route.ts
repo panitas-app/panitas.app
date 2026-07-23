@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
             amount: parseFloat(String(p.amount)),
             reference: p.reference || null,
             bankOrigin: p.bankOrigin || null,
-            paidAt: p.paidAt ? new Date(p.paidAt) : (status || (p.method === "credit" ? "verified" : "pending")) === "verified" ? new Date() : null,
+            paidAt: p.paidAt ? new Date(p.paidAt) : (p.status || (p.method === "credit" ? "verified" : "pending")) === "verified" ? new Date() : null,
             receiptImage: p.receiptImage || null,
             paymentAccountId: p.paymentAccountId || null,
             status: p.status || (p.method === "credit" ? "verified" : "pending"),
