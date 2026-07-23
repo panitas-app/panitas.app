@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-const KNOWN_SOURCES = ["direct", "social", "search", "whatsapp", "email"] as const
+const KNOWN_SOURCES = ["direct", "social", "search", "whatsapp", "email", "qr"] as const
 type Source = typeof KNOWN_SOURCES[number]
 
-function classifySource(referrer?: string): Source {
+function classifySource(referrer: string | undefined, ref: string | undefined): Source {
+  const r = (ref || "").toLowerCase()
+  if (r === "whatsapp" || r === "wa" || r.includes("whatsapp")) return "whatsapp"
+  if (r === "qr" || r === "qrcode") return "qr"
+  if (r === "facebook" || r === "fb" || r === "instagram" || r === "ig" || r === "tiktok" || r === "twitter" || r === "linkedin" || r === "social") return "social"
+  if (r === "google" || r === "bing" || r === "yahoo" || r === "search") return "search"
+  if (r === "email" || r === "mail" || r === "gmail" || r === "outlook" || r === "hotmail") return "email"
   if (!referrer) return "direct"
   if (referrer.includes("facebook") || referrer.includes("instagram") || referrer.includes("twitter") || referrer.includes("tiktok") || referrer.includes("linkedin")) return "social"
   if (referrer.includes("google") || referrer.includes("bing") || referrer.includes("yahoo")) return "search"
@@ -22,7 +28,8 @@ export async function POST(req: Request) {
     }
 
     const referrer = body.referrer as string | undefined
-    const source = classifySource(referrer)
+    const ref = body.ref as string | undefined
+    const source = classifySource(referrer, ref)
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)

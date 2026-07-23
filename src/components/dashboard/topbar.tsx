@@ -141,12 +141,13 @@ export function DashboardTopbar({
 
   const [storeUrl, setStoreUrl] = useState("")
   useEffect(() => { setStoreUrl(`${window.location.origin}/store/${store.slug}`) }, [store.slug])
+  const storeUrlQr = storeUrl ? `${storeUrl}?ref=qr` : ""
 
   const planButton = computePlanStatus(store, planEstado, planId, planVencimiento, latestSubscription)
 
   async function handleCopyLink() {
     try {
-      await navigator.clipboard.writeText(storeUrl)
+      await navigator.clipboard.writeText(`${storeUrl}?ref=whatsapp`)
       toast.success("Enlace copiado al portapapeles")
     } catch {
       toast.error("No se pudo copiar el enlace")
@@ -252,7 +253,7 @@ export function DashboardTopbar({
       <QRModal
         open={qrOpen}
         onOpenChange={setQrOpen}
-        storeUrl={storeUrl}
+        storeUrl={storeUrlQr}
         storeName={store.name}
       />
     </>

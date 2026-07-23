@@ -21,6 +21,7 @@ const COLORS: Record<string, { cls: string; stroke: string }> = {
   search: { cls: "bg-emerald-500", stroke: "#10b981" },
   whatsapp: { cls: "bg-green-500", stroke: "#22c55e" },
   email: { cls: "bg-purple-500", stroke: "#a855f7" },
+  qr: { cls: "bg-orange-500", stroke: "#f97316" },
 }
 
 const DEFAULT_COLOR = { cls: "bg-muted-foreground/20", stroke: "#94a3b8" }
