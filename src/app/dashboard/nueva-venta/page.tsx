@@ -228,7 +228,7 @@ export default function NuevaVentaPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100dvh-4rem)] gap-3 lg:gap-4">
       {/* Left: Products */}
       <div className="flex-1 flex flex-col min-h-0">
         <div className="mb-4 flex items-center gap-3 shrink-0">

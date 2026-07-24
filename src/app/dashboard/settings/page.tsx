@@ -51,17 +51,17 @@ export default async function SettingsPage(props: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="text-center font-heading text-xl font-semibold">Configuración</h1>
+    <div className="mx-auto max-w-4xl space-y-4 lg:space-y-6">
+      <h1 className="text-center font-heading text-lg lg:text-xl font-semibold">Configuración</h1>
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList className="w-full justify-start flex-nowrap overflow-x-auto scrollbar-none">
-          <TabsTrigger value="general">Envío</TabsTrigger>
-          <TabsTrigger value="payments">Cuentas de pago</TabsTrigger>
-          <TabsTrigger value="verification">Verificación</TabsTrigger>
-          {isNegocio && isAdmin && <TabsTrigger value="team">Equipo</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="subscription">Suscripción</TabsTrigger>}
-          {isEnterprise && <TabsTrigger value="credit">Crédito</TabsTrigger>}
+        <TabsList className="w-full justify-start flex-nowrap overflow-x-auto scrollbar-none -mx-3 px-3">
+          <TabsTrigger value="general" className="shrink-0">Envío</TabsTrigger>
+          <TabsTrigger value="payments" className="shrink-0">Cuentas de pago</TabsTrigger>
+          <TabsTrigger value="verification" className="shrink-0">Verificación</TabsTrigger>
+          {isNegocio && isAdmin && <TabsTrigger value="team" className="shrink-0">Equipo</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="subscription" className="shrink-0">Suscripción</TabsTrigger>}
+          {isEnterprise && <TabsTrigger value="credit" className="shrink-0">Crédito</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="general" className="mt-6">

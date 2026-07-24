@@ -204,6 +204,84 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* ── Mobile form inputs — prevent iOS zoom, proper sizing ── */
+@layer base {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    @apply min-h-[44px] text-base;
+    font-size: max(16px, 1rem);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 12px;
+    @apply border border-border bg-background px-4 py-3;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  input:focus, textarea:focus, select:focus {
+    @apply ring-2 ring-primary/20 border-primary outline-none;
+  }
+  /* Prevent zoom on input focus for iOS (< 16px font = zoom trigger) */
+  @supports (-webkit-touch-callout: none) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* ── Touch states — all interactive elements ── */
+@layer base {
+  button, a, [role="button"], label, summary {
+    @apply transition-all duration-150;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active:not(:disabled), a:active, [role="button"]:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ── Responsive tables → stack on mobile ── */
+@media (max-width: 640px) {
+  table {
+    font-size: 0.8125rem;
+  }
+  table thead {
+    @apply sr-only;
+  }
+  table tr {
+    @apply block border border-border rounded-xl mb-3 bg-card p-3;
+  }
+  table td {
+    @apply flex items-center justify-between py-2 px-0 border-b border-border/50 last:border-0;
+  }
+  table td::before {
+    content: attr(data-label);
+    @apply font-bold text-muted-foreground text-[11px] uppercase tracking-wider mr-3;
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+}
+
+/* ── Smooth page transitions ── */
+@layer base {
+  main {
+    animation: fadeIn 0.2s ease-out;
+  }
+}
+
+/* ── Keyboard-aware layout — bottom nav shrinks when keyboard open ── */
+@supports (height: 100dvh) {
+  .min-h-dvh-app {
+    min-height: 100dvh;
+  }
+}
+
 @utility glass {
   background: var(--glass-bg, rgba(255,255,255,0.7));
   backdrop-filter: var(--glass-blur, blur(16px));

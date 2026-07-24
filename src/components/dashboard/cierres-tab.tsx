@@ -195,7 +195,7 @@ export default function CierresTab() {
         <Button variant="outline" size="sm" onClick={() => setYear((y) => y - 1)}>
           <ChevronLeft className="size-4" />
         </Button>
-        <span className="text-lg font-bold min-w-[100px] text-center">{year}</span>
+        <span className="text-lg font-bold shrink-0 text-center">{year}</span>
         <Button variant="outline" size="sm" onClick={() => setYear((y) => y + 1)} disabled={year >= new Date().getFullYear()}>
           <ChevronRight className="size-4" />
         </Button>

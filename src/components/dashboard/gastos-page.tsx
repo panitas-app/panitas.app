@@ -595,7 +595,7 @@ function ExpenseList() {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0">
               <Label className="text-[10px]">Buscar</Label>
               <div className="relative mt-1">
                 <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />

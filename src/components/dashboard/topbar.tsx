@@ -156,10 +156,10 @@ export function DashboardTopbar({
 
   return (
     <>
-      <header data-tour="topbar" className="sticky top-0 z-20 flex h-16 items-center justify-between glass-dark px-6">
-        <div className="flex items-center gap-4">
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-500/5 px-3.5 py-1 text-xs font-bold text-emerald-300 sm:flex">
-            <span className="relative flex size-1.5">
+      <header data-tour="topbar" className="sticky top-0 z-20 flex h-14 lg:h-16 items-center justify-between glass-dark px-4 lg:px-6 safe-top">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="hidden items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-500/5 px-3 py-1 text-[11px] font-bold text-emerald-300 sm:flex">
+            <span className="relative flex size-1.5 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
             </span>
@@ -167,12 +167,12 @@ export function DashboardTopbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
           {/* Plan status button */}
           <Link
             href={planButton.href}
             className={cn(
-              "hidden items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all md:flex",
+              "hidden items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all md:flex",
               planButton.className,
             )}
           >
@@ -183,7 +183,7 @@ export function DashboardTopbar({
           {/* Share button */}
           <button
             onClick={handleCopyLink}
-            className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted sm:flex"
+            className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted sm:flex"
           >
             <Share2 className="size-3.5" />
             Compartir
@@ -192,13 +192,13 @@ export function DashboardTopbar({
           {/* QR button */}
           <button
             onClick={() => setQrOpen(true)}
-            className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted sm:flex"
+            className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted sm:flex"
           >
             <QrCode className="size-3.5" />
             QR
           </button>
 
-          <Link href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer" className="group hidden items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted md:flex">
+          <Link href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted md:flex">
             Ver tienda
           </Link>
 

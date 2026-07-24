@@ -230,7 +230,7 @@ export default function OrderDetailPage() {
         href={`https://wa.me/${customerPhoneDigits}?text=${encodeURIComponent(`Hola ${order.customerName}, te escribo respecto a tu pedido ${order.orderNumber}`)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl shadow-green-500/40 hover:bg-green-600 hover:scale-110 transition-all duration-200"
+        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl shadow-green-500/40 hover:bg-green-600 active:scale-95 transition-all duration-200 safe-bottom"
       >
         <MessageCircle className="size-7" />
       </a>

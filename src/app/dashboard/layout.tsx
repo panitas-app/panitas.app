@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardTopbar } from "@/components/dashboard/topbar"
+import { BottomNav } from "@/components/dashboard/bottom-nav"
 import { NewOrdersProvider } from "@/components/dashboard/new-orders-provider"
 import { getCurrentStore } from "@/lib/permissions"
 import { UpgradeBannerWrapper } from "@/components/dashboard/upgrade-banner-wrapper"
@@ -104,7 +105,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
             planType={planType}
             storeSetupComplete={storeSetupComplete}
           >
-            <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
+            <div className="flex min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
               <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
               <div className="flex flex-1 flex-col lg:pl-64">
                 <DashboardTopbar
@@ -123,13 +124,14 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                   period: latestSubscription.period || "monthly",
                 } : null}
               />
-                <main className="flex-1 p-4 md:p-6">
+                <main className="flex-1 p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
                   {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
                   <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
                     {children}
                   </UpgradeBannerWrapper>
                 </main>
               </div>
+              <BottomNav planType={planType} />
             </div>
           </SetupWizardProvider>
         </BcvRateProvider>

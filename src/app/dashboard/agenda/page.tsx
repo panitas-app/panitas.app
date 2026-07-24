@@ -199,7 +199,7 @@ export default function AgendaPage() {
             <ChevronLeft className="size-4" />
           </Button>
           <Popover>
-            <PopoverTrigger render={<button className="flex items-center gap-1.5 text-sm font-semibold min-w-[160px] justify-center hover:text-primary transition-colors" />}>
+            <PopoverTrigger render={<button className="flex items-center gap-1.5 text-sm font-semibold min-w-[120px] justify-center hover:text-primary transition-colors" />}>
               <CalendarIcon className="size-4 text-muted-foreground" />
               {new Date(date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
             </PopoverTrigger>

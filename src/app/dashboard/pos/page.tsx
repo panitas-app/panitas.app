@@ -1065,7 +1065,7 @@ async function processSale() {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setPaymentOpen(false)}>Cancelar</Button>
-            <Button onClick={processSale} disabled={submitting} className="gap-2 min-w-[200px]">
+            <Button onClick={processSale} disabled={submitting} className="gap-2 min-w-[160px]">
               <CreditCard className="size-4" />
               {submitting ? "Procesando..." : selectedCreditTerm ? "Crear crédito" : `Cobrar $${splitPayments.reduce((s, p) => s + p.amount, 0).toFixed(2)}`}
             </Button>

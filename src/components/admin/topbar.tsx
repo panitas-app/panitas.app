@@ -23,10 +23,10 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
     : user?.email?.slice(0, 2).toUpperCase() || "A"
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border/10 bg-background/80 backdrop-blur-xl px-6">
-      <Link href="/admin" className="flex items-center gap-2 font-heading text-base font-bold">
-        <Shield className="size-5 text-primary" />
-        <span>PANITAS <span className="text-xs font-normal text-muted-foreground">Admin</span></span>
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border/10 bg-background/80 backdrop-blur-xl px-4 lg:px-6 safe-top">
+      <Link href="/admin" className="flex items-center gap-2 font-heading text-sm lg:text-base font-bold min-w-0">
+        <Shield className="size-5 text-primary shrink-0" />
+        <span>PANITAS <span className="text-[11px] font-normal text-muted-foreground hidden sm:inline">Admin</span></span>
       </Link>
       <div className="flex items-center gap-3">
         <DropdownMenu>

@@ -508,7 +508,7 @@ export function ImportWizard({ storeId, categories }: Props) {
           )}
 
           <div className="glass rounded-2xl overflow-hidden">
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-80 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0">
                   <tr className="border-b border-border/50 bg-muted/30 backdrop-blur-sm">

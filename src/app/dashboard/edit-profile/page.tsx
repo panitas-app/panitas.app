@@ -9,7 +9,7 @@ export default async function EditProfilePage() {
   const planType = current.store.planType || current.store.plan || "tienda"
 
   return (
-    <div className="mx-auto max-w-6xl py-6 px-4">
+    <div className="mx-auto max-w-6xl py-4 lg:py-6 px-3 lg:px-4">
       <EditProfileForm store={current.store} planType={planType} storeId={current.store.id} />
     </div>
   )
