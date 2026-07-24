@@ -30,6 +30,7 @@ export async function GET(
       twitter: true,
       youtube: true,
       linkedin: true,
+      showBolivares: true,
     },
   })
 

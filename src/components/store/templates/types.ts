@@ -33,7 +33,7 @@ export interface StoreData {
   linkedin?: string | null
   plan: string
   planType: string
-  showBolivares: boolean
+  showBolivares?: boolean
   categories: CategoryData[]
   products: ProductData[]
 }
@@ -61,5 +61,5 @@ export interface TemplateComponentProps {
   onUpdateQty: (productId: string, qty: number) => void
   onRemove: (productId: string) => void
   onCheckout: () => void
-  showBolivares: boolean
+  showBolivares?: boolean
 }

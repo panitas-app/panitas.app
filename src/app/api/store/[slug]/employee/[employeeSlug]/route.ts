@@ -23,6 +23,7 @@ export async function GET(
       address: true,
       storeHours: true,
       negocioId: true,
+      showBolivares: true,
     },
   })
 

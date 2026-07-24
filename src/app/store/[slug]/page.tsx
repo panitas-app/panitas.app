@@ -185,6 +185,7 @@ export default async function StorePage({
         slug: p.category.slug,
       } : null,
     })),
+    showBolivares: store.showBolivares ?? true,
   }
 
   const jsonLd = {

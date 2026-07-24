@@ -34,8 +34,6 @@ interface TodaySale { id: string; orderNumber: string; total: number; customerNa
 export default function POSPage() {
   const router = useRouter()
   const { rate: bcvRate } = useBcvRate()
-  const totalVes = total * bcvRate
-  const subtotalVes = subtotal * bcvRate
 
   // Products
   const [products, setProducts] = useState<Product[]>([])
@@ -267,6 +265,8 @@ export default function POSPage() {
   const totalBase = Math.max(0, subtotal - cartDiscount - couponDiscount)
   const total = Math.max(0, totalBase + (saleType === "shipping" ? shippingCost : 0))
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const totalVes = total * bcvRate
+  const subtotalVes = subtotal * bcvRate
 
   const filteredProducts = products.filter((p) => {
     if (!search) return true

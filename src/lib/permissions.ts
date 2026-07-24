@@ -40,6 +40,7 @@ export type StoreInfo = {
     shippingCost: number
     freeShippingActive: boolean
     freeShippingMinAmount: number
+    showBolivares: boolean
     createdAt: Date
     updatedAt: Date
   }
