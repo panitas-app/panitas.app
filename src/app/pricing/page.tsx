@@ -235,8 +235,8 @@ export default function PricingPage() {
       {/* Feature comparison table */}
       <section className="mx-auto max-w-5xl px-6 pb-20">
         <h2 className="mb-10 text-center font-heading text-3xl font-extrabold text-accent sm:text-4xl">Comparativa de planes</h2>
-        <div className="overflow-hidden rounded-3xl glass-dark shadow-sm">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overflow-hidden rounded-3xl glass-dark shadow-sm">
+          <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="bg-gray-50">
                 <th className="px-5 py-4 text-left font-bold text-accent">Módulo</th>

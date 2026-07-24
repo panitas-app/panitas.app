@@ -36,6 +36,7 @@ export function ModernTemplate({
   cart, cartCount, cartOpen, onCartOpen,
   onAddToCart, onUpdateQty, onRemove, onCheckout,
   canBook,
+  showBolivares,
 }: TemplateComponentProps) {
   const router = useRouter()
   const [search, setSearch] = useState("")
@@ -237,6 +238,7 @@ export function ModernTemplate({
                   onAddToCart={onAddToCart}
                   bcvRate={bcvRate}
                   accentColor={accentColor}
+                  showBolivares={store.showBolivares}
                 />
               </motion.div>
             ))}
@@ -293,6 +295,7 @@ export function ModernTemplate({
                   onAddToCart={onAddToCart}
                   bcvRate={bcvRate}
                   accentColor={accentColor}
+                  showBolivares={store.showBolivares}
                 />
               </motion.div>
             ))}
@@ -394,11 +397,13 @@ export function ModernTemplate({
         onCheckout={onCheckout}
         isOpen={cartOpen}
         onClose={() => onCartOpen(false)}
+        bcvRate={bcvRate}
+        showBolivares={store.showBolivares}
       />
 
       <button
         onClick={() => onCartOpen(true)}
-        className="fixed bottom-24 right-6 z-40 flex items-center gap-2.5 rounded-full px-5 py-3 shadow-lg shadow-black/10 transition-all active:scale-95 hover:brightness-105"
+        className="fixed bottom-24 right-6 z-40 flex items-center gap-2.5 rounded-full px-5 py-3 shadow-lg shadow-black/10 transition-all active:scale-95 hover:brightness-105 safe-bottom"
         style={{ backgroundColor: accentColor, color: "#102A43" }}
       >
         <ShoppingCart className="size-5" />

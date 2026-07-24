@@ -34,6 +34,8 @@ interface TodaySale { id: string; orderNumber: string; total: number; customerNa
 export default function POSPage() {
   const router = useRouter()
   const { rate: bcvRate } = useBcvRate()
+  const totalVes = total * bcvRate
+  const subtotalVes = subtotal * bcvRate
 
   // Products
   const [products, setProducts] = useState<Product[]>([])
@@ -472,7 +474,7 @@ async function processSale() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-0">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100dvh-4rem)] gap-0">
       {/* ─── LEFT: Products ─── */}
       <div className="flex flex-1 flex-col min-h-0 bg-card border-r border-border">
         {/* Search bar */}
@@ -491,7 +493,7 @@ async function processSale() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="h-9 rounded-lg border border-border bg-background px-2 text-xs max-w-[140px]"
+            className="h-9 rounded-lg border border-border bg-background px-2 text-xs max-w-32"
           >
             <option value="all">Todas</option>
             {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
@@ -590,7 +592,7 @@ async function processSale() {
       </div>
 
       {/* ─── RIGHT: Cart + Customer + Checkout ─── */}
-      <div className="w-[380px] shrink-0 flex flex-col bg-background border-l border-border">
+      <div className="w-full lg:w-[380px] shrink-0 flex flex-col bg-background border-l border-border max-h-full lg:max-h-none">
         {/* Today's sales summary (collapsible) */}
         <button onClick={() => setShowTodaySales(!showTodaySales)} className="flex items-center justify-between px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground border-b border-border shrink-0">
           <span className="flex items-center gap-1.5"><Receipt className="size-3.5" /> Ventas hoy</span>
@@ -882,24 +884,36 @@ async function processSale() {
         <div className="border-t border-border p-4 space-y-2 shrink-0">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Subtotal</span>
-            <span className="text-sm font-semibold">${subtotal.toFixed(2)}</span>
+            <div className="text-right">
+              <span className="text-sm font-semibold">${subtotal.toFixed(2)}</span>
+              <p className="text-[10px] text-muted-foreground/70">Bs. {subtotalVes.toFixed(2)}</p>
+            </div>
           </div>
           {(cartDiscount > 0 || couponDiscount > 0) && (
             <div className="flex items-center justify-between text-green-600">
               <span className="text-xs">Descuentos</span>
-              <span className="text-xs font-semibold">-${(cartDiscount + couponDiscount).toFixed(2)}</span>
+              <div className="text-right">
+                <span className="text-xs font-semibold">-${(cartDiscount + couponDiscount).toFixed(2)}</span>
+                <p className="text-[10px] text-muted-foreground/70">-Bs. {((cartDiscount + couponDiscount) * bcvRate).toFixed(2)}</p>
+              </div>
             </div>
           )}
           {saleType === "shipping" && shippingCost > 0 && (
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">Envío</span>
-              <span className="text-xs font-semibold">${shippingCost.toFixed(2)}</span>
+              <div className="text-right">
+                <span className="text-xs font-semibold">${shippingCost.toFixed(2)}</span>
+                <p className="text-[10px] text-muted-foreground/70">Bs. {(shippingCost * bcvRate).toFixed(2)}</p>
+              </div>
             </div>
           )}
           <Separator />
           <div className="flex items-center justify-between">
             <span className="text-base font-bold">Total USD</span>
-            <span className="text-xl font-black">${total.toFixed(2)}</span>
+            <div className="text-right">
+              <span className="text-xl font-black">${total.toFixed(2)}</span>
+              <p className="text-xs text-muted-foreground/70">Bs. {totalVes.toFixed(2)}</p>
+            </div>
           </div>
 
           <Button className="w-full gap-2 h-12 text-base font-bold" disabled={cart.length === 0 || !customer} onClick={openPayment}>

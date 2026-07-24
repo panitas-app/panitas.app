@@ -18,9 +18,10 @@ interface ProductCardProps {
   onAddToCart: (product: ProductCardProduct) => void
   bcvRate: number
   accentColor: string
+  showBolivares?: boolean
 }
 
-export function ProductCard({ product, onAddToCart, bcvRate, accentColor }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart, bcvRate, accentColor, showBolivares = true }: ProductCardProps) {
   const outOfStock = product.stock !== null && product.stock <= 0
   const imageUrl = product.images?.[0] || null
   const priceVes = product.price * bcvRate
@@ -61,9 +62,11 @@ export function ProductCard({ product, onAddToCart, bcvRate, accentColor }: Prod
           <p className="text-base font-bold text-foreground">
             ${product.price.toFixed(2)}
           </p>
-          <p className="text-[11px] text-muted-foreground/70">
-            Bs. {priceVes.toFixed(2)}
-          </p>
+          {showBolivares && bcvRate > 0 && (
+            <p className="text-[11px] text-muted-foreground/70">
+              Bs. {priceVes.toFixed(2)}
+            </p>
+          )}
         </div>
       </div>
 

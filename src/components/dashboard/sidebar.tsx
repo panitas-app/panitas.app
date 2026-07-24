@@ -6,9 +6,8 @@ import { usePathname } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { playNotificationSound } from "@/lib/notification-sound"
 import {
   LayoutDashboard,
@@ -36,6 +35,7 @@ import {
   Receipt,
   CalendarCheck,
   Banknote,
+  X,
 } from "lucide-react"
 import type { Store as PrismaStore } from "@prisma/client"
 import type { Role } from "@/lib/roles"
@@ -87,13 +87,12 @@ function getNavItems(planType: string): SidebarItem[] {
 
   if (planType === "negocio") {
     baseItems.push(
-{ href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
       { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
       { href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] },
     )
   }
 
-  // Empresarial: vendedores, comisiones
   if (planType === "empresa" || planType === "empresarial") {
     baseItems.push(
       { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
@@ -103,7 +102,7 @@ function getNavItems(planType: string): SidebarItem[] {
     )
   }
 
-if (planType === "emprendedor" || planType === "tienda") {
+  if (planType === "emprendedor" || planType === "tienda") {
     baseItems.push(
       { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
       { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
@@ -121,7 +120,6 @@ if (planType === "emprendedor" || planType === "tienda") {
     )
   }
 
-  // Editar tienda / perfil (not for enterprise)
   if (!isEnterprise) {
     if (planType === "agenda" || planType === "reservas") {
       baseItems.push(
@@ -138,7 +136,6 @@ if (planType === "emprendedor" || planType === "tienda") {
     { href: "/dashboard/settings", label: "Configuración", icon: Settings, roles: ["admin", "manager", "viewer"] },
   )
 
-  // Ver Planes (not for enterprise)
   if (!isEnterprise) {
     baseItems.push(
       { href: "/pricing", label: "Ver Planes", icon: Crown, roles: ["admin"] },
@@ -153,6 +150,7 @@ interface SidebarContentProps {
   role: Role
   planId?: string
   modalidad?: string | null
+  onNavClick?: () => void
 }
 
 function sidebarPlanLabel(planId: string, modalidad: string | null | undefined): string {
@@ -162,7 +160,7 @@ function sidebarPlanLabel(planId: string, modalidad: string | null | undefined):
   return PLAN_DEFINITIONS[planId as keyof typeof PLAN_DEFINITIONS]?.label || "Emprendedor"
 }
 
-function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps) {
+function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarContentProps) {
   const pathname = usePathname()
   const [pendingCount, setPendingCount] = useState(0)
   const lastViewedRef = useRef<string | null>(null)
@@ -230,16 +228,16 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
 
   return (
     <div className="flex h-full flex-col glass-dark text-foreground">
-      <div className="px-5 pt-5 pb-0 shrink-0">
+      <div className="px-4 pt-4 pb-0 shrink-0">
         <div data-tour="store-info" className="flex items-center gap-3 px-2 py-1.5 mt-2">
-          <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/10 overflow-hidden">
+          <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/10 overflow-hidden">
             {store.logo ? (
               <img src={store.logo} alt={store.name} className="size-full object-cover" />
             ) : (
               <Store className="size-5 text-accent" />
             )}
           </div>
-          <div className="flex flex-col truncate">
+          <div className="flex flex-col truncate min-w-0">
             <span className="font-heading text-sm font-extrabold truncate text-foreground leading-tight">{store.name}</span>
             <span className="text-[10px] text-muted-foreground font-semibold tracking-wider uppercase">Plan {planLabel}</span>
           </div>
@@ -247,7 +245,7 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
         <Separator className="bg-muted mt-4" />
       </div>
 
-      <nav className="flex-1 overflow-y-auto min-h-0 px-5 py-4 space-y-2">
+      <nav className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-1">
         {visibleItems.map((item) => {
           const Icon = item.icon
           const isActive =
@@ -255,11 +253,11 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
               ? pathname === "/dashboard"
               : pathname === item.href || pathname.startsWith(item.href + "/") || pathname.startsWith(item.href + "?")
           return (
-            <Link key={item.href} href={item.href} className="relative block" data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}>
+            <Link key={item.href} href={item.href} onClick={onNavClick} className="relative block" data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}>
               <Button
                 variant="ghost"
                 className={cn(
-                  "relative w-full justify-start gap-3 rounded-xl py-5 text-foreground/70 hover:text-foreground hover:bg-accent transition-all duration-200",
+                  "relative w-full justify-start gap-3 rounded-xl min-h-[44px] text-foreground/70 hover:text-foreground hover:bg-accent transition-all duration-200",
                   isActive && "text-accent hover:text-accent font-bold"
                 )}
               >
@@ -270,14 +268,13 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
-                
-                <Icon className={cn("size-4.5 z-10 icon-hover-bounce", isActive ? "text-accent" : "text-muted-foreground")} />
-                <span className="z-10">{item.label}</span>
+                <Icon className={cn("size-4.5 z-10 icon-hover-bounce shrink-0", isActive ? "text-accent" : "text-muted-foreground")} />
+                <span className="z-10 truncate">{item.label}</span>
                 {item.badge && pendingCount > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm"
+                    className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm shrink-0"
                   >
                     {pendingCount > 99 ? "99+" : pendingCount}
                   </motion.span>
@@ -288,17 +285,16 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
         })}
       </nav>
 
-      <div className="mt-auto shrink-0 px-5 pb-5">
+      <div className="mt-auto shrink-0 px-4 pb-4 safe-bottom">
         <Separator className="bg-muted mb-4" />
-        
         {!isEnterprise && (
           <Link data-tour="view-store" href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer">
             <Button
               variant="ghost"
-              className="w-full justify-center gap-2 rounded-xl bg-muted py-5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-accent hover:text-foreground transition-all"
+              className="w-full justify-center gap-2 rounded-xl bg-muted min-h-[44px] text-xs font-bold uppercase tracking-wider text-primary hover:bg-accent hover:text-foreground transition-all"
             >
               Ver mi tienda
-              <ExternalLink className="size-3.5" />
+              <ExternalLink className="size-3.5 shrink-0" />
             </Button>
           </Link>
         )}
@@ -308,23 +304,65 @@ function SidebarContent({ store, role, planId, modalidad }: SidebarContentProps)
 }
 
 export function DashboardSidebar({ store, role, planId, modalidad }: { store: PrismaStore; role: Role; planId?: string; modalidad?: string | null }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = "" }
+  }, [mobileOpen])
+
   return (
     <>
-      <aside data-tour="sidebar" className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
+      <aside data-tour="sidebar" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
         <div className="flex flex-1 flex-col glass-dark min-h-0">
           <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
         </div>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10" />
       </aside>
-      
-      <Sheet>
-        <SheetTrigger render={<Button variant="outline" size="icon" className="fixed top-3.5 left-3.5 z-40 lg:hidden rounded-xl border-border bg-muted backdrop-blur-md text-foreground shadow-xs hover:bg-white/20" />}>
-          <Menu className="size-4 text-slate-700" />
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 border-r-0">
-          <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
-        </SheetContent>
-      </Sheet>
+
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-3.5 left-3.5 z-40 lg:hidden touch-target rounded-xl bg-background/80 backdrop-blur-md border border-border shadow-xs text-foreground"
+        aria-label="Abrir menú"
+      >
+        <Menu className="size-5" />
+      </button>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+            />
+            <motion.div
+              ref={sheetRef}
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-hidden shadow-2xl"
+            >
+              <div className="relative h-full">
+                <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={() => setMobileOpen(false)} />
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="absolute top-4 right-4 touch-target rounded-full bg-muted/80 backdrop-blur-sm text-foreground"
+                  aria-label="Cerrar menú"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

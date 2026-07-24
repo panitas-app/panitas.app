@@ -489,6 +489,47 @@ export function templateInactiveClientReactivation(
   `
 }
 
+// ─── APPOINTMENT RESCHEDULED ────────────────────────────────────────
+
+export function templateAppointmentRescheduled({
+  clienteNombre,
+  tiendaNombre,
+  servicioNombre,
+  fechaAnterior,
+  horaAnterior,
+  fechaNueva,
+  horaNueva,
+}: {
+  clienteNombre: string
+  tiendaNombre: string
+  servicioNombre: string
+  fechaAnterior: string
+  horaAnterior: string
+  fechaNueva: string
+  horaNueva: string
+}) {
+  return `
+    <h2>Cita reagendada</h2>
+    <p>Hola <strong>${clienteNombre}</strong>,</p>
+    <p>Tu cita en <strong>${tiendaNombre}</strong> ha sido reagendada.</p>
+    <p><strong>Servicio:</strong> ${servicioNombre}</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr>
+        <td style="padding:8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px 0 0 0">
+          <strong style="color:#dc2626">Anterior</strong><br>
+          ${fechaAnterior} — ${horaAnterior}
+        </td>
+        <td style="padding:8px;background:#dcfce7;border:1px solid #86efac;border-radius:0 6px 0 0">
+          <strong style="color:#16a34a">Nueva</strong><br>
+          ${fechaNueva} — ${horaNueva}
+        </td>
+      </tr>
+    </table>
+    <p>Si tienes algún inconveniente, por favor contáctanos.</p>
+    <p style="color:#6b7280;font-size:12px">— ${tiendaNombre}</p>
+  `
+}
+
 // ─── PASSWORD RESET ──────────────────────────────────────────────────
 
 export function templatePasswordReset(nombre: string, codigo: string, link: string) {

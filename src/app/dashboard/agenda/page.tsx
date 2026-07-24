@@ -9,7 +9,12 @@ import {
   Popover, PopoverTrigger, PopoverContent,
 } from "@/components/ui/popover"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User } from "lucide-react"
+import {
+  Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight } from "lucide-react"
 
 interface Employee {
   id: string
@@ -61,6 +66,10 @@ export default function AgendaPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [stats, setStats] = useState({ total: 0, confirmed: 0, completed: 0, cancelled: 0 })
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null)
+  const [rescheduleDate, setRescheduleDate] = useState<string>("")
+  const [rescheduleTime, setRescheduleTime] = useState<string>("")
+  const [rescheduling, setRescheduling] = useState(false)
 
   useEffect(() => {
     fetch("/api/employees").then((r) => r.ok && r.json()).then((data) => {
@@ -105,6 +114,28 @@ export default function AgendaPage() {
       })
       if (res.ok) fetchAgenda()
     } catch (e) { console.error("[unhandled error]", e) }
+  }
+
+  const openReschedule = (appt: Appointment) => {
+    setRescheduleId(appt.id)
+    setRescheduleDate(appt.date.split("T")[0])
+    setRescheduleTime(appt.time)
+  }
+
+  const handleReschedule = async () => {
+    if (!rescheduleId || !rescheduleDate || !rescheduleTime) return
+    setRescheduling(true)
+    try {
+      const res = await fetch(`/api/appointments/${rescheduleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: rescheduleDate, time: rescheduleTime }),
+      })
+      if (res.ok) {
+        setRescheduleId(null)
+        fetchAgenda()
+      }
+    } catch (e) { console.error("[unhandled error]", e) } finally { setRescheduling(false) }
   }
 
   const changeDate = (delta: number) => {
@@ -242,6 +273,11 @@ export default function AgendaPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {appt.status !== "cancelled" && appt.status !== "completed" && (
+                    <Button variant="ghost" size="icon" className="size-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => openReschedule(appt)} title="Reagendar">
+                      <MoveRight className="size-3.5" />
+                    </Button>
+                  )}
                   <Badge variant="outline" className={`text-[10px] ${statusColors[appt.status] || ""}`}>
                     {statusLabels[appt.status] || appt.status}
                   </Badge>
@@ -266,6 +302,48 @@ export default function AgendaPage() {
           </AnimatePresence>
         </div>
       )}
+
+      <Dialog open={!!rescheduleId} onOpenChange={(o) => { if (!o) setRescheduleId(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reagendar cita</DialogTitle>
+            <DialogDescription>Selecciona la nueva fecha y hora para la cita.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nueva fecha</label>
+              <Popover>
+                <PopoverTrigger render={<button className="w-full flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm hover:bg-accent" />}>
+                  <CalendarIcon className="size-4 text-muted-foreground" />
+                  {rescheduleDate ? new Date(rescheduleDate + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "Seleccionar fecha"}
+                </PopoverTrigger>
+                <PopoverContent align="center" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={rescheduleDate ? new Date(rescheduleDate + "T12:00:00") : undefined}
+                    onSelect={(d) => d && setRescheduleDate(d.toISOString().split("T")[0])}
+                    disabled={(d) => d < new Date(new Date().toDateString())}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nueva hora</label>
+              <Input
+                type="time"
+                value={rescheduleTime}
+                onChange={(e) => setRescheduleTime(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleId(null)}>Cancelar</Button>
+            <Button onClick={handleReschedule} disabled={rescheduling || !rescheduleDate || !rescheduleTime}>
+              {rescheduling ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -244,6 +244,7 @@ export function DeliveryTemplate({
                 onAddToCart={onAddToCart}
                 bcvRate={bcvRate}
                 accentColor={accentColor}
+                showBolivares={store.showBolivares}
               />
             ))}
           </div>
@@ -278,6 +279,7 @@ export function DeliveryTemplate({
                         onAddToCart={onAddToCart}
                         bcvRate={bcvRate}
                         accentColor={accentColor}
+                        showBolivares={store.showBolivares}
                       />
                     ))}
                   </div>
@@ -301,6 +303,7 @@ export function DeliveryTemplate({
                       onAddToCart={onAddToCart}
                       bcvRate={bcvRate}
                       accentColor={accentColor}
+                      showBolivares={store.showBolivares}
                     />
                   ))}
                 </div>
@@ -311,7 +314,7 @@ export function DeliveryTemplate({
       </main>
 
       {/* ==================== FLOATING CART BAR ==================== */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 shadow-lg safe-bottom">
         <div className="mx-auto max-w-6xl flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-2">
@@ -347,6 +350,8 @@ export function DeliveryTemplate({
         onCheckout={onCheckout}
         isOpen={cartOpen}
         onClose={() => onCartOpen(false)}
+        bcvRate={bcvRate}
+        showBolivares={store.showBolivares}
       />
 
       {/* ==================== FOOTER ==================== */}

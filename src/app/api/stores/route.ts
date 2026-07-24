@@ -202,6 +202,7 @@ export async function PUT(request: NextRequest) {
       data.freeShippingMinAmount = n
     }
   }
+  if (body.showBolivares !== undefined) data.showBolivares = body.showBolivares === true
 
   if (body.posPin !== undefined) {
     if (body.posPin === null || body.posPin === "") {

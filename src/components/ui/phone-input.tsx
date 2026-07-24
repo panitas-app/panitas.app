@@ -131,7 +131,7 @@ export function PhoneInput({ value, onChange, placeholder, autoFocus, onEnter }:
               left: menuLeft,
               zIndex: 9999,
             }}
-            className="w-[280px] rounded-xl border border-border bg-popover shadow-lg"
+            className="w-[clamp(220px,70vw,280px)] rounded-xl border border-border bg-popover shadow-lg"
           >
             <div className="max-h-[260px] overflow-y-auto p-1">
               {COUNTRY_CODES.map((c) => (

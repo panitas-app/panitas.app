@@ -19,6 +19,7 @@ export function ExpressTemplate({
   store, products, bcvRate, slug, accentColor,
   cart, cartCount, cartOpen, onCartOpen,
   onAddToCart, onUpdateQty, onRemove, onCheckout,
+  showBolivares,
 }: TemplateComponentProps) {
   const router = useRouter()
   const [search, setSearch] = useState("")
@@ -170,6 +171,7 @@ export function ExpressTemplate({
                     onAddToCart={handleQuickAdd}
                     bcvRate={bcvRate}
                     accentColor={accentColor}
+                    showBolivares={showBolivares}
                   />
                 </motion.div>
               ))}
@@ -179,7 +181,7 @@ export function ExpressTemplate({
       </main>
 
       {/* ==================== FLOATING CART BAR ==================== */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 shadow-lg safe-bottom">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
             <ShoppingCart className="size-4 text-muted-foreground" />
@@ -276,6 +278,8 @@ export function ExpressTemplate({
         onCheckout={onCheckout}
         isOpen={cartOpen}
         onClose={() => onCartOpen(false)}
+        bcvRate={bcvRate}
+        showBolivares={showBolivares}
       />
 
       {/* WhatsApp */}

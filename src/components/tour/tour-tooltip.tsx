@@ -148,7 +148,7 @@ export function TourTooltip({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: -10 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed z-[9999] w-[360px] rounded-2xl border border-primary/20 bg-white shadow-2xl shadow-primary/10"
+        className="fixed z-[9999] w-[clamp(280px,85vw,360px)] rounded-2xl border border-primary/20 bg-white shadow-2xl shadow-primary/10"
         style={style}
         role="dialog"
         aria-label={`Tutorial paso ${currentIndex + 1} de ${totalSteps}`}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
@@ -6,6 +6,14 @@ import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema } from "@/lib/seo/schema";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#FFB92E",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),

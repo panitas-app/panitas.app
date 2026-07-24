@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { useState } from "react"
 import type { Store } from "@prisma/client"
+import { resolvePlanId } from "@/lib/plans"
 
 export function SettingsGeneral({ store }: { store: Store }) {
   const router = useRouter()
@@ -15,6 +16,10 @@ export function SettingsGeneral({ store }: { store: Store }) {
   
   const s = store as any
   const [freeShippingActive, setFreeShippingActive] = useState<boolean>(s.freeShippingActive ?? false)
+  const [showBolivares, setShowBolivares] = useState<boolean>(s.showBolivares ?? true)
+
+  const planId = resolvePlanId(s.plan || s.planType || "tienda")
+  const isAgendaOrEmprendedor = planId === "agenda" || planId === "comercio"
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -28,6 +33,7 @@ export function SettingsGeneral({ store }: { store: Store }) {
           shippingCost: form.get("shippingCost"),
           freeShippingActive,
           freeShippingMinAmount: freeShippingActive ? form.get("freeShippingMinAmount") : 0,
+          showBolivares,
         }),
       })
       if (!res.ok) throw new Error("Error")
@@ -82,6 +88,22 @@ export function SettingsGeneral({ store }: { store: Store }) {
             defaultValue={s.freeShippingMinAmount ?? 0}
             required
             placeholder="Ej: 30.00"
+          />
+        </div>
+      )}
+
+      {isAgendaOrEmprendedor && (
+        <div className="flex items-center justify-between rounded-xl border p-4 shadow-xs bg-muted/10">
+          <div className="space-y-0.5 max-w-[80%]">
+            <Label htmlFor="showBolivares" className="text-sm font-medium">Mostrar precios en Bolívares</Label>
+            <p className="text-xs text-muted-foreground">
+              Mostrar el equivalente en Bs. (tasa BCV) junto a los precios en USD en la tienda pública, agenda y POS.
+            </p>
+          </div>
+          <Switch
+            id="showBolivares"
+            checked={showBolivares}
+            onCheckedChange={setShowBolivares}
           />
         </div>
       )}

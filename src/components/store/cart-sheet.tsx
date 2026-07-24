@@ -21,11 +21,14 @@ interface CartSheetProps {
   onCheckout: () => void
   isOpen: boolean
   onClose: () => void
+  bcvRate?: number
+  showBolivares?: boolean
 }
 
-export function CartSheet({ items, onUpdateQty, onRemove, onCheckout, isOpen, onClose }: CartSheetProps) {
+export function CartSheet({ items, onUpdateQty, onRemove, onCheckout, isOpen, onClose, bcvRate = 0, showBolivares = true }: CartSheetProps) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotalVes = subtotal * bcvRate
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
@@ -98,6 +101,12 @@ export function CartSheet({ items, onUpdateQty, onRemove, onCheckout, isOpen, on
                 <span>Subtotal</span>
                 <span className="font-medium">${subtotal.toFixed(2)}</span>
               </div>
+              {showBolivares && bcvRate > 0 && (
+                <div className="flex justify-between text-sm mb-4 text-muted-foreground">
+                  <span>Subtotal en Bs.</span>
+                  <span className="font-medium">Bs. {subtotalVes.toFixed(2)}</span>
+                </div>
+              )}
               <Button className="w-full" onClick={onCheckout}>
                 Ir al carrito
               </Button>

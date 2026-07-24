@@ -45,6 +45,7 @@ interface StoreData {
   linkedin?: string | null
   plan: string
   planType: string
+  showBolivares: boolean
   categories: CategoryData[]
   products: ProductData[]
 }
@@ -155,7 +156,7 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
     return <StoreSkeleton template={templateId} />
   }
 
-  const Template = getTemplateComponent(templateId)
+const Template = getTemplateComponent(templateId)
   if (!Template) {
     return <LoadingState message="Plantilla no encontrada..." />
   }
@@ -179,10 +180,11 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
         onUpdateQty={handleUpdateQty}
         onRemove={handleRemove}
         onCheckout={handleCheckout}
+        showBolivares={store.showBolivares}
       />
       <button
         onClick={() => setQrOpen(true)}
-        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur-md transition-all hover:scale-105 active:scale-95 safe-bottom"
         style={{ backgroundColor: accentColor + "20", color: accentColor, border: "1px solid " + accentColor + "40" }}
       >
         <QrCode className="size-4" />
