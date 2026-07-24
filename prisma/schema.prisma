@@ -28,6 +28,7 @@ model User {
   trustScore       Int      @default(50)
   phone            String?  // verified phone number
   phoneVerified    Boolean  @default(false)
+  country          String?  // country from registration
   suspendedAt      DateTime?
   suspensionReason String?
 

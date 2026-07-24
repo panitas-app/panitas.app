@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { name, email, password, plan } = await req.json()
+    const { name, email, password, plan, country } = await req.json()
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 })
@@ -67,6 +67,7 @@ export async function POST(req: Request) {
         name: trimmedName,
         email: trimmedEmail,
         password: hashedPassword,
+        country: country?.trim() || null,
       },
     })
 

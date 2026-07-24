@@ -109,7 +109,7 @@ export default function PricingPage() {
                   <Button variant="ghost" size="sm" className="rounded-xl text-xs font-bold text-[#050505]/80 hover:bg-gray-50">Iniciar sesión</Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm" className="rounded-xl bg-primary text-accent font-bold text-xs">Registrarse gratis</Button>
+                  <Button size="sm" className="rounded-xl bg-primary text-accent font-bold text-xs">Prueba gratis</Button>
                 </Link>
               </>
             )}
@@ -322,7 +322,7 @@ export default function PricingPage() {
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href={session ? "/subscribe" : "/register"}>
               <Button size="lg" className="h-13 rounded-xl bg-primary text-accent font-bold px-8 text-base shadow-xl shadow-primary/30 hover:brightness-105">
-                {session ? "Adquirir un plan" : "Crear cuenta gratis"}
+                {session ? "Adquirir un plan" : "Prueba gratis"}
               </Button>
             </Link>
           </div>

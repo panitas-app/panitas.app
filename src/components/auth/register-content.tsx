@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { signIn } from "next-auth/react"
 import posthog from "posthog-js"
 import { motion } from "framer-motion"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Sparkles, ArrowLeft, UserPlus, Globe, Mail, Lock, Loader2 } from "lucide-react"
+import { Sparkles, ArrowLeft, UserPlus, Globe, Mail, Lock, Loader2, MapPin } from "lucide-react"
 import { Toaster, toast } from "sonner"
 
 interface SessionUser {
@@ -31,7 +32,33 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
+  const [country, setCountry] = useState("VE")
   const [loading, setLoading] = useState(false)
+
+  const countryOptions = [
+    { value: "VE", label: "🇻🇪 Venezuela" },
+    { value: "CO", label: "🇨🇴 Colombia" },
+    { value: "EC", label: "🇪🇨 Ecuador" },
+    { value: "PE", label: "🇵🇪 Perú" },
+    { value: "BO", label: "🇧🇴 Bolivia" },
+    { value: "AR", label: "🇦🇷 Argentina" },
+    { value: "CL", label: "🇨🇱 Chile" },
+    { value: "UY", label: "🇺🇾 Uruguay" },
+    { value: "PY", label: "🇵🇾 Paraguay" },
+    { value: "BR", label: "🇧🇷 Brasil" },
+    { value: "GY", label: "🇬🇾 Guyana" },
+    { value: "SR", label: "🇸🇷 Surinam" },
+    { value: "GF", label: "🇬🇫 Guayana Francesa" },
+    { value: "PA", label: "🇵🇦 Panamá" },
+    { value: "CR", label: "🇨🇷 Costa Rica" },
+    { value: "GT", label: "🇬🇹 Guatemala" },
+    { value: "HN", label: "🇭🇳 Honduras" },
+    { value: "SV", label: "🇸🇻 El Salvador" },
+    { value: "NI", label: "🇳🇮 Nicaragua" },
+    { value: "BZ", label: "🇧🇿 Belice" },
+    { value: "US", label: "🇺🇸 Estados Unidos" },
+    { value: "ES", label: "🇪🇸 España" },
+  ]
 
   useEffect(() => {
     if (session) {
@@ -50,7 +77,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, plan: selectedPlan }),
+        body: JSON.stringify({ email, password, name, country, plan: selectedPlan }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -166,6 +193,25 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
                       className="pl-10 rounded-xl bg-white"
                       required
                     />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-country" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">País</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <select
+                      id="reg-country"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="pl-10 pr-8 rounded-xl bg-white appearance-none w-full h-10"
+                      required
+                    >
+                      {countryOptions.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="space-y-2">
