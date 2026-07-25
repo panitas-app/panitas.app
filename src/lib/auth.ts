@@ -16,18 +16,55 @@ function validateEmail(email: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null
 }
 
+function createAdapter() {
+  const base = PrismaAdapter(prisma)
+  return {
+    ...base,
+    createUser: async (user: any) => {
+      if (user.email) {
+        const existing = await prisma.user.findUnique({ where: { email: user.email } })
+        if (existing) return existing as any
+      }
+      return await base.createUser!(user)
+    },
+    linkAccount: async (account: any) => {
+      try {
+        const existing = await prisma.account.findUnique({
+          where: {
+            provider_providerAccountId: {
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+            },
+          },
+        })
+        if (existing) return existing as any
+        return await base.linkAccount!(account) as any
+      } catch {
+        const existing = await prisma.account.findUnique({
+          where: {
+            provider_providerAccountId: {
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+            },
+          },
+        })
+        if (existing) return existing as any
+        return account
+      }
+    },
+  } as any
+}
+
 const googleProvider = Google({
   clientId: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   allowDangerousEmailAccountLinking: true,
 })
-// Force property onto provider in case @auth/core merge doesn't propagate it
-googleProvider.allowDangerousEmailAccountLinking = true
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
-  adapter: PrismaAdapter(prisma),
+  adapter: createAdapter(),
   providers: [
     googleProvider,
     Credentials({

@@ -9,7 +9,7 @@ export const authConfig = {
   },
   providers: [],
   callbacks: {
-    async signIn({ account, profile, user }) {
+    async signIn({ account, profile }) {
       if (account?.provider === "google" && profile?.email) {
         const existingUser = await prisma.user.findUnique({
           where: { email: profile.email },
@@ -17,37 +17,10 @@ export const authConfig = {
         }).catch(() => null)
 
         if (existingUser) {
-          // Manually link Google account if not already linked
           const hasGoogleAccount = existingUser.accounts.some(a => a.provider === "google")
-          if (!hasGoogleAccount && account.providerAccountId) {
-            let linked = false
-            try {
-              await prisma.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type || "OAuth",
-                  provider: "google",
-                  providerAccountId: account.providerAccountId,
-                  refresh_token: account.refresh_token,
-                  access_token: account.access_token,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                  session_state: typeof account.session_state === "string" ? account.session_state : null,
-                },
-              })
-              linked = true
-            } catch (err: any) {
-              if (err?.code !== "P2002") {
-                console.error("[auth] Failed to link Google account:", err)
-              }
-            }
-            // Only send welcome email on the FIRST Google sign-in (when linking)
-            if (linked) {
-              enviarBienvenida(profile.email, profile.name || "Usuario")
-                .catch(e => console.error("[welcome email error]", e))
-            }
+          if (!hasGoogleAccount) {
+            enviarBienvenida(profile.email, profile.name || "Usuario")
+              .catch(e => console.error("[welcome email error]", e))
           }
         }
         return true
