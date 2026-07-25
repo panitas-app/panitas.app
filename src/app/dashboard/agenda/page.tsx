@@ -13,7 +13,7 @@ import {
   Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight, ArrowRight } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight, ArrowRight, MessageCircle } from "lucide-react"
 
 interface Employee {
   id: string
@@ -60,10 +60,10 @@ interface BlockedSlotData {
 }
 
 const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400",
-  completed: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400",
-  cancelled: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400",
+  pending: "bg-amber-500 text-white border-amber-600",
+  confirmed: "bg-blue-500 text-white border-blue-600",
+  completed: "bg-emerald-500 text-white border-emerald-600",
+  cancelled: "bg-red-400 text-white border-red-500",
 }
 
 const statusLabels: Record<string, string> = {
@@ -332,21 +332,21 @@ export default function AgendaPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-4 hover:shadow-sm transition-shadow"
+                className="flex items-center justify-between rounded-xl border border-border bg-white p-4 shadow-sm"
               >
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="text-center min-w-[48px]">
-                    <p className="text-lg font-bold text-[#102A43]">{appt.time}</p>
+                  <div className="flex flex-col items-center justify-center rounded-lg bg-[#102A43] px-3 py-2 min-w-[64px]">
+                    <p className="text-lg font-bold text-white leading-tight">{appt.time}</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{appt.customerName}</p>
-                    <p className="text-xs text-muted-foreground">{appt.customerPhone}</p>
+                    <p className="text-sm font-bold text-[#102A43] truncate">{appt.customerName}</p>
+                    <p className="text-xs text-gray-500">{appt.customerPhone}</p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                       {appt.service && (
-                        <span className="text-xs text-muted-foreground/70">{appt.service.name}</span>
+                        <span className="text-xs text-gray-600 font-medium">{appt.service.name}</span>
                       )}
                       {appt.employee && (
-                        <span className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                        <span className="text-xs text-gray-600 font-medium flex items-center gap-1">
                           <User className="size-3" />
                           {appt.employee.name}
                         </span>
@@ -354,28 +354,37 @@ export default function AgendaPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {appt.status !== "cancelled" && appt.status !== "completed" && (
-                    <Button variant="ghost" size="icon" className="size-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => openReschedule(appt)} title="Reagendar">
-                      <MoveRight className="size-3.5" />
+                    <Button variant="ghost" size="icon" className="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => openReschedule(appt)} title="Reagendar">
+                      <MoveRight className="size-4" />
                     </Button>
                   )}
-                  <Badge variant="outline" className={`text-[10px] ${statusColors[appt.status] || ""}`}>
+                  <a
+                    href={`https://wa.me/${appt.customerPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hola " + appt.customerName + ", tu cita ha sido confirmada. ¡Te esperamos!")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="ghost" size="icon" className="size-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="WhatsApp">
+                      <MessageCircle className="size-4" />
+                    </Button>
+                  </a>
+                  <Badge variant="outline" className={`text-[10px] font-bold border ${statusColors[appt.status] || ""}`}>
                     {statusLabels[appt.status] || appt.status}
                   </Badge>
                   {appt.status === "pending" && (
                     <>
-                      <Button variant="ghost" size="icon" className="size-7 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => changeStatus(appt.id, "confirmed")} title="Confirmar">
-                        <Check className="size-3.5" />
+                      <Button variant="ghost" size="icon" className="size-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => changeStatus(appt.id, "confirmed")} title="Confirmar">
+                        <Check className="size-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-7 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => changeStatus(appt.id, "cancelled")} title="Cancelar">
-                        <X className="size-3.5" />
+                      <Button variant="ghost" size="icon" className="size-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => changeStatus(appt.id, "cancelled")} title="Cancelar">
+                        <X className="size-4" />
                       </Button>
                     </>
                   )}
                   {appt.status === "confirmed" && (
-                    <Button variant="ghost" size="icon" className="size-7 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => changeStatus(appt.id, "completed")} title="Completar">
-                      <Check className="size-3.5" />
+                    <Button variant="ghost" size="icon" className="size-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => changeStatus(appt.id, "completed")} title="Completar">
+                      <Check className="size-4" />
                     </Button>
                   )}
                 </div>
