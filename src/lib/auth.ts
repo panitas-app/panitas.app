@@ -6,8 +6,8 @@ import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { authConfig } from "./auth.config"
 
-if (process.env.VERCEL && process.env.VERCEL_URL) {
-  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`
+if (process.env.VERCEL) {
+  process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'https://panitas.app'
 }
 
 function validateEmail(email: unknown): string | null {
