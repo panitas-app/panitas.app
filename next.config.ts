@@ -11,11 +11,11 @@ const csp = [
   `connect-src 'self' https://ve.dolarapi.com https://pydolarve.org https://www.googletagmanager.com https://us.posthog.com${
     !isProd ? " ws: wss: http://localhost:* ws://localhost:*" : ""
   }`,
-  "frame-src 'self' https://www.googletagmanager.com",
+  "frame-src 'self' https://accounts.google.com https://www.googletagmanager.com",
   "media-src 'self' https://res.cloudinary.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://accounts.google.com",
 ].join("; ");
 
 const nextConfig: NextConfig = {

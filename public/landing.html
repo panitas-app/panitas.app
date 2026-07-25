@@ -511,7 +511,7 @@
         .modal_content .form_field { padding: 0.65rem 0.85rem; }
       }
 
-      /* ===== MOBILE PERFORMANCE — disable heavy effects ===== */
+      /* ===== MOBILE PERFORMANCE — light optimizations ===== */
       @media (max-width: 768px) {
         /* Disable hero video on mobile — saves bandwidth + CPU */
         .hero_video, .hero_home_visual_wrap video {
@@ -524,29 +524,10 @@
         .plan-bg-video, .plan_card video {
           display: none !important;
         }
-        /* Remove backdrop-filter entirely on mobile */
-        * {
-          backdrop-filter: none !important;
-          -webkit-backdrop-filter: none !important;
-        }
-        /* Disable all CSS animations on mobile */
-        *, *::before, *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-        }
-        /* Disable GSAP-style transforms */
-        [style*="transform"] {
-          transform: none !important;
-        }
-        /* Reduce modal backdrop */
+        /* Reduce backdrop-filter blur on mobile */
         .modal_backdrop {
-          background: rgba(0,0,0,0.6) !important;
-          backdrop-filter: none !important;
-        }
-        /* Disable hover effects */
-        a:hover, button:hover {
-          transform: none !important;
+          backdrop-filter: blur(4px) !important;
+          -webkit-backdrop-filter: blur(4px) !important;
         }
       }
     </style>
