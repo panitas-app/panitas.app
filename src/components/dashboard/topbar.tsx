@@ -201,7 +201,7 @@ export function DashboardTopbar({
           </button>
 
           <Link href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold text-foreground/70 transition-all hover:bg-muted md:flex">
-            Ver tienda
+            {planId === "agenda" ? "Ver mi link" : "Ver tienda"}
           </Link>
 
           {/* User dropdown */}

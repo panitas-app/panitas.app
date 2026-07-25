@@ -293,7 +293,7 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
               variant="ghost"
               className="w-full justify-center gap-2 rounded-xl bg-muted min-h-[44px] text-xs font-bold uppercase tracking-wider text-primary hover:bg-accent hover:text-foreground transition-all"
             >
-              Ver mi tienda
+              {planId === "agenda" ? "Ver mi link" : "Ver mi tienda"}
               <ExternalLink className="size-3.5 shrink-0" />
             </Button>
           </Link>
