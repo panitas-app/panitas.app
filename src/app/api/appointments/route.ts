@@ -83,7 +83,14 @@ export async function POST(request: NextRequest) {
     if (!allowed) return NextResponse.json({ error }, { status: 403 })
 
     negocioId = negocio.id
-    if (!agendaId) return NextResponse.json({ error: "agendaId requerido" }, { status: 400 })
+    if (!agendaId) {
+      const agenda = await prisma.agenda.findFirst({
+        where: { negocioId: negocio.id },
+        select: { id: true },
+      })
+      if (!agenda) return NextResponse.json({ error: "Agenda no encontrada" }, { status: 404 })
+      agendaId = agenda.id
+    }
   }
 
   const agenda = await prisma.agenda.findFirst({
