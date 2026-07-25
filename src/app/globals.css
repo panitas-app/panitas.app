@@ -246,6 +246,16 @@
   }
 }
 
+/* ── Mobile: disable transitions for performance ── */
+@media (max-width: 640px) {
+  button, a, [role="button"], label, summary {
+    transition: none !important;
+  }
+  input, textarea, select {
+    transition: none !important;
+  }
+}
+
 /* ── Responsive tables → stack on mobile ── */
 @media (max-width: 640px) {
   table {
@@ -275,24 +285,57 @@
   }
 }
 
-/* ── Mobile performance: reduce animations + contain layout ── */
+/* ── Mobile performance: disable animations + remove blur + contain layout ── */
 @media (max-width: 640px) {
   *, *::before, *::after {
     -webkit-tap-highlight-color: transparent;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
   }
   main {
     contain: layout style;
-    animation: none;
+    animation: none !important;
   }
   .Card, [data-slot="card"] {
     contain: layout style paint;
   }
+  /* Remove all backdrop-filter on mobile — biggest GPU savings */
   .glass-dark, .glass, .glass-card {
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255,255,255,0.95) !important;
+  }
+  .glass-dark {
+    background: rgba(240,244,255,0.98) !important;
+  }
+  /* Disable icon animations on mobile */
+  button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
+    transition: none !important;
+  }
+  button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, label:hover svg.lucide {
+    animation: none !important;
+  }
+  /* Disable scale on active for mobile — reduces GPU compositing */
+  button:active:not(:disabled), a:active, [role="button"]:active {
+    transform: none !important;
+  }
+  /* Disable hover effects on mobile */
+  button:hover, a:hover, [role="button"]:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  /* Disable framer-motion transforms via CSS — reduce jank */
+  [style*="transform"] {
+    will-change: auto !important;
+  }
+  /* Reduce paint complexity */
+  .sidebar, nav, header {
+    contain: layout style;
   }
 }
 

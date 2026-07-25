@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { Cookie } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -24,41 +23,33 @@ export function CookieConsentBanner() {
     setVisible(false)
   }
 
+  if (!visible) return null
+
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 25 }}
-          className="fixed bottom-0 left-0 right-0 z-[100] border-t border-border bg-background/95 backdrop-blur-xl"
-        >
-          <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:px-6">
-            <div className="flex items-start gap-3 sm:flex-1">
-              <Cookie className="mt-0.5 size-5 shrink-0 text-primary" />
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Usamos cookies técnicas para que puedas iniciar sesión y gestionar tu tienda, y
-                cookies de rendimiento (Google Analytics) para mejorar la plataforma. Al hacer clic
-                en &quot;Aceptar&quot;, autorizas su uso. Puedes consultar nuestra{" "}
-                <Link
-                  href="/privacidad"
-                  className="text-primary underline hover:text-primary/80 transition-colors"
-                >
-                  Política de Privacidad y Cookies
-                </Link>
-                .
-              </p>
-            </div>
-            <Button
-              onClick={accept}
-              className="shrink-0 rounded-xl px-6 font-semibold"
+    <div className="fixed bottom-0 left-0 right-0 z-[100] border-t border-border bg-background/95 animate-slide-up">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-4 sm:flex-row sm:px-6">
+        <div className="flex items-start gap-3 sm:flex-1">
+          <Cookie className="mt-0.5 size-5 shrink-0 text-primary" />
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Usamos cookies técnicas para que puedas iniciar sesión y gestionar tu tienda, y
+            cookies de rendimiento (Google Analytics) para mejorar la plataforma. Al hacer clic
+            en &quot;Aceptar&quot;, autorizas su uso. Puedes consultar nuestra{" "}
+            <Link
+              href="/privacidad"
+              className="text-primary underline hover:text-primary/80 transition-colors"
             >
-              Aceptar
-            </Button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              Política de Privacidad y Cookies
+            </Link>
+            .
+          </p>
+        </div>
+        <Button
+          onClick={accept}
+          className="shrink-0 rounded-xl px-6 font-semibold"
+        >
+          Aceptar
+        </Button>
+      </div>
+    </div>
   )
 }

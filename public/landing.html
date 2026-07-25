@@ -510,6 +510,45 @@
         .modal_content h2 { font-size: 1.35rem; }
         .modal_content .form_field { padding: 0.65rem 0.85rem; }
       }
+
+      /* ===== MOBILE PERFORMANCE — disable heavy effects ===== */
+      @media (max-width: 768px) {
+        /* Disable hero video on mobile — saves bandwidth + CPU */
+        .hero_video, .hero_home_visual_wrap video {
+          display: none !important;
+        }
+        .hero_home_visual_wrap {
+          background: linear-gradient(135deg, #071A33 0%, #0A2540 50%, #0D3050 100%) !important;
+        }
+        /* Disable all plan background videos on mobile */
+        .plan-bg-video, .plan_card video {
+          display: none !important;
+        }
+        /* Remove backdrop-filter entirely on mobile */
+        * {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        /* Disable all CSS animations on mobile */
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        /* Disable GSAP-style transforms */
+        [style*="transform"] {
+          transform: none !important;
+        }
+        /* Reduce modal backdrop */
+        .modal_backdrop {
+          background: rgba(0,0,0,0.6) !important;
+          backdrop-filter: none !important;
+        }
+        /* Disable hover effects */
+        a:hover, button:hover {
+          transform: none !important;
+        }
+      }
     </style>
     <script>
       function toggleMobileMenu(e) {
@@ -552,7 +591,7 @@
       <nav class="nav_component" aria-label="Navegación principal">
         <div class="nav_desktop_contain u-container-full">
           <a href="#hero" class="nav_desktop_logo" data-tooltip="Inicio">
-            <img src="/logonuevo.png" alt="Panitas — Software administrativo para negocios" />
+            <img src="/logonuevo.png" alt="Panitas — Software administrativo para negocios" width="120" height="40" loading="eager" fetchpriority="high" />
           </a>
           <ul class="nav_links_wrap">
             <li class="nav_links_item">
@@ -629,7 +668,7 @@
         <section id="hero" class="hero_home_wrap u-min-height-screen" data-animate-theme-to="dark">
           <div class="hero_home_content">
             <div class="hero_home_logo animate-up">
-              <img src="/logonuevo.png" alt="Panitas software administrativo" style="height: 100%; width: auto;" />
+              <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="eager" style="height: 100%; width: auto;" />
             </div>
             <h1 class="hero_tagline">Software administrativo para controlar inventario, vender online y administrar tu negocio desde un solo lugar.</h1>
           </div>
@@ -700,7 +739,7 @@
           <div class="how_contain u-container">
             <div class="how_title_wrap">
               <div class="c-heading">
-                <h2><img src="/logonuevo.png" alt="Panitas" class="inline-logo" /> integra <span class="u-text-accent">todo en un solo sistema</span></h2>
+                <h2><img src="/logonuevo.png" alt="Panitas" class="inline-logo" width="32" height="32" loading="lazy" /> integra <span class="u-text-accent">todo en un solo sistema</span></h2>
               </div>
               <div class="c-text">
                 <p>Panitas es un software administrativo que reúne inventario, ventas, agenda, CRM, tienda online, caja y reportes. Un solo panel para administrar tu negocio completo.</p>
@@ -1604,7 +1643,7 @@
 
           <div class="footer_bottom_wrap">
             <div class="footer_bottom_logo">
-              <img src="/logonuevo.png" alt="Panitas software administrativo" style="height: 100%; width: auto;" />
+              <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="lazy" style="height: 100%; width: auto;" />
             </div>
             <ul class="footer_bottom_link_list">
               <li><a href="/terminos" class="footer_bottom_link">Términos</a></li>

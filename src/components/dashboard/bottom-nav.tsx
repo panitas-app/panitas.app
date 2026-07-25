@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
 import {
   LayoutDashboard,
   Package,
@@ -11,7 +10,6 @@ import {
   Calendar,
   Settings,
   Users,
-  Banknote,
 } from "lucide-react"
 
 interface BottomNavItem {
@@ -59,19 +57,15 @@ export function BottomNav({ planType }: { planType: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 min-w-[56px] transition-all duration-200",
-                isActive ? "text-primary" : "text-muted-foreground active:scale-95"
+                "relative flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 min-w-[56px]",
+                isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
               {isActive && (
-                <motion.div
-                  layoutId="bottomNavActive"
-                  className="absolute inset-x-1 -top-1 h-0.5 rounded-full bg-primary"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
+                <span className="absolute inset-x-1 -top-1 h-0.5 rounded-full bg-primary" />
               )}
-              <Icon className={cn("size-5 transition-all", isActive && "text-primary")} />
-              <span className={cn("text-[10px] leading-tight transition-all", isActive ? "font-bold" : "font-medium")}>
+              <Icon className={cn("size-5", isActive && "text-primary")} />
+              <span className={cn("text-[10px] leading-tight", isActive ? "font-bold" : "font-medium")}>
                 {item.label}
               </span>
             </Link>
