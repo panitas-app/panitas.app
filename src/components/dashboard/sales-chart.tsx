@@ -82,23 +82,26 @@ function computeBars(
   }
 
   if (period === "day") {
-    const subtitle = `${WEEKDAYS[today.getDay()]} ${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`
+    const daysCount = 7
     const bars: Bar[] = []
-    for (let h = 0; h < 24; h++) {
-      const filtered = orders.filter((o) => {
-        const d = new Date(o.createdAt)
-        return isSameDay(d, today) && d.getHours() === h
-      })
+    let totalUsd = 0, totalVes = 0
+    const startDay = new Date(today)
+    startDay.setDate(startDay.getDate() - (daysCount - 1))
+    const subtitle = `${fmtShortDate(startDay)} – ${fmtShortDate(today)}`
+    for (let i = 0; i < daysCount; i++) {
+      const day = new Date(startDay)
+      day.setDate(day.getDate() + i)
+      const filtered = orders.filter((o) => isSameDay(new Date(o.createdAt), day))
       const { usd, ves } = aggregate(filtered)
+      totalUsd += usd; totalVes += ves
+      const isToday = isSameDay(day, today)
       bars.push({
-        label: `${String(h).padStart(2, "0")}:00`,
-        shortLabel: `${h}h`,
-        tooltipLabel: `${String(h).padStart(2, "0")}:00`,
+        label: `${WEEKDAYS[day.getDay()]} ${day.getDate()}`,
+        shortLabel: `${day.getDate()}`,
+        tooltipLabel: `${WEEKDAYS[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}${isToday ? " (Hoy)" : ""}`,
         usd, ves, orderCount: filtered.length,
       })
     }
-    let totalUsd = 0, totalVes = 0
-    for (const b of bars) { totalUsd += b.usd; totalVes += b.ves }
     const nonZero = bars.filter((b) => b.usd > 0)
     return {
       bars, totalUsd, totalVes, subtitle,
@@ -142,25 +145,27 @@ function computeBars(
   }
 
   if (period === "month") {
-    const start = new Date(today.getFullYear(), today.getMonth(), 1)
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-    const subtitle = `${MONTHS[today.getMonth()]} ${today.getFullYear()}`
+    const monthsCount = 12
     const bars: Bar[] = []
     let totalUsd = 0, totalVes = 0
-    const cursor = new Date(start)
-    while (cursor <= end) {
-      const day = new Date(cursor)
-      const filtered = orders.filter((o) => isSameDay(new Date(o.createdAt), day))
+    for (let i = monthsCount - 1; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      const filtered = orders.filter((o) => {
+        const od = new Date(o.createdAt)
+        return od >= d && od <= monthEnd
+      })
       const { usd, ves } = aggregate(filtered)
       totalUsd += usd; totalVes += ves
+      const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
       bars.push({
-        label: `${day.getDate()} ${MONTHS[day.getMonth()]}`,
-        shortLabel: String(day.getDate()),
-        tooltipLabel: `${day.getDate()} ${MONTHS[day.getMonth()]} – $${usd.toFixed(2)}`,
+        label: `${MONTHS[d.getMonth()]} ${d.getFullYear()}`,
+        shortLabel: `${MONTHS[d.getMonth()]}`,
+        tooltipLabel: `${MONTHS[d.getMonth()]} ${d.getFullYear()}${isCurrentMonth ? " (Actual)" : ""}`,
         usd, ves, orderCount: filtered.length,
       })
-      cursor.setDate(cursor.getDate() + 1)
     }
+    const subtitle = `${MONTHS[bars[0] ? new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getMonth() : today.getMonth()]} ${new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getFullYear()} – ${MONTHS[today.getMonth()]} ${today.getFullYear()}`
     const nonZero = bars.filter((b) => b.usd > 0)
     return {
       bars, totalUsd, totalVes, subtitle,
@@ -246,10 +251,11 @@ export function SalesChart({ orders, bcvRate }: Props) {
 
   const barWidth = useMemo(() => {
     const count = bars.length
-    if (count <= 7) return 40
-    if (count <= 14) return 28
-    if (count <= 31) return 18
-    return 14
+    if (count <= 7) return 52
+    if (count <= 12) return 44
+    if (count <= 14) return 36
+    if (count <= 31) return 24
+    return 18
   }, [bars.length])
 
   const handlePeriodChange = useCallback((p: Period) => {
@@ -352,9 +358,11 @@ export function SalesChart({ orders, bcvRate }: Props) {
                   const pct = maxUsd > 0 ? (bar.usd / maxUsd) * 100 : 0
                   const isHovered = hoveredIdx === idx
                   const showLabel = bars.length <= 14 || idx % Math.ceil(bars.length / 14) === 0 || idx === bars.length - 1
-                  const isToday = period === "day" || period === "month"
-                    ? (period === "day" ? idx === new Date().getHours() : idx === today.getDate() - 1)
-                    : false
+                  const isToday = period === "day"
+                    ? idx === bars.length - 1
+                    : period === "month"
+                      ? idx === bars.length - 1
+                      : false
 
                   return (
                     <div
