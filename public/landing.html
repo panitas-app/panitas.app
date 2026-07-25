@@ -94,19 +94,7 @@
     <script type="module" crossorigin src="/assets/index-C2QVMFJG.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-iEuhCjZC.css">
     <style>
-      @media (width <= 768px) {
-        .hero_home_content { bottom: 10%; padding: 0 1.5rem 0 1rem; }
-        .hero_home_wrap { min-height: 100dvh; }
-        .hero_tagline { margin: 0; }
-        .hero_cta_wrap { margin-top: 1.5rem; }
-        .hero_cta_wrap .button_main_element { padding: 0.75rem 1.75rem; font-size: 0.95rem; }
-        .nav_mobile_overlay.is-active { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
-        .button_menu_wrap.is-active .button_menu_icon_line:last-child { transform: rotate(-45deg) translate(2px, -4px); }
-        .button_main_wrap.cta-primary .button_main_element,
-        .button_main_wrap.cta-secondary .button_main_element { min-height: 44px; }
-        .modal_content_wrap { max-width: 100% !important; }
-      }
+      /* ===== Splash Loader ===== */
       #splash-loader {
         position: fixed; inset: 0; z-index: 9999;
         background: #FFB92E;
@@ -171,11 +159,7 @@
       }
       .button_main_wrap.cta-secondary .button_main_base { display: none; }
 
-      /* Hero CTA spacing */
-      .hero_cta_wrap { margin-top: 2rem; }
-      .hero_cta_wrap .button_main_element { padding: 0.9rem 2.25rem; font-size: 1.05rem; }
-
-      /* Button loading state */
+      /* ===== Button loading state ===== */
       .button_main_wrap.is-loading .button_main_element { pointer-events: none; opacity: 0.7; }
       .button_main_wrap.is-loading .button_main_text { visibility: hidden; }
       .button_main_wrap.is-loading::after {
@@ -191,7 +175,7 @@
       }
       .button_main_wrap.cta-primary.is-loading::after { border-color: rgba(5,5,5,0.2); border-top-color: #050505; }
 
-      /* Password toggle */
+      /* ===== Password toggle ===== */
       .pw-field-wrap { position: relative; }
       .pw-toggle {
         position: absolute;
@@ -208,19 +192,110 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
       }
       .pw-toggle:hover { color: var(--_theme---text); }
       .pw-toggle svg { width: 18px; height: 18px; }
 
-      /* Login error shake */
+      /* ===== Login error shake ===== */
       @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-4px)} 40%,80%{transform:translateX(4px)} }
       .form-shake { animation: shake 0.4s ease; }
-      .form-field-error { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.15) !important; }
 
-      /* Accessibility: focus-visible for keyboard nav */
-      a:focus-visible, button:focus-visible {
+      /* ===== Accessibility ===== */
+      [role="button"] { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
         outline: 2px solid var(--_theme---heading-accent);
         outline-offset: 2px;
+      }
+
+      /* ===== MOBILE (<= 768px) ===== */
+      @media (width <= 768px) {
+        /* Hero */
+        .hero_home_content { bottom: 10%; padding: 0 1.5rem 0 1rem; }
+        .hero_home_wrap { min-height: 100dvh; }
+        .hero_tagline { margin: 0; }
+
+        /* Nav buttons — full width stacked */
+        .nav_links_wrap .button_main_wrap { display: none; }
+        .nav_mobile_overlay .button_main_wrap.cta-primary,
+        .nav_mobile_overlay .button_main_wrap.cta-secondary {
+          width: 100%;
+          display: block;
+        }
+        .nav_mobile_overlay .button_main_element {
+          width: 100%;
+          justify-content: center;
+          min-height: 48px;
+          font-size: 1rem;
+        }
+
+        /* Mobile nav hamburger animation */
+        .nav_mobile_overlay.is-active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
+        .button_menu_wrap.is-active .button_menu_icon_line:last-child { transform: rotate(-45deg) translate(2px, -4px); }
+
+        /* Buttons — 48px touch targets */
+        .button_main_wrap.cta-primary .button_main_element,
+        .button_main_wrap.cta-secondary .button_main_element {
+          min-height: 48px;
+          padding: 0.75rem 1.5rem;
+          font-size: 0.95rem;
+          border-radius: 0.875rem;
+        }
+
+        /* Login modal — full screen on mobile */
+        .modal_inner { justify-content: flex-end; }
+        .modal_content_wrap {
+          max-width: 100% !important;
+          width: 100% !important;
+          height: 100% !important;
+          border-left: none !important;
+          border-radius: 0 !important;
+        }
+
+        /* Login form — bigger fields */
+        .modal_content .form_field {
+          font-size: 16px !important; /* prevents iOS zoom */
+          min-height: 48px;
+          padding: 0.75rem 1rem;
+          border-radius: 0.75rem;
+        }
+        .modal_content .form_label_text { font-size: 0.8rem; }
+        .modal_content h2 { font-size: 1.5rem; }
+
+        /* Password toggle — bigger touch target */
+        .pw-toggle { right: 0.25rem; padding: 0.5rem; }
+        .pw-toggle svg { width: 20px; height: 20px; }
+
+        /* Loading spinner — bigger on mobile */
+        .button_main_wrap.is-loading::after {
+          width: 20px; height: 20px;
+          margin-left: -10px; margin-top: -10px;
+        }
+
+        /* Plan cards — single column */
+        .plans_layout { grid-template-columns: 1fr !important; }
+
+        /* Cards — single column */
+        .how_layout { grid-template-columns: 1fr !important; }
+
+        /* FAQ — full width */
+        .faq_layout { max-width: 100% !important; padding: 0 1rem; }
+      }
+
+      /* ===== SMALL MOBILE (<= 480px) ===== */
+      @media (width <= 480px) {
+        .hero_home_content { bottom: 8%; padding: 0 1rem; }
+        .button_main_wrap.cta-primary .button_main_element,
+        .button_main_wrap.cta-secondary .button_main_element {
+          padding: 0.65rem 1.25rem;
+          font-size: 0.9rem;
+          border-radius: 0.75rem;
+        }
+        .modal_content { padding: 1.5rem 1.25rem !important; }
+        .modal_content h2 { font-size: 1.35rem; }
+        .modal_content .form_field { padding: 0.65rem 0.85rem; }
       }
     </style>
     <script>
