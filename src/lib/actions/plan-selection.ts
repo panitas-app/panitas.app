@@ -19,6 +19,73 @@ const PLAN_DEFINITIONS = [
   { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
 ]
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
+}
+
+async function ensurePlanExists(planId: string) {
+  const def = PLAN_DEFINITIONS.find((p) => p.id === planId)
+  if (!def) return
+  try {
+    const existing = await prisma.plan.findUnique({ where: { id: planId } })
+    if (!existing) {
+      await prisma.plan.create({
+        data: { ...def, descripcion: "", activo: true },
+      })
+    }
+  } catch (err: any) {
+    if (err?.code !== "P2002") console.error("[ensurePlanExists] plan create failed:", err)
+  }
+}
+
+async function createStoreForUser(userId: string, userName: string, planId: string, cfg: { modalidad: string | null; planType: string; hasAgenda: boolean }) {
+  const slug = slugify(userName) + "-" + userId.slice(0, 6)
+
+  const negocio = await prisma.negocio.create({
+    data: {
+      nombre: userName,
+      slug,
+      planId,
+      modalidad: cfg.modalidad,
+      planEstado: "pendiente",
+      planVencimiento: null,
+      userId,
+    },
+  })
+
+  const store = await prisma.store.create({
+    data: {
+      name: userName,
+      slug,
+      plan: "free",
+      planStatus: "pendiente",
+      planType: cfg.planType,
+      userId,
+      negocioId: negocio.id,
+    },
+  })
+
+  await prisma.storeMember.create({
+    data: {
+      storeId: store.id,
+      userId,
+      role: "admin",
+    },
+  })
+
+  if (cfg.hasAgenda) {
+    await prisma.agenda.create({
+      data: {
+        nombre: "Mi Agenda",
+        slug: slug + "-agenda",
+        negocioId: negocio.id,
+      },
+    }).catch(() => {})
+  }
+
+  return store
+}
+
 export async function applyPlanSelection(planParam: string): Promise<{ success: boolean; error?: string }> {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: "No autenticado" }
@@ -28,26 +95,29 @@ export async function applyPlanSelection(planParam: string): Promise<{ success: 
   const cfg = planToConfig[resolved]
   if (!cfg) return { success: false, error: "Plan no válido" }
 
-  const store = await prisma.store.findUnique({ where: { userId }, select: { id: true, planType: true, negocioId: true, slug: true, name: true } })
-  if (!store) return { success: false, error: "Tienda no encontrada" }
+  // Ensure plans exist in DB
+  await ensurePlanExists(resolved)
 
-  // Update store planType
+  // Find or create store
+  let store = await prisma.store.findUnique({
+    where: { userId },
+    select: { id: true, planType: true, negocioId: true, slug: true, name: true },
+  })
+
+  if (!store) {
+    // User registered but has no store yet — create it now
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+    const userName = user?.name || "Mi Tienda"
+    store = await createStoreForUser(userId, userName, resolved, cfg)
+    if (!store) return { success: false, error: "No se pudo crear la tienda" }
+    return { success: true }
+  }
+
+  // Update existing store planType
   try {
     await prisma.store.update({ where: { id: store.id }, data: { planType: cfg.planType } })
   } catch (e) {
     console.error("[applyPlanSelection] store.update failed:", e)
-  }
-
-  // Ensure plans exist in DB
-  for (const p of PLAN_DEFINITIONS) {
-    try {
-      const existing = await prisma.plan.findUnique({ where: { id: p.id } })
-      if (!existing) {
-        await prisma.plan.create({ data: { ...p, descripcion: "", activo: true } })
-      }
-    } catch (err: any) {
-      if (err?.code !== "P2002") console.error("[applyPlanSelection] plan create failed:", err)
-    }
   }
 
   // Update or create Negocio

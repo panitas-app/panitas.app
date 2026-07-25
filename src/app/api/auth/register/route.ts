@@ -8,12 +8,6 @@ import { getPostHogClient } from "@/lib/posthog-server"
 
 const PASSWORD_MIN_LENGTH = 6
 
-const planDefaults: Record<string, { planId: string; modalidad: string | null; planType: string; hasAgenda: boolean }> = {
-  agenda: { planId: "agenda", modalidad: "agenda", planType: "agenda", hasAgenda: true },
-  comercio: { planId: "comercio", modalidad: null, planType: "tienda", hasAgenda: true },
-  mayorista: { planId: "mayorista", modalidad: null, planType: "empresa", hasAgenda: false },
-}
-
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
 }
@@ -71,94 +65,8 @@ export async function POST(req: Request) {
       },
     })
 
-    // Auto-create Negocio + Store + Agenda if plan is provided
-    const planKey = plan && planDefaults[plan] ? plan : "comercio"
-    const cfg = planDefaults[planKey]
-    const planSlug = slugify(trimmedName) + "-" + user.id.slice(0, 6)
-
-    try {
-      // Ensure Plan record exists in DB (no transactions for Neon HTTP)
-      // Use findUnique+create instead of upsert (upsert uses transactions internally)
-      const existingPlan = await prisma.plan.findUnique({ where: { id: cfg.planId } })
-      if (!existingPlan) {
-        try {
-          await prisma.plan.create({
-            data: {
-              id: cfg.planId,
-              nombre: cfg.planId,
-              label: cfg.planId.charAt(0).toUpperCase() + cfg.planId.slice(1),
-              descripcion: "",
-              precioUsd: cfg.planId === "agenda" ? 15 : cfg.planId === "comercio" ? 25 : 45,
-              precioUsdAnual: cfg.planId === "agenda" ? 150 : cfg.planId === "comercio" ? 250 : 450,
-              activo: true,
-              sortOrder: cfg.planId === "agenda" ? 1 : cfg.planId === "comercio" ? 2 : 3,
-            },
-          })
-        } catch (err: any) {
-          if (err?.code !== "P2002") throw err
-        }
-      }
-
-      const negocio = await prisma.negocio.create({
-        data: {
-          nombre: trimmedName,
-          slug: planSlug,
-          planId: cfg.planId,
-          modalidad: cfg.modalidad,
-          planEstado: "pendiente",
-          planVencimiento: null,
-          userId: user.id,
-        },
-      })
-
-      if (cfg.hasAgenda) {
-        await prisma.agenda.create({
-          data: {
-            nombre: "Mi Agenda",
-            slug: planSlug + "-agenda",
-            negocioId: negocio.id,
-          },
-        })
-      }
-
-      // Create Store without nested creation to avoid HTTP transaction failures
-      const store = await prisma.store.create({
-        data: {
-          name: trimmedName,
-          slug: planSlug,
-          plan: "free",
-          planStatus: "pendiente",
-          planType: cfg.planType,
-          userId: user.id,
-          negocioId: negocio.id,
-        },
-      })
-
-      // Create StoreMember separately
-      await prisma.storeMember.create({
-        data: {
-          storeId: store.id,
-          userId: user.id,
-          role: "admin",
-        },
-      })
-    } catch (creationError: any) {
-      console.error("[register creation crash]", creationError)
-      try {
-        await prisma.auditLog.create({
-          data: {
-            action: "register.creation_failed",
-            entity: "User",
-            metadata: JSON.stringify({ error: creationError?.message || String(creationError), stack: creationError?.stack }),
-            userId: user.id,
-          }
-        })
-      } catch (logErr) {
-        console.error("Failed to write register crash audit log:", logErr)
-      }
-      // Opción A: No relanzar si el User ya fue creado.
-      // getCurrentStore() auto-healeará Store/Negocio faltantes en el siguiente login.
-    }
+    // Store + Negocio se crean cuando el usuario elige un plan en /choose-plan
+    // NO se crea nada aquí para permitir que el usuario seleccione plan primero
 
     // Always send welcome + verification emails + track even if Store/Negocio creation fails
     enviarBienvenida(trimmedEmail, trimmedName)
@@ -189,8 +97,8 @@ export async function POST(req: Request) {
     }
 
     const phog = getPostHogClient()
-    phog.identify({ distinctId: user.id, properties: { plan: planKey } })
-    phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: planKey, method: "email" } })
+    phog.identify({ distinctId: user.id, properties: { plan: "none" } })
+    phog.capture({ distinctId: user.id, event: "user_registered", properties: { plan: plan || "none", method: "email" } })
     phog.flush().catch(e => console.error("[posthog flush error]", e))
 
     return NextResponse.json({ success: true })

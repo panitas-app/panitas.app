@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { applyPlanSelection } from "@/lib/actions/plan-selection"
 
 const CLOUDINARY_CLOUD = "dxgqv585u"
 
@@ -153,10 +155,40 @@ const contentVariants = {
 export default function ChoosePlanPage() {
   const { data: session, status } = useSession()
   const isAuthenticated = status === "authenticated"
+  const router = useRouter()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [selectingPlan, setSelectingPlan] = useState<string | null>(null)
 
   const expandedPlan = expandedId ? plans.find((p) => p.id === expandedId) : null
+
+  const handleSelectPlan = useCallback(async (planId: string, paymentMode: string) => {
+    if (!isAuthenticated) {
+      router.push(`/register?plan=${planId}&paymentMode=${paymentMode}`)
+      return
+    }
+    setSelectingPlan(planId)
+    const result = await applyPlanSelection(planId)
+    if (result.success) {
+      router.push(`/subscribe?plan=${planId}&paymentMode=${paymentMode}`)
+    } else {
+      setSelectingPlan(null)
+    }
+  }, [isAuthenticated, router])
+
+  const handlePayLater = useCallback(async (planId: string) => {
+    if (!isAuthenticated) {
+      router.push(`/register?plan=${planId}&payLater=true`)
+      return
+    }
+    setSelectingPlan(planId)
+    const result = await applyPlanSelection(planId)
+    if (result.success) {
+      router.push(`/dashboard?plan=${planId}`)
+    } else {
+      setSelectingPlan(null)
+    }
+  }, [isAuthenticated, router])
 
   return (
     <div className="min-h-screen bg-[#071A33] relative overflow-x-hidden">
@@ -288,35 +320,42 @@ export default function ChoosePlanPage() {
                         transition={{ delay: 0.5 }}
                         className="mt-6 sm:mt-8 lg:mt-10 flex flex-col gap-3"
                       >
-                        <Link
-                          href={isAuthenticated ? `/subscribe?plan=${expandedPlan.id}&paymentMode=single` : `/register?plan=${expandedPlan.id}&paymentMode=single`}
-                          className="group relative inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-gradient-to-br from-[#0066FF] to-[#0044CC] text-white font-semibold text-sm sm:text-base rounded-lg overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,102,255,0.35)] hover:scale-[1.02] active:scale-[0.98]"
+                        <button
+                          onClick={() => handleSelectPlan(expandedPlan.id, "single")}
+                          disabled={selectingPlan === expandedPlan.id}
+                          className="group relative inline-flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] bg-gradient-to-br from-[#0066FF] to-[#0044CC] text-white font-semibold text-sm sm:text-base rounded-lg overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,102,255,0.35)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <span className="relative z-10">Pagar · ${expandedPlan.price}/mes</span>
+                          <span className="relative z-10">
+                            {selectingPlan === expandedPlan.id ? "Creando tienda..." : `Pagar · $${expandedPlan.price}/mes`}
+                          </span>
                           <svg className="relative z-10 w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <path d="M5 12h14M12 5l7 7-7 7" />
                           </svg>
                           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/15 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                        </Link>
+                        </button>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                          <Link
-                            href={isAuthenticated ? `/subscribe?plan=${expandedPlan.id}&paymentMode=installment` : `/register?plan=${expandedPlan.id}&paymentMode=installment`}
-                            className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 min-h-[44px] border border-white/15 text-white font-medium text-xs sm:text-sm rounded-lg overflow-hidden transition-all duration-200 hover:border-white/30 hover:bg-white/5 flex-1"
+                          <button
+                            onClick={() => handleSelectPlan(expandedPlan.id, "installment")}
+                            disabled={selectingPlan === expandedPlan.id}
+                            className="group relative inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 min-h-[44px] border border-white/15 text-white font-medium text-xs sm:text-sm rounded-lg overflow-hidden transition-all duration-200 hover:border-white/30 hover:bg-white/5 flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <span className="relative z-10">2 cuotas de ${expandedPlan.installmentAmount} (${expandedPlan.installmentAmount * 2})</span>
+                            <span className="relative z-10">
+                              {selectingPlan === expandedPlan.id ? "Creando tienda..." : `2 cuotas de $${expandedPlan.installmentAmount} ($${expandedPlan.installmentAmount * 2})`}
+                            </span>
                             <svg className="relative z-10 w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
-                          </Link>
-                          <Link
-                            href={isAuthenticated ? `/dashboard?plan=${expandedPlan.id}` : `/register?plan=${expandedPlan.id}&payLater=true`}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-white/30 border border-white/5 rounded-lg hover:border-white/15 hover:text-white/50 transition-all duration-200 group flex-1"
+                          </button>
+                          <button
+                            onClick={() => handlePayLater(expandedPlan.id)}
+                            disabled={selectingPlan === expandedPlan.id}
+                            className="inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-white/30 border border-white/5 rounded-lg hover:border-white/15 hover:text-white/50 transition-all duration-200 group flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Ir al dashboard y pagar después
+                            {selectingPlan === expandedPlan.id ? "Creando tienda..." : "Ir al dashboard y pagar después"}
                             <svg className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
-                          </Link>
+                          </button>
                         </div>
                       </motion.div>
                     </div>
