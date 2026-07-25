@@ -5,13 +5,16 @@ import { createContext, useContext, useState, type ReactNode } from "react"
 interface BcvRateContextValue {
   rate: number
   setRate: (rate: number) => void
+  showBolivares: boolean
+  setShowBolivares: (v: boolean) => void
 }
 
 const BcvRateContext = createContext<BcvRateContextValue | null>(null)
 
-export function BcvRateProvider({ initialRate, children }: { initialRate: number; children: ReactNode }) {
+export function BcvRateProvider({ initialRate, initialShowBolivares = true, children }: { initialRate: number; initialShowBolivares?: boolean; children: ReactNode }) {
   const [rate, setRate] = useState(initialRate)
-  return <BcvRateContext.Provider value={{ rate, setRate }}>{children}</BcvRateContext.Provider>
+  const [showBolivares, setShowBolivares] = useState(initialShowBolivares)
+  return <BcvRateContext.Provider value={{ rate, setRate, showBolivares, setShowBolivares }}>{children}</BcvRateContext.Provider>
 }
 
 export function useBcvRate() {

@@ -958,6 +958,7 @@ model Appointment {
   address         String?
   notes           String?
   receiptImage    String?
+  rescheduleHistory Json?  // [{from: {date, time}, to: {date, time}, by, at}]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

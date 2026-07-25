@@ -13,8 +13,7 @@ import {
   Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight, ArrowRight } from "lucide-react"
 
 interface Employee {
   id: string
@@ -25,6 +24,7 @@ interface Employee {
 interface Service {
   id: string
   name: string
+  durationMin: number
 }
 
 interface Appointment {
@@ -39,7 +39,24 @@ interface Appointment {
   notes: string | null
   service: Service | null
   employee: Employee | null
+  serviceId: string | null
+  employeeId: string | null
   createdAt: string
+}
+
+interface SlotData {
+  time: string
+  available: boolean
+}
+
+interface ScheduleData {
+  startTime: string
+  endTime: string
+}
+
+interface BlockedSlotData {
+  startTime: string
+  endTime: string
 }
 
 const statusColors: Record<string, string> = {
@@ -70,6 +87,10 @@ export default function AgendaPage() {
   const [rescheduleDate, setRescheduleDate] = useState<string>("")
   const [rescheduleTime, setRescheduleTime] = useState<string>("")
   const [rescheduling, setRescheduling] = useState(false)
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null)
+  const [rescheduleSlots, setRescheduleSlots] = useState<SlotData[]>([])
+  const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false)
+  const [rescheduleAppointment, setRescheduleAppointment] = useState<Appointment | null>(null)
 
   useEffect(() => {
     fetch("/api/employees").then((r) => r.ok && r.json()).then((data) => {
@@ -118,13 +139,68 @@ export default function AgendaPage() {
 
   const openReschedule = (appt: Appointment) => {
     setRescheduleId(appt.id)
+    setRescheduleAppointment(appt)
     setRescheduleDate(appt.date.split("T")[0])
     setRescheduleTime(appt.time)
+    setRescheduleError(null)
+    setRescheduleSlots([])
   }
+
+  const fetchRescheduleSlots = useCallback(async (dateStr: string, appointment: Appointment) => {
+    if (!dateStr || !appointment) return
+    setRescheduleSlotsLoading(true)
+    setRescheduleSlots([])
+    try {
+      const params = new URLSearchParams({ date: dateStr })
+      if (appointment.employeeId) params.set("employeeId", appointment.employeeId)
+      const res = await fetch(`/api/appointments/slots?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        const schedules: ScheduleData[] = data.schedules || []
+        const takenAppointments: { time: string; serviceId?: string }[] = data.appointments || []
+        const blockedSlots: BlockedSlotData[] = data.blockedSlots || []
+        const servicesList: { id: string; durationMin: number }[] = data.services || []
+        const serviceDurationMap = new Map(servicesList.map(s => [s.id, s.durationMin]))
+
+        const duration = appointment.serviceId ? (serviceDurationMap.get(appointment.serviceId) || 30) : 30
+        const takenTimes = new Set(takenAppointments.map(a => a.time))
+
+        const slots: SlotData[] = []
+        for (const schedule of schedules) {
+          const startParts = schedule.startTime.split(":").map(Number)
+          const endParts = schedule.endTime.split(":").map(Number)
+          let startMin = startParts[0] * 60 + startParts[1]
+          const endMin = endParts[0] * 60 + endParts[1]
+          while (startMin + duration <= endMin) {
+            const h = Math.floor(startMin / 60).toString().padStart(2, "0")
+            const m = (startMin % 60).toString().padStart(2, "0")
+            const timeStr = `${h}:${m}`
+            const isTaken = takenTimes.has(timeStr)
+            const isBlocked = blockedSlots.some(b => {
+              const bStart = parseInt(b.startTime.split(":")[0]) * 60 + parseInt(b.startTime.split(":")[1])
+              const bEnd = parseInt(b.endTime.split(":")[0]) * 60 + parseInt(b.endTime.split(":")[1])
+              return startMin >= bStart && startMin < bEnd
+            })
+            slots.push({ time: timeStr, available: !isTaken && !isBlocked })
+            startMin += duration
+          }
+        }
+        setRescheduleSlots(slots)
+      }
+    } catch (e) { console.error("[unhandled error]", e) }
+    finally { setRescheduleSlotsLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    if (rescheduleId && rescheduleDate && rescheduleAppointment) {
+      fetchRescheduleSlots(rescheduleDate, rescheduleAppointment)
+    }
+  }, [rescheduleDate, rescheduleId, rescheduleAppointment, fetchRescheduleSlots])
 
   const handleReschedule = async () => {
     if (!rescheduleId || !rescheduleDate || !rescheduleTime) return
     setRescheduling(true)
+    setRescheduleError(null)
     try {
       const res = await fetch(`/api/appointments/${rescheduleId}`, {
         method: "PATCH",
@@ -134,8 +210,14 @@ export default function AgendaPage() {
       if (res.ok) {
         setRescheduleId(null)
         fetchAgenda()
+      } else {
+        const data = await res.json()
+        setRescheduleError(data.error || "Error al reagendar")
       }
-    } catch (e) { console.error("[unhandled error]", e) } finally { setRescheduling(false) }
+    } catch (e) {
+      console.error("[unhandled error]", e)
+      setRescheduleError("Error de conexión")
+    } finally { setRescheduling(false) }
   }
 
   const changeDate = (delta: number) => {
@@ -303,17 +385,55 @@ export default function AgendaPage() {
         </div>
       )}
 
+      {/* ─── RESCHEDULE DIALOG ─── */}
       <Dialog open={!!rescheduleId} onOpenChange={(o) => { if (!o) setRescheduleId(null) }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Reagendar cita</DialogTitle>
-            <DialogDescription>Selecciona la nueva fecha y hora para la cita.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <MoveRight className="size-5 text-amber-600" />
+              Reagendar cita
+            </DialogTitle>
+            <DialogDescription>
+              {rescheduleAppointment && (
+                <span className="text-muted-foreground">
+                  {rescheduleAppointment.customerName} — {rescheduleAppointment.service?.name || "Sin servicio"}
+                </span>
+              )}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+
+          <div className="space-y-5 py-2">
+            {/* Current appointment info */}
+            {rescheduleAppointment && (
+              <div className="rounded-xl bg-muted/50 p-3 flex items-center justify-between text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Horario actual</p>
+                  <p className="font-semibold">
+                    {new Date(rescheduleAppointment.date + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                    {" a las "}
+                    {rescheduleAppointment.time}
+                  </p>
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground" />
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground mb-0.5">Nuevo horario</p>
+                  <p className="font-semibold text-amber-600">
+                    {rescheduleDate ? (
+                      <>
+                        {new Date(rescheduleDate + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                        {rescheduleTime ? ` a las ${rescheduleTime}` : ""}
+                      </>
+                    ) : "Seleccionar"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Date picker */}
             <div>
-              <label className="text-sm font-medium mb-1 block">Nueva fecha</label>
+              <label className="text-sm font-medium mb-2 block">Nueva fecha</label>
               <Popover>
-                <PopoverTrigger render={<button className="w-full flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm hover:bg-accent" />}>
+                <PopoverTrigger render={<button className="w-full flex items-center gap-2 rounded-xl border border-input bg-background px-3 py-2.5 text-sm hover:bg-accent transition-colors" />}>
                   <CalendarIcon className="size-4 text-muted-foreground" />
                   {rescheduleDate ? new Date(rescheduleDate + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "Seleccionar fecha"}
                 </PopoverTrigger>
@@ -327,19 +447,56 @@ export default function AgendaPage() {
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Time slots */}
             <div>
-              <label className="text-sm font-medium mb-1 block">Nueva hora</label>
-              <Input
-                type="time"
-                value={rescheduleTime}
-                onChange={(e) => setRescheduleTime(e.target.value)}
-              />
+              <label className="text-sm font-medium mb-2 block">Horarios disponibles</label>
+              {rescheduleSlotsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Clock className="size-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : rescheduleSlots.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  {rescheduleDate ? "No hay horarios disponibles para esta fecha" : "Selecciona una fecha para ver horarios"}
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto">
+                  {rescheduleSlots.map((slot) => (
+                    <button
+                      key={slot.time}
+                      disabled={!slot.available}
+                      onClick={() => slot.available && setRescheduleTime(slot.time)}
+                      className={`px-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+                        !slot.available
+                          ? "bg-muted text-muted-foreground/40 cursor-not-allowed line-through"
+                          : rescheduleTime === slot.time
+                          ? "bg-amber-500 text-white shadow-md ring-2 ring-amber-300"
+                          : "bg-card border border-border hover:border-amber-300 hover:bg-amber-50 text-foreground"
+                      }`}
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Error */}
+            {rescheduleError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {rescheduleError}
+              </div>
+            )}
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setRescheduleId(null)}>Cancelar</Button>
-            <Button onClick={handleReschedule} disabled={rescheduling || !rescheduleDate || !rescheduleTime}>
-              {rescheduling ? "Guardando..." : "Guardar cambios"}
+            <Button
+              onClick={handleReschedule}
+              disabled={rescheduling || !rescheduleDate || !rescheduleTime || rescheduleSlotsLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {rescheduling ? "Reagendando..." : "Confirmar reagendo"}
             </Button>
           </DialogFooter>
         </DialogContent>

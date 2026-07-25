@@ -33,7 +33,7 @@ interface TodaySale { id: string; orderNumber: string; total: number; customerNa
 
 export default function POSPage() {
   const router = useRouter()
-  const { rate: bcvRate } = useBcvRate()
+  const { rate: bcvRate, showBolivares } = useBcvRate()
 
   // Products
   const [products, setProducts] = useState<Product[]>([])
@@ -886,7 +886,7 @@ async function processSale() {
             <span className="text-xs text-muted-foreground">Subtotal</span>
             <div className="text-right">
               <span className="text-sm font-semibold">${subtotal.toFixed(2)}</span>
-              <p className="text-[10px] text-muted-foreground/70">Bs. {subtotalVes.toFixed(2)}</p>
+              {showBolivares && bcvRate > 0 && <p className="text-[10px] text-muted-foreground/70">Bs. {subtotalVes.toFixed(2)}</p>}
             </div>
           </div>
           {(cartDiscount > 0 || couponDiscount > 0) && (
@@ -894,7 +894,7 @@ async function processSale() {
               <span className="text-xs">Descuentos</span>
               <div className="text-right">
                 <span className="text-xs font-semibold">-${(cartDiscount + couponDiscount).toFixed(2)}</span>
-                <p className="text-[10px] text-muted-foreground/70">-Bs. {((cartDiscount + couponDiscount) * bcvRate).toFixed(2)}</p>
+                {showBolivares && bcvRate > 0 && <p className="text-[10px] text-muted-foreground/70">-Bs. {((cartDiscount + couponDiscount) * bcvRate).toFixed(2)}</p>}
               </div>
             </div>
           )}
@@ -903,7 +903,7 @@ async function processSale() {
               <span className="text-xs text-muted-foreground">Envío</span>
               <div className="text-right">
                 <span className="text-xs font-semibold">${shippingCost.toFixed(2)}</span>
-                <p className="text-[10px] text-muted-foreground/70">Bs. {(shippingCost * bcvRate).toFixed(2)}</p>
+                {showBolivares && bcvRate > 0 && <p className="text-[10px] text-muted-foreground/70">Bs. {(shippingCost * bcvRate).toFixed(2)}</p>}
               </div>
             </div>
           )}
@@ -912,7 +912,7 @@ async function processSale() {
             <span className="text-base font-bold">Total USD</span>
             <div className="text-right">
               <span className="text-xl font-black">${total.toFixed(2)}</span>
-              <p className="text-xs text-muted-foreground/70">Bs. {totalVes.toFixed(2)}</p>
+              {showBolivares && bcvRate > 0 && <p className="text-xs text-muted-foreground/70">Bs. {totalVes.toFixed(2)}</p>}
             </div>
           </div>
 
@@ -1162,7 +1162,7 @@ async function processSale() {
 
                 <div className="text-center text-[10px] text-muted-foreground pt-1">
                   <p>¡Gracias por tu compra!</p>
-                  {bcvRate > 0 && <p>Tasa BCV: Bs. {formatBCV(bcvRate)} / USD</p>}
+                  {showBolivares && bcvRate > 0 && <p>Tasa BCV: Bs. {formatBCV(bcvRate)} / USD</p>}
                 </div>
               </div>
             )}

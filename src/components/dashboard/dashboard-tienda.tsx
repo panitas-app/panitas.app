@@ -5,6 +5,7 @@ import { Package, ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
 import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { formatBCV } from "@/lib/bcv/format"
+import { useBcvRate } from "@/lib/bcv-context"
 
 interface Props {
   store: Store
@@ -34,6 +35,7 @@ interface Props {
 
 export function DashboardTienda({ store, rate: initialRate, data, orders, visitorData, categoryStats }: Props) {
   const rate = initialRate
+  const { showBolivares } = useBcvRate()
   const todayRevenueVes = data.todayRevenue * rate
   const weekRevenueVes = data.weekRevenue * rate
 
@@ -44,6 +46,7 @@ export function DashboardTienda({ store, rate: initialRate, data, orders, visito
           <h1 className="font-heading text-2xl font-black text-foreground tracking-tight md:text-3xl">Panel de Control</h1>
           <p className="text-xs text-muted-foreground font-semibold tracking-wider uppercase mt-1">{store.name} · Plan Tienda</p>
         </div>
+        {showBolivares && (
         <div data-tour="bcv-rate" className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-xs">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <DollarSign className="size-4.5" />
@@ -53,6 +56,7 @@ export function DashboardTienda({ store, rate: initialRate, data, orders, visito
             <span className="text-sm font-black text-foreground">Bs. {formatBCV(rate)} / USD</span>
           </div>
         </div>
+        )}
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -66,7 +70,7 @@ export function DashboardTienda({ store, rate: initialRate, data, orders, visito
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tracking-tight">${data.todayRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground font-semibold mt-1">Bs. {todayRevenueVes.toFixed(2)}</p>
+            {showBolivares && <p className="text-xs text-muted-foreground font-semibold mt-1">Bs. {todayRevenueVes.toFixed(2)}</p>}
           </CardContent>
         </Card>
 
@@ -80,7 +84,7 @@ export function DashboardTienda({ store, rate: initialRate, data, orders, visito
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground tracking-tight">${data.weekRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground font-semibold mt-1">Bs. {weekRevenueVes.toFixed(2)}</p>
+            {showBolivares && <p className="text-xs text-muted-foreground font-semibold mt-1">Bs. {weekRevenueVes.toFixed(2)}</p>}
           </CardContent>
         </Card>
 

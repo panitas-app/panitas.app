@@ -11,6 +11,7 @@ import GastosPage from "@/components/dashboard/gastos-page"
 import PuntoEquilibrioTab from "@/components/dashboard/punto-equilibrio-tab"
 import CierresTab from "@/components/dashboard/cierres-tab"
 import { formatBCV } from "@/lib/bcv/format"
+import { useBcvRate } from "@/lib/bcv-context"
 
 const ALL_TABS = [
   { key: "balance", label: "Balance", icon: BarChart3 },
@@ -66,6 +67,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 const PLAN_TYPES_SIN_INVENTARIO = ["agenda", "reservas"]
 
 export default function AnalyticsPage() {
+  const { showBolivares } = useBcvRate()
   const [tab, setTab] = useState("balance")
   const [balance, setBalance] = useState<BalanceData | null>(null)
   const [inventario, setInventario] = useState<InventarioData | null>(null)
@@ -145,6 +147,7 @@ function getPeriodData(data: BalanceData, period: Period) {
 }
 
 function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Period; setPeriod: (p: Period) => void }) {
+  const { showBolivares } = useBcvRate()
   const statusLabels: Record<string, string> = {
     pending: "Pendiente", confirmed: "Confirmado", preparing: "Preparando",
     shipped: "Enviado", delivered: "Entregado", cancelled: "Cancelado",
@@ -222,7 +225,7 @@ function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Pe
             </span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">Balance general ({PERIOD_LABELS[period].toLowerCase()})</p>
-          <p className="text-xs text-muted-foreground">Tasa BCV: Bs. {formatBCV(data.rate)}</p>
+          {showBolivares && <p className="text-xs text-muted-foreground">Tasa BCV: Bs. {formatBCV(data.rate)}</p>}
         </CardContent>
       </Card>
 
@@ -234,7 +237,7 @@ function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Pe
           </CardHeader>
           <CardContent>
             <p className="font-heading text-2xl font-bold text-green-600">+${revenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Bs. {(revenue * data.rate).toFixed(2)}</p>
+            {showBolivares && <p className="text-xs text-muted-foreground">Bs. {(revenue * data.rate).toFixed(2)}</p>}
           </CardContent>
         </Card>
         <Card>
@@ -243,7 +246,7 @@ function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Pe
           </CardHeader>
           <CardContent>
             <p className="font-heading text-2xl font-bold text-red-600">-${expenseTotal.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Bs. {(expenseTotal * data.rate).toFixed(2)}</p>
+            {showBolivares && <p className="text-xs text-muted-foreground">Bs. {(expenseTotal * data.rate).toFixed(2)}</p>}
           </CardContent>
         </Card>
       </div>

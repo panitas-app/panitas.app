@@ -21,6 +21,118 @@ function isValidTimeStr(s: any): boolean {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(s)
 }
 
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number)
+  return h * 60 + m
+}
+
+const DAY_KEYS = ["dom", "lun", "mar", "mie", "jue", "vie", "sab"]
+
+async function validateSlot(
+  agendaId: string,
+  dateStr: string,
+  timeStr: string,
+  serviceDurationMin: number,
+  excludeAppointmentId: string,
+  employeeId?: string | null,
+): Promise<{ valid: boolean; error?: string }> {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  const date = new Date(y, m - 1, d)
+  const dayOfWeek = date.getDay()
+
+  // Get schedules
+  let schedules: { startTime: string; endTime: string }[]
+  if (employeeId) {
+    schedules = await prisma.employeeSchedule.findMany({
+      where: { employeeId, dayOfWeek, isActive: true },
+    })
+  } else {
+    schedules = await prisma.schedule.findMany({
+      where: { agendaId, dayOfWeek, isActive: true },
+    })
+  }
+
+  // Fallback to storeHours
+  if (schedules.length === 0) {
+    const agenda = await prisma.agenda.findUnique({ where: { id: agendaId }, select: { negocioId: true } })
+    if (agenda) {
+      const store = await prisma.store.findUnique({ where: { negocioId: agenda.negocioId }, select: { storeHours: true } })
+      if (store?.storeHours) {
+        try {
+          const parsed = JSON.parse(store.storeHours)
+          const dayKey = DAY_KEYS[dayOfWeek]
+          const day = parsed[dayKey]
+          if (day && day.type !== "Cerrado") {
+            schedules.push({ startTime: day.open || "09:00", endTime: day.close || "18:00" })
+            if (day.reopen && day.reclose) {
+              schedules.push({ startTime: day.reopen, endTime: day.reclose })
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  }
+
+  if (schedules.length === 0) {
+    return { valid: false, error: "El negocio no tiene horarios configurados para este día" }
+  }
+
+  // Check if time + duration fits within any schedule block
+  const startMin = timeToMinutes(timeStr)
+  const endMin = startMin + serviceDurationMin
+  const fitsInSchedule = schedules.some(s => {
+    const sStart = timeToMinutes(s.startTime)
+    const sEnd = timeToMinutes(s.endTime)
+    return startMin >= sStart && endMin <= sEnd
+  })
+  if (!fitsInSchedule) {
+    return { valid: false, error: "El horario seleccionado no está dentro del horario laboral" }
+  }
+
+  // Check blocked slots
+  const blockedSlots = await prisma.blockedSlot.findMany({ where: { agendaId, date } })
+  const overlapsBlocked = blockedSlots.some(block => {
+    const blockStart = timeToMinutes(block.startTime)
+    const blockEnd = timeToMinutes(block.endTime)
+    return startMin < blockEnd && endMin > blockStart
+  })
+  if (overlapsBlocked) {
+    return { valid: false, error: "El horario seleccionado está bloqueado" }
+  }
+
+  // Check existing appointments (overlap detection)
+  const appointmentWhere: any = {
+    agendaId,
+    date,
+    status: { not: "cancelled" },
+    id: { not: excludeAppointmentId },
+  }
+  if (employeeId) appointmentWhere.employeeId = employeeId
+
+  const existingAppointments = await prisma.appointment.findMany({
+    where: appointmentWhere,
+    select: { time: true, serviceId: true },
+  })
+
+  // Get service durations for overlapping check
+  const serviceIds = existingAppointments.map(a => a.serviceId).filter(Boolean) as string[]
+  const services = serviceIds.length > 0
+    ? await prisma.service.findMany({ where: { id: { in: serviceIds } }, select: { id: true, durationMin: true } })
+    : []
+  const serviceDurationMap = new Map(services.map(s => [s.id, s.durationMin]))
+
+  for (const appt of existingAppointments) {
+    const apptStart = timeToMinutes(appt.time)
+    const apptDuration = appt.serviceId ? (serviceDurationMap.get(appt.serviceId) || 30) : 30
+    const apptEnd = apptStart + apptDuration
+    if (startMin < apptEnd && endMin > apptStart) {
+      return { valid: false, error: "El horario se superpone con otra cita existente" }
+    }
+  }
+
+  return { valid: true }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -63,14 +175,49 @@ export async function PATCH(
 
   // Reagendar: cambiar fecha y/o hora
   let rescheduled = false
+  let newDateStr = ""
+  let newTimeStr = ""
+
   if (body.date !== undefined && isValidDateStr(body.date)) {
     const [y, m, d] = body.date.split("-").map(Number)
     data.date = new Date(y, m - 1, d)
+    newDateStr = body.date
     rescheduled = true
   }
   if (body.time !== undefined && isValidTimeStr(body.time)) {
     data.time = body.time
+    newTimeStr = body.time
     rescheduled = true
+  }
+
+  // Validate slot if rescheduling
+  if (rescheduled) {
+    const checkDate = newDateStr || appointment.date.toISOString().split("T")[0]
+    const checkTime = newTimeStr || appointment.time
+    const serviceDuration = appointment.serviceId
+      ? (await prisma.service.findUnique({ where: { id: appointment.serviceId }, select: { durationMin: true } }))?.durationMin || 30
+      : 30
+
+    const validation = await validateSlot(
+      appointment.agendaId,
+      checkDate,
+      checkTime,
+      serviceDuration,
+      id,
+      appointment.employeeId,
+    )
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 409 })
+    }
+
+    // Record reschedule history
+    const historyEntry = {
+      from: { date: appointment.date.toISOString().split("T")[0], time: appointment.time },
+      to: { date: checkDate, time: checkTime },
+      at: new Date().toISOString(),
+    }
+    const existingHistory = Array.isArray(appointment.rescheduleHistory) ? appointment.rescheduleHistory : []
+    data.rescheduleHistory = [...existingHistory, historyEntry]
   }
 
   // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately

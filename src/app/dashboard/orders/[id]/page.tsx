@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import { useBcvRate } from "@/lib/bcv-context"
 import { DownloadPurchaseOrder } from "@/components/seller/purchase-order"
 import {
   CheckCircle,
@@ -125,6 +126,7 @@ function formatDate(iso: string) {
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { showBolivares } = useBcvRate()
   const id = params?.id as string
 
   const [order, setOrder] = useState<Order | null>(null)
@@ -545,7 +547,7 @@ export default function OrderDetailPage() {
               <span>Total</span>
               <span>${order.total.toFixed(2)}</span>
             </div>
-            {order.bcvRateAtOrder && (
+            {showBolivares && order.bcvRateAtOrder && (
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Total en Bs. (tasa del día)</span>
                 <span>Bs. {(order.total * order.bcvRateAtOrder).toFixed(2)}</span>

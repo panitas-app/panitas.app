@@ -97,7 +97,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
   return (
     <DashboardTourHandler planType={planType}>
       <NewOrdersProvider>
-        <BcvRateProvider initialRate={bcvRate}>
+        <BcvRateProvider initialRate={bcvRate} initialShowBolivares={current.store.showBolivares ?? true}>
           <SetupWizardProvider
             storeId={current.store.id}
             negocioId={current.store.negocioId}

@@ -129,7 +129,7 @@ export function DashboardTopbar({
   } | null
 }) {
   const [qrOpen, setQrOpen] = useState(false)
-  const { rate: bcvRate } = useBcvRate()
+  const { rate: bcvRate, showBolivares } = useBcvRate()
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -158,6 +158,7 @@ export function DashboardTopbar({
     <>
       <header data-tour="topbar" className="sticky top-0 z-20 flex h-14 lg:h-16 items-center justify-between glass-dark px-4 lg:px-6 safe-top">
         <div className="flex items-center gap-4 min-w-0">
+          {showBolivares && (
           <div className="hidden items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-500/5 px-3 py-1 text-[11px] font-bold text-emerald-300 sm:flex">
             <span className="relative flex size-1.5 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -165,6 +166,7 @@ export function DashboardTopbar({
             </span>
             $ 1 = Bs. {bcvRate > 0 ? bcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--"}
           </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">

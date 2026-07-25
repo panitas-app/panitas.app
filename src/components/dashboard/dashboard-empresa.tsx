@@ -5,6 +5,7 @@ import { DollarSign, ShoppingCart, Calendar, Users, TrendingUp, CheckCircle, Clo
 import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import { formatBCV } from "@/lib/bcv/format"
+import { useBcvRate } from "@/lib/bcv-context"
 import { CategoryStats } from "@/components/dashboard/category-stats"
 
 interface Props {
@@ -45,6 +46,7 @@ interface Props {
 
 export function DashboardEmpresa({ store, rate: initialRate, sales, appointments, crm, orders, visitorData, categoryStats, serviceStats, pendingCommissions }: Props) {
   const rate = initialRate
+  const { showBolivares } = useBcvRate()
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10">
@@ -53,6 +55,7 @@ export function DashboardEmpresa({ store, rate: initialRate, sales, appointments
           <h1 className="font-heading text-2xl font-black text-foreground tracking-tight md:text-3xl">Resumen Ejecutivo</h1>
           <p className="text-xs text-muted-foreground font-semibold tracking-wider uppercase mt-1">{store.name} · Plan Empresa</p>
         </div>
+        {showBolivares && (
         <div className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-xs">
           <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <DollarSign className="size-4.5" />
@@ -62,6 +65,7 @@ export function DashboardEmpresa({ store, rate: initialRate, sales, appointments
             <span className="text-sm font-black text-foreground">Bs. {formatBCV(rate)} / USD</span>
           </div>
         </div>
+        )}
       </div>
 
       {/* Executive KPIs */}

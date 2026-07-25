@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarDays, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useBcvRate } from "@/lib/bcv-context"
 
 interface OrderData {
   id: string
@@ -69,6 +70,7 @@ function parseInputValue(s: string): Date | null {
 }
 
 export function SalesChart({ orders, bcvRate }: Props) {
+  const { showBolivares } = useBcvRate()
   const [period, setPeriod] = useState<Period>("week")
   const today = useMemo(() => startOfDay(new Date()), [])
 
@@ -306,10 +308,12 @@ export function SalesChart({ orders, bcvRate }: Props) {
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total USD</p>
             <p className="text-xl font-black text-accent">${totalUsd.toFixed(2)}</p>
           </div>
+          {showBolivares && (
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Bs</p>
             <p className="text-xl font-black text-accent">Bs. {totalVes.toFixed(2)}</p>
           </div>
+          )}
         </div>
 
         {/* Chart */}
