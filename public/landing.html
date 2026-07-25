@@ -1770,21 +1770,10 @@
     video.play().catch(function(){});
   }
 
-  function startHero() {
-    if (video.src !== heroVideos[0]) {
-      video.src = heroVideos[0];
-      video.load();
-    }
-    video.play().catch(function(){});
-  }
-
+  video.src = heroVideos[0];
+  video.load();
+  video.play().catch(function(){});
   video.addEventListener('ended', playNext);
-
-  if (video.readyState >= 2) {
-    startHero();
-  } else {
-    video.addEventListener('loadeddata', startHero, { once: true });
-  }
 
   video.addEventListener('error', function() {
     setTimeout(playNext, 500);
