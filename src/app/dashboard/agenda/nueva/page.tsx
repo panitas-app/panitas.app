@@ -6,30 +6,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { ArrowLeft, CalendarPlus } from "lucide-react"
 import Link from "next/link"
 
-interface Employee { id: string; name: string }
 interface Service { id: string; name: string; duration?: number }
 
 export default function NuevaCitaPage() {
   const router = useRouter()
-  const [employees, setEmployees] = useState<Employee[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [serviceId, setServiceId] = useState("")
-  const [employeeId, setEmployeeId] = useState("")
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
   const [time, setTime] = useState("10:00")
   const [notes, setNotes] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch("/api/employees").then(r => r.ok && r.json()).then(setEmployees).catch(() => {})
     fetch("/api/services").then(r => r.ok && r.json()).then(setServices).catch(() => {})
   }, [])
 
@@ -50,7 +46,6 @@ export default function NuevaCitaPage() {
           date,
           time,
           serviceId: serviceId || undefined,
-          employeeId: employeeId || undefined,
           notes: notes.trim() || null,
           appointmentType: "manual",
         }),
@@ -105,29 +100,16 @@ export default function NuevaCitaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Servicio (opcional)</Label>
-                <Select value={serviceId} onValueChange={(v) => v && setServiceId(v)}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {services.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Empleado (opcional)</Label>
-                <Select value={employeeId} onValueChange={(v) => v && setEmployeeId(v)}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {employees.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-1.5">
+              <Label>Servicio (opcional)</Label>
+              <Select value={serviceId} onValueChange={(v) => v && setServiceId(v)}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  {services.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
