@@ -98,9 +98,14 @@
         .hero_home_content { bottom: 10%; padding: 0 1.5rem 0 1rem; }
         .hero_home_wrap { min-height: 100dvh; }
         .hero_tagline { margin: 0; }
+        .hero_cta_wrap { margin-top: 1.5rem; }
+        .hero_cta_wrap .button_main_element { padding: 0.75rem 1.75rem; font-size: 0.95rem; }
         .nav_mobile_overlay.is-active { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
         .button_menu_wrap.is-active .button_menu_icon_line:last-child { transform: rotate(-45deg) translate(2px, -4px); }
+        .button_main_wrap.cta-primary .button_main_element,
+        .button_main_wrap.cta-secondary .button_main_element { min-height: 44px; }
+        .modal_content_wrap { max-width: 100% !important; }
       }
       #splash-loader {
         position: fixed; inset: 0; z-index: 9999;
@@ -117,6 +122,115 @@
         animation: spin 0.7s linear infinite;
       }
       @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ===== Premium Button System ===== */
+      .button_main_wrap.cta-primary .button_main_element {
+        background: linear-gradient(135deg, #FFB92E 0%, #FFC940 100%);
+        border: 1px solid rgba(255, 185, 46, 0.5);
+        color: #050505;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: 0 2px 8px rgba(255, 185, 46, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition: all 0.3s cubic-bezier(.16,1,.3,1);
+      }
+      .button_main_wrap.cta-primary:hover .button_main_element {
+        background: linear-gradient(135deg, #e6a800 0%, #FFB92E 100%);
+        box-shadow: 0 8px 24px rgba(255, 185, 46, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px) scale(1.02);
+      }
+      .button_main_wrap.cta-primary:active .button_main_element {
+        transform: translateY(0) scale(0.98);
+        box-shadow: 0 2px 8px rgba(255, 185, 46, 0.2);
+      }
+      .button_main_wrap.cta-primary:focus-visible .button_main_element {
+        outline: 2px solid #FFB92E;
+        outline-offset: 2px;
+      }
+      .button_main_wrap.cta-primary .button_main_base { display: none; }
+
+      .button_main_wrap.cta-secondary .button_main_element {
+        background: transparent;
+        border: 1px solid var(--glass-border);
+        color: var(--_theme---text);
+        font-weight: 600;
+        box-shadow: none;
+        transition: all 0.3s cubic-bezier(.16,1,.3,1);
+      }
+      .button_main_wrap.cta-secondary:hover .button_main_element {
+        background: var(--glass-bg);
+        border-color: var(--_theme---heading-accent);
+        box-shadow: var(--elevation-low);
+        transform: translateY(-1px);
+      }
+      .button_main_wrap.cta-secondary:active .button_main_element {
+        transform: translateY(0) scale(0.98);
+      }
+      .button_main_wrap.cta-secondary:focus-visible .button_main_element {
+        outline: 2px solid var(--_theme---heading-accent);
+        outline-offset: 2px;
+      }
+      .button_main_wrap.cta-secondary .button_main_base { display: none; }
+
+      /* Hero CTA spacing */
+      .hero_cta_wrap { margin-top: 2rem; }
+      .hero_cta_wrap .button_main_element { padding: 0.9rem 2.25rem; font-size: 1.05rem; }
+
+      /* Button loading state */
+      .button_main_wrap.is-loading .button_main_element { pointer-events: none; opacity: 0.7; }
+      .button_main_wrap.is-loading .button_main_text { visibility: hidden; }
+      .button_main_wrap.is-loading::after {
+        content: '';
+        position: absolute;
+        width: 18px; height: 18px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        top: 50%; left: 50%;
+        margin-left: -9px; margin-top: -9px;
+      }
+      .button_main_wrap.cta-primary.is-loading::after { border-color: rgba(5,5,5,0.2); border-top-color: #050505; }
+
+      /* Password toggle */
+      .pw-field-wrap { position: relative; }
+      .pw-toggle {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.35rem;
+        color: var(--swatch--gray);
+        transition: color 0.2s;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .pw-toggle:hover { color: var(--_theme---text); }
+      .pw-toggle svg { width: 18px; height: 18px; }
+
+      /* Login error shake */
+      @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-4px)} 40%,80%{transform:translateX(4px)} }
+      .form-shake { animation: shake 0.4s ease; }
+      .form-field-error { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.15) !important; }
+
+      /* Modal open animation */
+      .modal_dialog[open] .modal_content_wrap {
+        animation: modal-slide-in 0.35s cubic-bezier(.16,1,.3,1);
+      }
+      @keyframes modal-slide-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      /* Accessibility: focus-visible for keyboard nav */
+      a:focus-visible, button:focus-visible {
+        outline: 2px solid var(--_theme---heading-accent);
+        outline-offset: 2px;
+      }
     </style>
     <script>
       function toggleMobileMenu(e) {
@@ -128,6 +242,15 @@
         document.querySelector('.page_wrap').style.overflow = isActive ? '' : 'hidden';
       }
       document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            var trigger = e.target.closest('[data-modal-trigger]');
+            if (trigger) {
+              e.preventDefault();
+              trigger.click();
+            }
+          }
+        });
         var modal = document.getElementById('modal-probar');
         if (!modal) return;
         var observer = new MutationObserver(function() {
@@ -140,6 +263,13 @@
           }
         });
         observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('showLogin') === '1') {
+          setTimeout(function() { modal.showModal(); }, 300);
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }
       });
     </script>
   </head>
@@ -168,15 +298,15 @@
               <a href="#faq" class="nav_links_link">FAQ</a>
             </li>
             <li class="nav_links_item">
-              <a href="/login" class="button_main_wrap" style="text-decoration:none;">
+              <div class="button_main_wrap cta-secondary" data-modal-trigger="modal-probar" role="button" tabindex="0" aria-label="Iniciar sesión" style="cursor:pointer;">
                 <div class="button_main_element">
                   <span class="button_main_text">Iniciar sesión</span>
                   <div class="button_main_base"></div>
                 </div>
-              </a>
+              </div>
             </li>
             <li class="nav_links_item">
-              <a href="/register" class="button_main_wrap" style="text-decoration:none;">
+              <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;" aria-label="Prueba gratis">
                 <div class="button_main_element">
                   <span class="button_main_text">Prueba gratis</span>
                   <div class="button_main_base"></div>
@@ -199,16 +329,16 @@
           <li><a href="#planes-detalle" class="nav_mobile_link">Precios</a></li>
           <li><a href="#faq" class="nav_mobile_link">FAQ</a></li>
           <li>
-            <a href="/login" class="button_main_wrap" style="margin-top: 1rem; text-decoration:none;">
-              <div class="button_main_element">
+            <div class="button_main_wrap cta-secondary" data-modal-trigger="modal-probar" role="button" tabindex="0" aria-label="Iniciar sesión" style="margin-top: 1rem; cursor:pointer; width: 100%; text-align: center;">
+              <div class="button_main_element" style="width: 100%; justify-content: center;">
                 <span class="button_main_text">Iniciar sesión</span>
                 <div class="button_main_base"></div>
               </div>
-            </a>
+            </div>
           </li>
           <li>
-            <a href="/register" class="button_main_wrap" style="margin-top: 1rem; text-decoration:none;">
-              <div class="button_main_element">
+            <a href="/register" class="button_main_wrap cta-primary" style="margin-top: 1rem; text-decoration:none; width: 100%; display: inline-block;" aria-label="Prueba gratis">
+              <div class="button_main_element" style="width: 100%; justify-content: center;">
                 <span class="button_main_text">Prueba gratis</span>
                 <div class="button_main_base"></div>
               </div>
@@ -233,6 +363,14 @@
               <img src="/logonuevo.png" alt="Panitas" style="height: 100%; width: auto;" />
             </div>
             <h1 class="hero_tagline">Agenda, vende y administra todo desde un solo lugar.</h1>
+            <div class="hero_cta_wrap">
+              <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;">
+                <div class="button_main_element">
+                  <span class="button_main_text">Empieza gratis</span>
+                  <div class="button_main_base"></div>
+                </div>
+              </a>
+            </div>
           </div>
           <div class="hero_home_visual_wrap">
             <div class="hero_home_visual" id="hero-cycler">
@@ -461,7 +599,7 @@
                   <li>Dashboard de reservas y cancelaciones</li>
                   <li>1 miembro del equipo</li>
                 </ul>
-                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
+                <a href="/register" class="button_main_wrap cta-primary" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
@@ -494,7 +632,7 @@
                   <li>Reportes de ventas y analytics</li>
                   <li>3 miembros del equipo</li>
                 </ul>
-                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
+                <a href="/register" class="button_main_wrap cta-primary" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
@@ -529,7 +667,7 @@
                   <li>Soporte prioritario 24/7</li>
                   <li>10 miembros / 1GB almacenamiento</li>
                 </ul>
-                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
+                <a href="/register" class="button_main_wrap cta-primary" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
@@ -611,13 +749,13 @@
       <!-- ==================== MODALS ==================== -->
 
       <!-- Modal: Probar Gratis -->
-      <dialog class="modal_dialog" id="modal-probar">
+      <dialog class="modal_dialog" id="modal-probar" aria-label="Iniciar sesión">
         <div class="modal_inner">
           <div class="modal_backdrop" data-modal-close></div>
           <div class="modal_content_wrap">
             <div class="modal_scroll">
               <div class="modal_close">
-                <div class="button_close_wrap" data-modal-close>
+                <div class="button_close_wrap" data-modal-close aria-label="Cerrar">
                   <div class="button_close_icon">
                     <svg viewBox="0 0 14 14" fill="none">
                       <path d="M13 1L1 13M1 1L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
@@ -626,27 +764,32 @@
                 </div>
               </div>
               <div class="modal_content">
-                <h2>Inicia sesión</h2>
+                <h2 style="margin-bottom: 0.25rem;">Inicia sesión</h2>
+                <p style="font-size: 0.9rem; opacity: 0.6; margin-bottom: 1.5rem;">Accede a tu dashboard y gestiona tu negocio.</p>
                 <div class="form_wrap">
                   <form id="login-form" class="form_element">
                     <div class="form_fieldset_list">
                       <label class="form_label_wrap">
                         <span class="form_label_text">Correo electrónico</span>
-                        <input name="email" type="email" placeholder="correo@ejemplo.com" required class="form_field" />
+                        <input name="email" type="email" placeholder="correo@ejemplo.com" required class="form_field" autocomplete="email" />
                       </label>
                       <label class="form_label_wrap">
                         <span class="form_label_text">Clave</span>
-                        <input name="password" type="password" placeholder="••••••••" required class="form_field" />
+                        <div class="pw-field-wrap">
+                          <input name="password" type="password" placeholder="••••••••" required class="form_field" autocomplete="current-password" style="padding-right: 2.5rem;" />
+                          <button type="button" class="pw-toggle" aria-label="Mostrar contraseña" onclick="var inp=this.parentElement.querySelector('input');var isPassword=inp.type==='password';inp.type=isPassword?'text':'password';this.innerHTML=isPassword?'<svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><path d=&quot;M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24&quot;/><line x1=&quot;1&quot; y1=&quot;1&quot; x2=&quot;23&quot; y2=&quot;23&quot;/></svg>':'<svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><path d=&quot;M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z&quot;/><circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;3&quot;/></svg>';this.setAttribute('aria-label',isPassword?'Mostrar contraseña':'Ocultar contraseña');"></button>
+                        </div>
                       </label>
                     </div>
-                    <div class="button_main_wrap" style="margin-top: 1rem;">
-                      <button type="submit" class="button_main_element">
+                    <div id="login-error" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:0.6rem 1rem; border-radius:0.5rem; font-size:0.85rem; margin-top:0.75rem;"></div>
+                    <div class="button_main_wrap cta-primary" id="login-submit-wrap" style="margin-top: 1rem; width: 100%;">
+                      <button type="submit" class="button_main_element" style="width: 100%; justify-content: center;">
                         <span class="button_main_text">Iniciar sesión</span>
                         <div class="button_main_base"></div>
                       </button>
                     </div>
                   </form>
-                  <a href="/recuperar" style="display:block; text-align:center; margin:-0.25rem 0 0.5rem 0; font-size:0.85rem; color:var(--swatch--blue); text-decoration:none; opacity:0.75; transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
+                  <a href="/recuperar" style="display:block; text-align:center; margin:0.75rem 0 0; font-size:0.85rem; color:var(--swatch--blue); text-decoration:none; opacity:0.75; transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">
                     ¿Olvidaste tu contraseña?
                   </a>
                 </div>
@@ -655,15 +798,15 @@
                   <span style="font-size: 0.8rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em;">o</span>
                   <span style="flex: 1; height: 1px; background: var(--glass-border);"></span>
                 </div>
-                <div id="google-login-btn" class="button_main_wrap">
-                  <div class="button_main_element" style="display: flex; align-items: center; gap: 0.75rem;">
+                <div id="google-login-btn" class="button_main_wrap cta-secondary" role="button" tabindex="0" aria-label="Continuar con Google">
+                  <div class="button_main_element" style="display: flex; align-items: center; gap: 0.75rem; width: 100%; justify-content: center;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
-                    <span class="button_main_text">Iniciar sesión con Google</span>
+                    <span class="button_main_text">Continuar con Google</span>
                     <div class="button_main_base"></div>
                   </div>
                 </div>
@@ -846,10 +989,14 @@
       e.preventDefault(); e.stopPropagation();
       const email = e.target.querySelector('[name="email"]').value.trim();
       const password = e.target.querySelector('[name="password"]').value;
+      const submitWrap = document.getElementById('login-submit-wrap');
+      const errorEl = document.getElementById('login-error');
       if (!email || !password) { toast('Completa todos los campos', 'error'); return; }
+      submitWrap.classList.add('is-loading');
+      errorEl.style.display = 'none';
       try {
         const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
-        if (!csrfRes.ok) { toast('Error de conexión', 'error'); return; }
+        if (!csrfRes.ok) { throw new Error('CSRF'); }
         const { csrfToken } = await csrfRes.json();
         const res = await fetch('/api/auth/callback/credentials', {
           method: 'POST',
@@ -858,9 +1005,22 @@
           body: new URLSearchParams({ csrfToken, email, password, callbackUrl: '/dashboard', json: 'true' })
         });
         const data = await res.json();
-        if (data.url && !data.url.includes('error=')) { window.location.href = data.url; }
-        else { toast('Credenciales inválidas', 'error'); }
-      } catch (err) { console.error('[login error]', err); toast('Error de conexión', 'error'); }
+        if (data.url && !data.url.includes('error=')) {
+          submitWrap.querySelector('.button_main_text').textContent = 'Redirigiendo...';
+          window.location.href = data.url;
+        } else {
+          submitWrap.classList.remove('is-loading');
+          errorEl.textContent = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+          errorEl.style.display = 'block';
+          e.target.closest('.modal_content').classList.add('form-shake');
+          setTimeout(function(){ e.target.closest('.modal_content').classList.remove('form-shake'); }, 400);
+        }
+      } catch (err) {
+        console.error('[login error]', err);
+        submitWrap.classList.remove('is-loading');
+        errorEl.textContent = 'Error de conexión. Intenta de nuevo.';
+        errorEl.style.display = 'block';
+      }
     }
     if (e.target.id === 'contacto-form') {
       e.preventDefault(); e.stopPropagation();
@@ -885,9 +1045,10 @@
     const googleBtn = e.target.closest('#google-login-btn');
     if (googleBtn) {
       e.preventDefault(); e.stopPropagation();
+      googleBtn.classList.add('is-loading');
       try {
         const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
-        if (!csrfRes.ok) { toast('Error de conexión', 'error'); return; }
+        if (!csrfRes.ok) { toast('Error de conexión', 'error'); googleBtn.classList.remove('is-loading'); return; }
         const { csrfToken } = await csrfRes.json();
         const res = await fetch('/api/auth/signin/google', {
           method: 'POST',
@@ -897,8 +1058,12 @@
         });
         const data = await res.json();
         if (data.url) { window.location.href = data.url; }
-        else { toast('Error al iniciar sesión con Google', 'error'); }
-      } catch (err) { console.error('[google login error]', err); toast('Error al iniciar sesión con Google', 'error'); }
+        else { toast('Error al iniciar sesión con Google', 'error'); googleBtn.classList.remove('is-loading'); }
+      } catch (err) {
+        console.error('[google login error]', err);
+        toast('Error al iniciar sesión con Google', 'error');
+        googleBtn.classList.remove('is-loading');
+      }
       return;
     }
     const regLink = e.target.closest('.login_register_text a');
