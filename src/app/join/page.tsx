@@ -6,6 +6,8 @@ import { JoinContent } from "./join-content"
 export const metadata: Metadata = {
   title: PAGE_META["/join"].title,
   description: PAGE_META["/join"].description,
+  robots: { index: false, follow: true },
+  alternates: { canonical: "/join" },
   openGraph: { title: PAGE_META["/join"].title, description: PAGE_META["/join"].description },
   twitter: { title: PAGE_META["/join"].title, description: PAGE_META["/join"].description },
 }

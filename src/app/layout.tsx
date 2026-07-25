@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
-import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema } from "@/lib/seo/schema";
+import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema, LocalBusinessSchema } from "@/lib/seo/schema";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app";
 
@@ -25,7 +25,10 @@ export const metadata: Metadata = {
     "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B. Sin complicaciones técnicas, adaptado a Venezuela.",
   manifest: "/manifest.json",
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
     apple: "/apple-touch-icon.png",
     shortcut: "/favicon.png",
   },
@@ -33,6 +36,12 @@ export const metadata: Metadata = {
     capable: true,
     title: "Panitas",
     statusBarStyle: "black-translucent",
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      "es-VE": "/",
+    },
   },
   openGraph: {
     type: "website",
@@ -42,14 +51,16 @@ export const metadata: Metadata = {
     description:
       "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B.",
     url: baseUrl,
-    images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
+    images: [{ url: `${baseUrl}/og-image.jpg`, width: 1200, height: 630, alt: "Panitas – Software administrativo para negocios en Venezuela" }],
   },
   twitter: {
     card: "summary_large_image",
+    site: "@panitasapp",
+    creator: "@panitasapp",
     title: "Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala",
     description:
       "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B.",
-    images: [`${baseUrl}/og-image.png`],
+    images: [`${baseUrl}/og-image.jpg`],
   },
   robots: {
     index: true,
@@ -72,7 +83,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://cdn.prod.website-files.com" />
         <link rel="dns-prefetch" href="https://cdn.prod.website-files.com" />
-        <link rel="canonical" href={baseUrl} />
         <script dangerouslySetInnerHTML={{
           __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TDP569Q9');`,
         }} />
@@ -83,6 +93,7 @@ export default function RootLayout({
         <OrganizationSchema />
         <SoftwareApplicationSchema />
         <WebSiteSchema />
+        <LocalBusinessSchema />
       </head>
       <body className="min-h-full flex flex-col font-body bg-white text-[#050505]">
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TDP569Q9"

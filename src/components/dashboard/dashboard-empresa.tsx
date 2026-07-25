@@ -141,7 +141,7 @@ export function DashboardEmpresa({ store, rate: initialRate, sales, appointments
         {/* Appointments column */}
         <div className="space-y-4">
           <h2 className="font-heading text-sm font-bold text-foreground flex items-center gap-2"><Calendar className="size-4" /> Agenda</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Card className="rounded-xl bg-card">
               <CardContent className="p-4 text-center">
                 <Clock className="size-4 text-purple-500 mx-auto mb-1" />

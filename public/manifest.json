@@ -6,11 +6,26 @@
   "display": "standalone",
   "background_color": "#FFB92E",
   "theme_color": "#FFB92E",
+  "id": "/",
   "categories": ["business", "productivity", "shopping"],
   "scope": "/",
+  "lang": "es-VE",
+  "dir": "ltr",
+  "orientation": "any",
   "icons": [
     { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Panitas – Panel de administración"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

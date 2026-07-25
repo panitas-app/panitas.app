@@ -275,6 +275,27 @@
   }
 }
 
+/* ── Mobile performance: reduce animations + contain layout ── */
+@media (max-width: 640px) {
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  main {
+    contain: layout style;
+    animation: none;
+  }
+  .Card, [data-slot="card"] {
+    contain: layout style paint;
+  }
+  .glass-dark, .glass, .glass-card {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+}
+
 /* ── Keyboard-aware layout — bottom nav shrinks when keyboard open ── */
 @supports (height: 100dvh) {
   .min-h-dvh-app {

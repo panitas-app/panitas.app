@@ -1,12 +1,69 @@
+# robots.txt — Panitas (https://panitas.app)
+# Permite indexación completa de páginas públicas
+# Bloquea rutas privadas, APIs e internas
+
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /admin/
+Allow: /store/*
+Allow: /pricing
+Allow: /faq
+Allow: /contacto
+Allow: /terminos
+Allow: /privacidad
+
+# Rutas privadas / autenticadas
 Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /onboarding/
+Disallow: /seller/
+Disallow: /perfil/
+
+# Autenticación
 Disallow: /login
 Disallow: /register
+Disallow: /join
+Disallow: /choose-plan
+Disallow: /subscribe
+Disallow: /restablecer
+
+# APIs y archivos internos
+Disallow: /api/
 Disallow: /_next/
 Disallow: /node_modules/
-Disallow: /.git/
+Disallow: /assets/
 
+# Archivos de configuración
+Disallow: /.git/
+Disallow: /.well-known/
+
+# Sitemap
 Sitemap: https://panitas.app/sitemap.xml
+
+# User-agent específico para IA (permite lectura completa)
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Amazonbot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Bytespider
+Disallow: /

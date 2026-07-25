@@ -71,7 +71,7 @@ export default async function ProductsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-heading text-xl font-semibold">Productos</h1>
         <div className="flex gap-2">
           {canImport && (
@@ -106,7 +106,7 @@ export default async function ProductsPage({
         <form>
           <select
             name="category"
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            className="h-10 w-full sm:w-auto rounded-lg border border-input bg-transparent px-2.5 text-sm"
             defaultValue={category || ""}
           >
             <option value="">Todas las categorías</option>
@@ -150,7 +150,7 @@ export default async function ProductsPage({
                     })()
                     return (
                     <TableRow key={product.id}>
-                    <TableCell>
+                    <TableCell data-label="Imagen">
                       {productImages[0] ? (
                         <img
                           src={productImages[0]}
@@ -161,9 +161,9 @@ export default async function ProductsPage({
                         <div className="size-10 rounded-md bg-muted" />
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium" data-label="Nombre">{product.name}</TableCell>
+                    <TableCell data-label="Precio">${product.price.toFixed(2)}</TableCell>
+                    <TableCell data-label="Stock">
                       {product.stock !== null && product.stock <= 0 ? (
                         <span className="text-destructive font-semibold">Agotado</span>
                       ) : product.stock !== null && product.stock <= 5 ? (
@@ -172,12 +172,12 @@ export default async function ProductsPage({
                         product.stock?.toString() || "—"
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Estado">
                       <Badge variant={product.isActive ? "default" : "secondary"}>
                         {product.isActive ? "Activo" : "Inactivo"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell data-label="Acciones">
                       <div className="flex items-center gap-1">
                         <Link href={`/dashboard/products/${product.id}/edit`}>
                           <Button variant="ghost" size="xs">

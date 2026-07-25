@@ -4,6 +4,8 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: PAGE_META["/subscribe"].title,
   description: PAGE_META["/subscribe"].description,
+  robots: { index: false, follow: true },
+  alternates: { canonical: "/subscribe" },
   openGraph: { title: PAGE_META["/subscribe"].title, description: PAGE_META["/subscribe"].description },
   twitter: { title: PAGE_META["/subscribe"].title, description: PAGE_META["/subscribe"].description },
 }

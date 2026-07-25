@@ -5,6 +5,8 @@ import { redirect } from "next/navigation"
 export const metadata: Metadata = {
   title: PAGE_META["/login"].title,
   description: PAGE_META["/login"].description,
+  robots: { index: false, follow: true },
+  alternates: { canonical: "/login" },
   openGraph: { title: PAGE_META["/login"].title, description: PAGE_META["/login"].description },
   twitter: { title: PAGE_META["/login"].title, description: PAGE_META["/login"].description },
 }

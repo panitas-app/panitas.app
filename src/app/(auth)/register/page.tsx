@@ -6,6 +6,8 @@ import RegisterContent from "@/components/auth/register-content"
 export const metadata: Metadata = {
   title: PAGE_META["/register"].title,
   description: PAGE_META["/register"].description,
+  robots: { index: false, follow: true },
+  alternates: { canonical: "/register" },
   openGraph: { title: PAGE_META["/register"].title, description: PAGE_META["/register"].description },
   twitter: { title: PAGE_META["/register"].title, description: PAGE_META["/register"].description },
 }

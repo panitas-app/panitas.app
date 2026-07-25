@@ -258,7 +258,7 @@ export function SalesChart({ orders, bcvRate }: Props) {
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={cn(
-                  "px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all",
+                  "px-2 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all",
                   period === p
                     ? "bg-background text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground/80",
@@ -303,7 +303,7 @@ export function SalesChart({ orders, bcvRate }: Props) {
       </CardHeader>
       <CardContent className="p-6">
         {/* Totals bar */}
-        <div className="flex items-center gap-6 mb-6 pb-4">
+        <div className="flex items-center gap-4 sm:gap-6 mb-6 pb-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total USD</p>
             <p className="text-xl font-black text-accent">${totalUsd.toFixed(2)}</p>
@@ -324,8 +324,8 @@ export function SalesChart({ orders, bcvRate }: Props) {
           </div>
         ) : (
           <div
-            className="grid gap-1.5 sm:gap-3 items-end overflow-x-auto"
-            style={{ gridTemplateColumns: `repeat(${Math.min(bars.length, 31)}, minmax(28px, 1fr))` }}
+            className="grid gap-1 sm:gap-3 items-end overflow-x-auto scrollbar-none"
+            style={{ gridTemplateColumns: `repeat(${Math.min(bars.length, 31)}, minmax(18px, 1fr))` }}
           >
             {bars.map((bar, idx) => {
               const pct = maxUsd > 0 ? (bar.usd / maxUsd) * 100 : 0
@@ -334,17 +334,17 @@ export function SalesChart({ orders, bcvRate }: Props) {
                 <div key={`${bar.label}-${idx}`} className="flex flex-col items-center gap-1.5">
                   <div className="relative w-full flex flex-col items-center justify-end" style={{ height: 140 }}>
                     <div
-                      className="w-full max-w-[32px] rounded-lg bg-gradient-to-t from-primary/80 to-primary/30 transition-all duration-500 hover:from-primary hover:to-primary/50 cursor-pointer group relative"
+                      className="w-full max-w-[24px] sm:max-w-[32px] rounded-lg bg-gradient-to-t from-primary/80 to-primary/30 transition-all duration-500 hover:from-primary hover:to-primary/50 cursor-pointer group relative"
                       style={{ height: `${Math.max(pct, 4)}%` }}
                     >
-                      <div className="absolute -top-9 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap z-10">
+                      <div className="absolute -top-9 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap z-10 hidden sm:block">
                         ${bar.usd.toFixed(2)}
                       </div>
                     </div>
                   </div>
                   <span
-                    className="text-[10px] text-muted-foreground font-semibold text-center leading-tight"
-                    style={{ writingMode: bars.length > 20 ? "vertical-rl" : "horizontal-tb", transform: bars.length > 20 ? "rotate(180deg)" : "none" }}
+                    className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold text-center leading-tight"
+                    style={{ writingMode: bars.length > 14 ? "vertical-rl" : "horizontal-tb", transform: bars.length > 14 ? "rotate(180deg)" : "none" }}
                   >
                     {showShort ? bar.shortLabel : bar.label}
                   </span>

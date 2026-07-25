@@ -1,52 +1,64 @@
-# Panitas — SaaS todo-en-uno para negocios venezolanos
+# Panitas — Software administrativo todo-en-uno para negocios en Venezuela
 
-> Panitas es una plataforma SaaS venezolana que unifica tienda online, agenda de citas, CRM y control B2B en un solo sistema. Está diseñada para emprendedores, pymes, distribuidoras y mayoristas en Venezuela.
+> Panitas es una plataforma SaaS venezolana que unifica tienda online, agenda de citas, CRM, punto de venta (POS) y control B2B en un solo sistema. Diseñada para emprendedores, pymes, distribuidoras y mayoristas en Venezuela.
 
-## ¿Qué problema resuelve?
+## ¿Qué es Panitas?
 
-Los dueños de negocios en Venezuela usan múltiples herramientas desconectadas (WhatsApp para ventas, Google Calendar para citas, Excel para inventario) y no tienen acceso a pasarelas de pago internacionales. Panitas resuelve esto con un sistema integrado adaptado a métodos de pago venezolanos.
+Panitas es un software administrativo en la nube para negocios venezolanos. Permite crear tiendas online, gestionar citas, administrar clientes, controlar inventario y vender por punto de venta — todo desde un solo panel. A diferencia de Shopify o Square, Panitas acepta pagos por transferencia bancaria, pago móvil y POS sin necesidad de pasarelas internacionales.
 
-## Funciones principales
+## ¿Qué problemas resuelve?
 
-- Tienda online profesional con catálogo de productos
-- Agenda de citas con reservas online y recordatorios
-- CRM con gestión de clientes, etiquetas y seguimiento
-- Control B2B para mayoristas y distribuidoras
-- Punto de venta (POS) integrado
-- Reportes y analytics de ventas
-- Gestión de comisiones para vendedores
-- Automatización de notas de entrega
-- Tasa BCV actualizada automáticamente
-- Panel de administración para control total
+- **Herramientas fragmentadas:** Negocios usan WhatsApp para ventas, Google Calendar para citas, Excel para inventario. Panitas unifica todo.
+- **Sin acceso a pasarelas internacionales:** Stripe y PayPal tienen restricciones en Venezuela. Panitas acepta pagos locales.
+- **Inflación y devaluación:** Precios actualizados automáticamente según la tasa BCV oficial.
+- **Costos elevados:** Soluciones internacionales cuestan $79+/mes. Panitas desde $15/mes.
 
-## Planes
+## Funcionalidades principales
 
-| Plan | Precio | Ideal para |
-|------|--------|------------|
-| Agenda | $15/mes | Profesionales de citas (barberías, clínicas, salones) |
+- **Tienda online profesional:** Catálogo de productos, carrito de compras, checkout, cupones, múltiples plantillas (moderna, delivery, exprés, premium).
+- **Agenda de citas:** Calendario con disponibilidad en tiempo real, reservas online, recordatorios automáticos, gestión de múltiples profesionales.
+- **CRM:** Base de datos de clientes, historial de compras, etiquetas, segmentación, notas y seguimiento.
+- **Punto de venta (POS):** Interfaz de venta rápida, múltiples métodos de pago, tickets, historial de ventas.
+- **Control B2B:** Catálogo B2B con precios especiales, pedidos por volumen, comisiones de vendedores, notas de entrega automatizadas.
+- **Reportes y analytics:** Dashboard de ventas, revenue por período, productos más vendidos, balance general.
+- **Automatizaciones:** Recordatorios de citas, notificaciones de órdenes, alertas de inventario bajo.
+
+## Para qué tipo de negocios sirve
+
+- Tiendas online y pequeños comercios
+- Barberías, salones de belleza, clínicas, consultorios (profesionales de citas)
+- Distribuidoras y mayoristas (control B2B)
+- Emprendedores digitales
+- Tiendas físicas que quieren vender online
+- Ferreterías, papelerías, farmacias, boutiques
+
+## Planes y precios
+
+| Plan | Precio mensual | Ideal para |
+|------|---------------|------------|
+| Agenda | $15/mes | Barberías, clínicas, salones |
 | Emprendedor | $25/mes | Tiendas online con agenda y CRM |
-| Mayorista | $45/mes | Distribuidoras y mayoristas con B2B |
+| Mayorista | $45/mes | Distribuidoras y mayoristas B2B |
 
 ## Diferenciadores clave
 
-- Diseñado específicamente para el mercado venezolano
-- Pagos por transferencia, pago móvil y punto de venta (sin Stripe/PayPal)
+- Diseñado para el mercado venezolano
+- Pagos por transferencia, pago móvil y POS (sin Stripe/PayPal)
 - Tasa BCV actualizada cada 30 minutos
 - Sin comisiones por transacción
-- Adaptado a la realidad económica del país
+- 100% de las ventas son del comercio
+- Múltiples plantillas de tienda
+- CRM incluido sin costo extra
 
-## Público objetivo
+## Stack tecnológico
 
-- Pequeños y medianos comercios en Venezuela
-- Profesionales independientes (médicos, barberos, estilistas)
-- Distribuidoras y mayoristas
-- Emprendedores digitales
-- Dueños de tiendas físicas que quieren vender online
+Next.js 16, React 19, TypeScript, Tailwind CSS v4, Prisma ORM, PostgreSQL (Neon), NextAuth v5, Cloudinary, Vercel.
 
-## Enlaces
+## Enlaces importantes
 
 - Sitio web: https://panitas.app
-- Registro: https://panitas.app/register
-- Precios: https://panitas.app/pricing
-- FAQ: https://panitas.app/faq
+- Planes y precios: https://panitas.app/pricing
+- Preguntas frecuentes: https://panitas.app/faq
 - Contacto: https://panitas.app/contacto
+- Registro: https://panitas.app/register
+- Documentación completa: https://panitas.app/llms-full.txt

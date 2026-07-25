@@ -99,18 +99,18 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 border-b pb-1">
+      <div className="flex items-center gap-4 border-b pb-1 overflow-x-auto scrollbar-none flex-nowrap">
         {tabs.map((t) => {
           const Icon = t.icon
           return (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-3 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="size-4" />
+              <Icon className="size-4 shrink-0" />
               {t.label}
             </button>
           )
@@ -162,7 +162,7 @@ function BalanceTab({ data, period, setPeriod }: { data: BalanceData; period: Pe
   return (
     <div className="space-y-6">
       {/* Period selector + export */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
             <button
@@ -360,8 +360,8 @@ function InventarioTab({ data }: { data: InventarioData }) {
               </tr></thead>
               <tbody>{data.products.map((p) => (
                 <tr key={p.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">{p.name}</td><td className="px-4 py-3">{p.stock}</td><td className="px-4 py-3">${p.costPrice.toFixed(2)}</td><td className="px-4 py-3">${p.price.toFixed(2)}</td><td className="px-4 py-3 font-medium">${p.marginPerUnit.toFixed(2)}</td>
-                  <td className="px-4 py-3"><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${p.marginPercent >= 50 ? "bg-green-100 text-green-700" : p.marginPercent >= 30 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{p.marginPercent.toFixed(1)}%</span></td>
+                  <td className="px-4 py-3 font-medium" data-label="Producto">{p.name}</td><td className="px-4 py-3" data-label="Stock">{p.stock}</td><td className="px-4 py-3" data-label="Costo">${p.costPrice.toFixed(2)}</td><td className="px-4 py-3" data-label="Precio">${p.price.toFixed(2)}</td><td className="px-4 py-3 font-medium" data-label="Margen $">${p.marginPerUnit.toFixed(2)}</td>
+                  <td className="px-4 py-3" data-label="Margen %"><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${p.marginPercent >= 50 ? "bg-green-100 text-green-700" : p.marginPercent >= 30 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{p.marginPercent.toFixed(1)}%</span></td>
                 </tr>
               ))}{data.products.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No hay productos</td></tr>}</tbody>
             </table>

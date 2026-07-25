@@ -11,21 +11,65 @@ export default async function sitemap() {
     priority: route.priority,
   }))
 
-  let storePages: { url: string; lastModified: Date; changeFrequency: "weekly"; priority: number }[] = []
+  let storePages: { url: string; lastModified: Date; changeFrequency: "weekly" | "monthly"; priority: number }[] = []
+  let profilePages: { url: string; lastModified: Date; changeFrequency: "monthly"; priority: number }[] = []
+
   try {
     const stores = await prisma.store.findMany({
-      where: { isActive: true, planStatus: { in: ["active", "activo"] } },
-      select: { slug: true, updatedAt: true },
+      where: { isActive: true, planStatus: { in: ["active", "activo", "trial"] } },
+      select: {
+        slug: true,
+        updatedAt: true,
+        planType: true,
+      },
     })
-    storePages = stores.map((s) => ({
-      url: `${baseUrl}/store/${s.slug}`,
-      lastModified: s.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }))
+
+    storePages = stores.flatMap((s) => {
+      const pages: { url: string; lastModified: Date; changeFrequency: "weekly" | "monthly"; priority: number }[] = [
+        {
+          url: `${baseUrl}/store/${s.slug}`,
+          lastModified: s.updatedAt,
+          changeFrequency: "weekly",
+          priority: 0.8,
+        },
+      ]
+
+      if (s.planType === "agenda" || s.planType === "reservas") {
+        pages.push({
+          url: `${baseUrl}/store/${s.slug}/booking`,
+          lastModified: s.updatedAt,
+          changeFrequency: "weekly",
+          priority: 0.7,
+        })
+      }
+
+      return pages
+    })
   } catch (e) {
     console.error("[sitemap] DB not available at build time, returning public pages only:", e)
   }
 
-  return [...publicPages, ...storePages]
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        store: { isActive: true, planStatus: { in: ["active", "activo", "trial"] } },
+      },
+      select: {
+        id: true,
+        name: true,
+        updatedAt: true,
+      },
+    })
+
+    profilePages = users.map((u) => ({
+      url: `${baseUrl}/perfil/${u.id}`,
+      lastModified: u.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    }))
+  } catch (e) {
+    console.error("[sitemap] Could not fetch profile pages:", e)
+  }
+
+  return [...publicPages, ...storePages, ...profilePages]
 }

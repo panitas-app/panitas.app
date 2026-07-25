@@ -163,6 +163,7 @@ const sections = [
 export const metadata: Metadata = {
   title: PAGE_META["/terminos"].title,
   description: PAGE_META["/terminos"].description,
+  alternates: { canonical: "/terminos" },
   openGraph: { title: PAGE_META["/terminos"].title, description: PAGE_META["/terminos"].description },
   twitter: { title: PAGE_META["/terminos"].title, description: PAGE_META["/terminos"].description },
 }

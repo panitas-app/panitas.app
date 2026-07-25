@@ -126,6 +126,7 @@ const sections = [
 export const metadata: Metadata = {
   title: PAGE_META["/privacidad"].title,
   description: PAGE_META["/privacidad"].description,
+  alternates: { canonical: "/privacidad" },
   openGraph: { title: PAGE_META["/privacidad"].title, description: PAGE_META["/privacidad"].description },
   twitter: { title: PAGE_META["/privacidad"].title, description: PAGE_META["/privacidad"].description },
 }

@@ -2,7 +2,7 @@ export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app
 export const SITE_NAME = "Panitas"
 export const SITE_DESCRIPTION =
   "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B. Sin complicaciones técnicas."
-export const DEFAULT_OG_IMAGE = "/og-image.png"
+export const DEFAULT_OG_IMAGE = "/og-image.jpg"
 export const TWITTER_HANDLE = "@panitasapp"
 export const LOCALE = "es_VE"
 export const THEME_COLOR = "#FFB92E"
@@ -11,15 +11,10 @@ export const BACKGROUND_COLOR = "#102A43"
 export const PUBLIC_ROUTES = [
   { path: "/", label: "Inicio", changefreq: "weekly", priority: 1 },
   { path: "/pricing", label: "Planes y Precios", changefreq: "monthly", priority: 0.9 },
-  { path: "/choose-plan", label: "Elegir Plan", changefreq: "monthly", priority: 0.8 },
-  { path: "/subscribe", label: "Suscribirse", changefreq: "monthly", priority: 0.7 },
   { path: "/contacto", label: "Contacto", changefreq: "yearly", priority: 0.6 },
   { path: "/faq", label: "Preguntas Frecuentes", changefreq: "monthly", priority: 0.7 },
   { path: "/terminos", label: "Términos y Condiciones", changefreq: "yearly", priority: 0.4 },
   { path: "/privacidad", label: "Política de Privacidad", changefreq: "yearly", priority: 0.4 },
-  { path: "/register", label: "Registro", changefreq: "yearly", priority: 0.5 },
-  { path: "/login", label: "Iniciar Sesión", changefreq: "yearly", priority: 0.4 },
-  { path: "/join", label: "Unirse", changefreq: "yearly", priority: 0.3 },
 ] as const
 
 export const PAGE_META: Record<string, { title: string; description: string; keywords?: string }> = {

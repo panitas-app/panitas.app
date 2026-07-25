@@ -101,7 +101,7 @@ export function DashboardNegocio({ store, rate, sales, appointments, orders, vis
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <div className="rounded-xl bg-emerald-500/10 p-4">
                 <p className="text-xs text-muted-foreground mb-1">Ventas productos</p>
                 <p className="text-lg font-black text-emerald-600">${sales.weekRevenue.toFixed(2)}</p>
