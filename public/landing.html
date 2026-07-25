@@ -443,6 +443,9 @@
         outline-offset: 2px;
       }
 
+      /* ===== Hero tagline — minimal sans-serif ===== */
+      .hero_tagline { font-family: "Systemia", "Inter", sans-serif; font-weight: 500; letter-spacing: -0.01em; text-shadow: none; }
+
       /* ===== MOBILE (<= 768px) ===== */
       @media (width <= 768px) {
         .hero_home_content { bottom: 10%; padding: 0 1.5rem 0 1rem; }
@@ -644,7 +647,8 @@
           </div>
           <div class="hero_home_visual_wrap">
             <div class="hero_home_visual" id="hero-cycler">
-              <video class="hero_video" autoplay muted playsinline preload="metadata" poster="/og-image.jpg" style="width:100%;height:100%;object-fit:cover;" aria-label="Demostración del software administrativo Panitas"></video>
+              <video class="hero_video" autoplay muted playsinline preload="auto" poster="/og-image.jpg" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" aria-label="Demostración del software administrativo Panitas"></video>
+              <video class="hero_video" muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0;transition:opacity 0.4s ease;" aria-hidden="true"></video>
             </div>
           </div>
         </section>
@@ -1759,32 +1763,47 @@
   var idx = 0;
   var container = document.getElementById('hero-cycler');
   if (!container) return;
-  var video = container.querySelector('video');
-  if (!video) return;
+  var videos = container.querySelectorAll('video');
+  if (videos.length < 2) return;
+  var active = videos[0];
+  var preloader = videos[1];
   var pausedByScroll = false;
 
-  function playNext() {
+  function crossfade() {
+    preloader.style.opacity = '1';
+    active.style.opacity = '0';
+    var tmp = active;
+    active = preloader;
+    preloader = tmp;
     idx = (idx + 1) % heroVideos.length;
-    video.src = heroVideos[idx];
-    video.load();
-    video.play().catch(function(){});
+    preloader.src = heroVideos[idx];
+    preloader.load();
   }
 
-  video.src = heroVideos[0];
-  video.load();
-  video.play().catch(function(){});
-  video.addEventListener('ended', playNext);
+  active.src = heroVideos[0];
+  active.load();
+  active.play().catch(function(){});
+  active.addEventListener('ended', crossfade);
 
-  video.addEventListener('error', function() {
-    setTimeout(playNext, 500);
+  preloader.addEventListener('canplaythrough', function onLoad() {
+    preloader.removeEventListener('canplaythrough', onLoad);
+    if (!pausedByScroll) preloader.play().catch(function(){});
+  });
+
+  active.addEventListener('error', function() {
+    setTimeout(crossfade, 300);
   });
 
   var heroObserver = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        if (pausedByScroll) { video.play().catch(function(){}); pausedByScroll = false; }
+        if (pausedByScroll) {
+          active.play().catch(function(){});
+          preloader.play().catch(function(){});
+          pausedByScroll = false;
+        }
       } else {
-        if (!video.paused) { video.pause(); pausedByScroll = true; }
+        if (!active.paused) { active.pause(); preloader.pause(); pausedByScroll = true; }
       }
     });
   }, { threshold: 0.1 });
