@@ -87,12 +87,7 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth <= 768)
-  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -121,11 +116,6 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
   }, [isVisible, idx])
 
   if (!isActive) return null
-
-  // Skip video on mobile — show gradient fallback
-  if (isMobile) {
-    return <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${accent || '#0066FF'}22, ${accent || '#0066FF'}11)` }} />
-  }
 
   function handleEnded() {
     setLoaded(false); setError(false)

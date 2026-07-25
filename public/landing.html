@@ -513,17 +513,6 @@
 
       /* ===== MOBILE PERFORMANCE — light optimizations ===== */
       @media (max-width: 768px) {
-        /* Disable hero video on mobile — saves bandwidth + CPU */
-        .hero_video, .hero_home_visual_wrap video {
-          display: none !important;
-        }
-        .hero_home_visual_wrap {
-          background: linear-gradient(135deg, #071A33 0%, #0A2540 50%, #0D3050 100%) !important;
-        }
-        /* Disable all plan background videos on mobile */
-        .plan-bg-video, .plan_card video {
-          display: none !important;
-        }
         /* Reduce backdrop-filter blur on mobile */
         .modal_backdrop {
           backdrop-filter: blur(4px) !important;
