@@ -56,6 +56,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
     { value: "SV", label: "🇸🇻 El Salvador" },
     { value: "NI", label: "🇳🇮 Nicaragua" },
     { value: "BZ", label: "🇧🇿 Belice" },
+    { value: "DO", label: "🇩🇴 República Dominicana" },
     { value: "US", label: "🇺🇸 Estados Unidos" },
     { value: "ES", label: "🇪🇸 España" },
   ]

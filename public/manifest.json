@@ -4,7 +4,7 @@
   "description": "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#102A43",
+  "background_color": "#FFB92E",
   "theme_color": "#FFB92E",
   "categories": ["business", "productivity", "shopping"],
   "scope": "/",

@@ -17,6 +17,9 @@
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
     <meta name="theme-color" content="#FFB92E" />
     <meta name="application-name" content="Panitas" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-startup-image" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'><rect fill='%23FFB92E' width='1' height='1'/></svg>" />
     <meta property="og:title" content="Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala" />
     <meta property="og:description" content="Panitas: SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B." />
     <meta property="og:url" content="https://panitas.app" />
@@ -32,7 +35,6 @@
     <meta name="twitter:image" content="https://panitas.app/og-image.png" />
     <link rel="canonical" href="https://panitas.app" />
     <link rel="icon" href="/favicon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -100,6 +102,21 @@
         .button_menu_wrap.is-active .button_menu_icon_line:first-child { transform: rotate(45deg) translate(2px, 4px); }
         .button_menu_wrap.is-active .button_menu_icon_line:last-child { transform: rotate(-45deg) translate(2px, -4px); }
       }
+      #splash-loader {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #FFB92E;
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity 0.4s ease;
+      }
+      #splash-loader.hide { opacity: 0; pointer-events: none; }
+      #splash-loader .spinner {
+        width: 40px; height: 40px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
     </style>
     <script>
       function toggleMobileMenu(e) {
@@ -127,6 +144,7 @@
     </script>
   </head>
   <body class="u-theme-light">
+    <div id="splash-loader"><div class="spinner"></div></div>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TDP569Q9" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="page_wrap">
 
@@ -150,12 +168,20 @@
               <a href="#faq" class="nav_links_link">FAQ</a>
             </li>
             <li class="nav_links_item">
-              <div class="button_main_wrap" data-modal-trigger="modal-probar">
+              <a href="/login" class="button_main_wrap" style="text-decoration:none;">
+                <div class="button_main_element">
+                  <span class="button_main_text">Iniciar sesión</span>
+                  <div class="button_main_base"></div>
+                </div>
+              </a>
+            </li>
+            <li class="nav_links_item">
+              <a href="/register" class="button_main_wrap" style="text-decoration:none;">
                 <div class="button_main_element">
                   <span class="button_main_text">Prueba gratis</span>
                   <div class="button_main_base"></div>
                 </div>
-              </div>
+              </a>
             </li>
           </ul>
           <div class="button_menu_wrap" id="mobile-nav-toggle" onclick="toggleMobileMenu(event)" style="cursor:pointer;z-index:1002;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
@@ -173,12 +199,20 @@
           <li><a href="#planes-detalle" class="nav_mobile_link">Precios</a></li>
           <li><a href="#faq" class="nav_mobile_link">FAQ</a></li>
           <li>
-            <div class="button_main_wrap" data-modal-trigger="modal-probar" style="margin-top: 1rem;">
+            <a href="/login" class="button_main_wrap" style="margin-top: 1rem; text-decoration:none;">
+              <div class="button_main_element">
+                <span class="button_main_text">Iniciar sesión</span>
+                <div class="button_main_base"></div>
+              </div>
+            </a>
+          </li>
+          <li>
+            <a href="/register" class="button_main_wrap" style="margin-top: 1rem; text-decoration:none;">
               <div class="button_main_element">
                 <span class="button_main_text">Prueba gratis</span>
                 <div class="button_main_base"></div>
               </div>
-            </div>
+            </a>
           </li>
         </ul>
       </div>
@@ -427,12 +461,12 @@
                   <li>Dashboard de reservas y cancelaciones</li>
                   <li>1 miembro del equipo</li>
                 </ul>
-                <div class="button_main_wrap" data-modal-trigger="modal-probar" style="margin-top: auto;">
+                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
                   </div>
-                </div>
+                </a>
                 </div>
               </div>
               <div class="plan_card is-highlight" style="position:relative;overflow:hidden;">
@@ -460,12 +494,12 @@
                   <li>Reportes de ventas y analytics</li>
                   <li>3 miembros del equipo</li>
                 </ul>
-                <div class="button_main_wrap" data-modal-trigger="modal-probar" style="margin-top: auto;">
+                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
                   </div>
-                </div>
+                </a>
                 </div>
               </div>
               <div class="plan_card" style="position:relative;overflow:hidden;">
@@ -495,12 +529,12 @@
                   <li>Soporte prioritario 24/7</li>
                   <li>10 miembros / 1GB almacenamiento</li>
                 </ul>
-                <div class="button_main_wrap" data-modal-trigger="modal-probar" style="margin-top: auto;">
+                <a href="/register" class="button_main_wrap" style="margin-top: auto; text-decoration:none;">
                   <div class="button_main_element">
                     <span class="button_main_text">Lo quiero</span>
                     <div class="button_main_base"></div>
                   </div>
-                </div>
+                </a>
                 </div>
               </div>
             </div>
@@ -944,6 +978,12 @@
 
   lazyVideos.forEach(function(v) { observer.observe(v); });
 })();
+</script>
+<script>
+window.addEventListener('load', function() {
+  var loader = document.getElementById('splash-loader');
+  if (loader) { loader.classList.add('hide'); setTimeout(function(){ loader.remove(); }, 500); }
+});
 </script>
 </body>
 </html>
