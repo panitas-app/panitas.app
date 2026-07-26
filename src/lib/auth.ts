@@ -15,18 +15,16 @@ function validateEmail(email: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null
 }
 
-const googleProvider = Google({
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  allowDangerousEmailAccountLinking: true,
-})
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
   adapter: undefined,
   providers: [
-    googleProvider,
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
@@ -52,14 +50,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "google" && profile?.email) {
         const email = profile.email.toLowerCase()
 
-        // Find existing user
         const existingUser = await prisma.user.findUnique({
           where: { email },
           include: { accounts: true },
         }).catch(() => null)
 
         if (existingUser) {
-          // Link Google account if not already linked
           const hasGoogleAccount = existingUser.accounts.some(a => a.provider === "google")
           if (!hasGoogleAccount && account.providerAccountId) {
             await prisma.account.create({
@@ -78,11 +74,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
             }).catch(() => {})
           }
-          // Attach user ID to the token by returning the user object
-          return { id: existingUser.id, email: existingUser.email, name: existingUser.name } as any
+          return true
         }
 
-        // New user — create account + user
         const newUser = await prisma.user.create({
           data: {
             email,
@@ -109,7 +103,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }).catch(() => {})
         }
 
-        return { id: newUser.id, email: newUser.email, name: newUser.name } as any
+        return true
       }
       return true
     },

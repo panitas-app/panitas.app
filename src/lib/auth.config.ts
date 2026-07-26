@@ -40,10 +40,22 @@ export const authConfig = {
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
+        // Without adapter, Google sign-in gives us Google's profile ID, not our DB ID.
+        // Resolve the correct DB user ID by email for OAuth providers.
+        if (account?.provider === "google" && user.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email },
+            select: { id: true, is_email_verified: true },
+          }).catch(() => null)
+          if (dbUser) {
+            token.sub = dbUser.id
+            ;(token as any).is_email_verified = dbUser.is_email_verified ?? false
+            return token
+          }
+        }
         token.sub = user.id
-        // Fetch is_email_verified from DB for the logged-in user
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
