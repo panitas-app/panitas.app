@@ -107,7 +107,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
           >
             <div className="flex min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
               <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
-              <div className="flex flex-1 flex-col lg:pl-64">
+              <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
                 <DashboardTopbar
                 store={current.store}
                 user={user}
@@ -124,7 +124,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                   period: latestSubscription.period || "monthly",
                 } : null}
               />
-                <main className="flex-1 p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
+                <main className="flex-1 min-w-0 overflow-hidden p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
                   {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
                   <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
                     {children}

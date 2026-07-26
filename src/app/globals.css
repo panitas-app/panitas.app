@@ -256,10 +256,16 @@
   }
 }
 
-/* ── Responsive tables → stack on mobile ── */
-@media (max-width: 640px) {
+/* ── Responsive tables → stack on mobile/tablet ── */
+@media (max-width: 768px) {
+  [data-slot="table-container"] {
+    overflow-x: visible !important;
+    -webkit-overflow-scrolling: unset;
+  }
   table {
     font-size: 0.8125rem;
+    width: 100% !important;
+    table-layout: auto;
   }
   table thead {
     @apply sr-only;
@@ -269,12 +275,20 @@
   }
   table td {
     @apply flex items-center justify-between py-2 px-0 border-b border-border/50 last:border-0;
+    min-width: 0;
+    word-break: break-word;
+    white-space: normal;
   }
   table td::before {
     content: attr(data-label);
     @apply font-bold text-muted-foreground text-[11px] uppercase tracking-wider mr-3;
     flex-shrink: 0;
-    min-width: 80px;
+    min-width: 70px;
+    max-width: 100px;
+  }
+  table td.whitespace-nowrap,
+  table td[data-slot="table-cell"] {
+    white-space: normal !important;
   }
 }
 
@@ -292,12 +306,6 @@
   }
   .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
-  }
-  main {
-    contain: layout style;
-  }
-  .Card, [data-slot="card"] {
-    contain: layout style paint;
   }
   /* Reduce backdrop-filter blur on mobile — saves GPU */
   .glass-dark, .glass, .glass-card {

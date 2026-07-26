@@ -1,5 +1,4 @@
 import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
@@ -16,45 +15,6 @@ function validateEmail(email: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null
 }
 
-function createAdapter() {
-  const base = PrismaAdapter(prisma)
-  return {
-    ...base,
-    createUser: async (user: any) => {
-      if (user.email) {
-        const existing = await prisma.user.findUnique({ where: { email: user.email } })
-        if (existing) return existing as any
-      }
-      return await base.createUser!(user)
-    },
-    linkAccount: async (account: any) => {
-      try {
-        const existing = await prisma.account.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          },
-        })
-        if (existing) return existing as any
-        return await base.linkAccount!(account) as any
-      } catch {
-        const existing = await prisma.account.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-            },
-          },
-        })
-        if (existing) return existing as any
-        return account
-      }
-    },
-  } as any
-}
-
 const googleProvider = Google({
   clientId: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -64,7 +24,7 @@ const googleProvider = Google({
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
-  adapter: createAdapter(),
+  adapter: undefined,
   providers: [
     googleProvider,
     Credentials({
@@ -86,4 +46,72 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ account, profile }) {
+      if (account?.provider === "google" && profile?.email) {
+        const email = profile.email.toLowerCase()
+
+        // Find existing user
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          include: { accounts: true },
+        }).catch(() => null)
+
+        if (existingUser) {
+          // Link Google account if not already linked
+          const hasGoogleAccount = existingUser.accounts.some(a => a.provider === "google")
+          if (!hasGoogleAccount && account.providerAccountId) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type || "OAuth",
+                provider: "google",
+                providerAccountId: account.providerAccountId,
+                refresh_token: account.refresh_token,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: typeof account.session_state === "string" ? account.session_state : null,
+              },
+            }).catch(() => {})
+          }
+          // Attach user ID to the token by returning the user object
+          return { id: existingUser.id, email: existingUser.email, name: existingUser.name } as any
+        }
+
+        // New user — create account + user
+        const newUser = await prisma.user.create({
+          data: {
+            email,
+            name: profile.name || null,
+            emailVerified: new Date(),
+          },
+        })
+
+        if (account.providerAccountId) {
+          await prisma.account.create({
+            data: {
+              userId: newUser.id,
+              type: account.type || "OAuth",
+              provider: "google",
+              providerAccountId: account.providerAccountId,
+              refresh_token: account.refresh_token,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+              session_state: typeof account.session_state === "string" ? account.session_state : null,
+            },
+          }).catch(() => {})
+        }
+
+        return { id: newUser.id, email: newUser.email, name: newUser.name } as any
+      }
+      return true
+    },
+  },
 })
