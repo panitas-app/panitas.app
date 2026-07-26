@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw, Trash2 } from "lucide-react"
+import { ArrowLeft, UserX, UserCheck, Store, CreditCard, Activity, RefreshCw, Trash2, CheckCircle, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { planDisplayLabel, planColor } from "@/lib/plans"
 
@@ -53,6 +53,10 @@ export default function AdminUserDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteSecret, setDeleteSecret] = useState("")
   const [deleting, setDeleting] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState("")
+  const [rejectingSubId, setRejectingSubId] = useState<string | null>(null)
+  const [actingSubId, setActingSubId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -110,6 +114,41 @@ export default function AdminUserDetailPage() {
     if (!res.ok) { const err = await res.json().catch(() => ({})); toast.error(err.error || "Error al eliminar"); return }
     toast.success("Cuenta eliminada permanentemente")
     router.push("/admin/users")
+  }
+
+  async function handleApproveSub(subId: string) {
+    setActingSubId(subId)
+    const res = await fetch(`/api/admin/subscriptions/${subId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "active" }),
+    })
+    setActingSubId(null)
+    if (!res.ok) { toast.error("Error al aprobar"); return }
+    toast.success("Pago aprobado y suscripción activada")
+    window.location.reload()
+  }
+
+  function openRejectSub(subId: string) {
+    setRejectingSubId(subId)
+    setRejectReason("")
+    setRejectOpen(true)
+  }
+
+  async function handleRejectSub() {
+    if (!rejectingSubId) return
+    if (!rejectReason.trim()) { toast.error("Escribe un motivo de rechazo"); return }
+    setActingSubId(rejectingSubId)
+    const res = await fetch(`/api/admin/subscriptions/${rejectingSubId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "rejected", rejectionReason: rejectReason }),
+    })
+    setActingSubId(null)
+    if (!res.ok) { toast.error("Error al rechazar"); return }
+    toast.success("Pago rechazado")
+    setRejectOpen(false)
+    window.location.reload()
   }
 
   function getPlanLabel(p: string) {
@@ -237,6 +276,16 @@ export default function AdminUserDetailPage() {
                         )}
                       </div>
                     )}
+                    {sub.status === "pending" && (
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" disabled={actingSubId === sub.id} onClick={() => handleApproveSub(sub.id)}>
+                          <CheckCircle className="size-3.5" /> {actingSubId === sub.id ? "Procesando..." : "Aprobar pago"}
+                        </Button>
+                        <Button size="sm" variant="destructive" className="gap-1.5" disabled={actingSubId === sub.id} onClick={() => openRejectSub(sub.id)}>
+                          <XCircle className="size-3.5" /> Rechazar pago
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -304,6 +353,23 @@ export default function AdminUserDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSuspendOpen(false)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleSuspend}>Suspender</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-destructive"><XCircle className="size-4" /> Rechazar pago</DialogTitle></DialogHeader>
+          <div className="py-2 space-y-2">
+            <p className="text-sm text-muted-foreground">Indica el motivo del rechazo. El usuario será notificado por email.</p>
+            <Textarea placeholder="Motivo del rechazo..." value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)} rows={3} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleRejectSub} disabled={actingSubId === rejectingSubId}>
+              {actingSubId === rejectingSubId ? "Procesando..." : "Rechazar pago"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
