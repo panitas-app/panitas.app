@@ -1768,27 +1768,48 @@
   var active = videos[0];
   var preloader = videos[1];
   var pausedByScroll = false;
+  var preloaderReady = false;
+
+  function getNextIdx() { return (idx + 1) % heroVideos.length; }
+
+  function startPreloading() {
+    preloaderReady = false;
+    preloader.src = heroVideos[getNextIdx()];
+    preloader.load();
+  }
+
+  preloader.addEventListener('canplaythrough', function onPreloaderReady() {
+    preloader.removeEventListener('canplaythrough', onPreloaderReady);
+    preloaderReady = true;
+    if (!pausedByScroll) {
+      preloader.play().catch(function(){});
+    }
+  });
 
   function crossfade() {
+    if (!preloaderReady) {
+      active.addEventListener('canplay', function tryAgain() {
+        active.removeEventListener('canplay', tryAgain);
+        crossfade();
+      });
+      return;
+    }
     preloader.style.opacity = '1';
     active.style.opacity = '0';
     var tmp = active;
     active = preloader;
     preloader = tmp;
-    idx = (idx + 1) % heroVideos.length;
-    preloader.src = heroVideos[idx];
-    preloader.load();
+    idx = getNextIdx();
+    preloaderReady = false;
+    startPreloading();
+    active.addEventListener('ended', crossfade, { once: true });
   }
 
   active.src = heroVideos[0];
   active.load();
   active.play().catch(function(){});
   active.addEventListener('ended', crossfade);
-
-  preloader.addEventListener('canplaythrough', function onLoad() {
-    preloader.removeEventListener('canplaythrough', onLoad);
-    if (!pausedByScroll) preloader.play().catch(function(){});
-  });
+  startPreloading();
 
   active.addEventListener('error', function() {
     setTimeout(crossfade, 300);
