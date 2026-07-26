@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const subscriptions = await prisma.storeSubscription.findMany({
     where: { store: { userId: id } },
     orderBy: { createdAt: "desc" },
-    select: { id: true, plan: true, status: true, amount: true, period: true, createdAt: true, verifiedAt: true, rejectionReason: true },
+    select: { id: true, plan: true, status: true, amount: true, period: true, createdAt: true, verifiedAt: true, rejectionReason: true, paymentMethod: true, reference: true, bankOrigin: true, paidAt: true, receiptImage: true },
   })
 
   const auditLogs = await prisma.auditLog.findMany({

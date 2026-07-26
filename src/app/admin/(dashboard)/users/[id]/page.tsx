@@ -34,7 +34,7 @@ interface UserDetail {
   } | null
   negocio: { id: string; nombre: string; planId: string; modalidad: string | null; planEstado: string; planVencimiento: string | null } | null
   _count: { orders: number }
-  subscriptions: Array<{ id: string; plan: string; status: string; amount: number; period: string; createdAt: string; verifiedAt: string | null; rejectionReason: string | null }>
+  subscriptions: Array<{ id: string; plan: string; status: string; amount: number; period: string; createdAt: string; verifiedAt: string | null; rejectionReason: string | null; paymentMethod: string | null; reference: string | null; bankOrigin: string | null; paidAt: string | null; receiptImage: string | null }>
   auditLogs: Array<{ id: string; action: string; entity: string; createdAt: string }>
 }
 
@@ -193,14 +193,50 @@ export default function AdminUserDetailPage() {
             {user.subscriptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin suscripciones</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {user.subscriptions.map((sub) => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="text-sm font-medium">{getPlanLabel(sub.plan)}</p>
-                      <p className="text-xs text-muted-foreground">${sub.amount.toFixed(2)} · {sub.period === "yearly" ? "Anual" : "Mensual"}</p>
+                  <div key={sub.id} className="p-3 rounded-lg bg-muted/50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{getPlanLabel(sub.plan)}</p>
+                        <p className="text-xs text-muted-foreground">${sub.amount.toFixed(2)} · {sub.period === "yearly" ? "Anual" : "Mensual"}</p>
+                      </div>
+                      <Badge className={cn("text-xs", getStatusColor(sub.status))}>{sub.status}</Badge>
                     </div>
-                    <Badge className={cn("text-xs", getStatusColor(sub.status))}>{sub.status}</Badge>
+                    {(sub.bankOrigin || sub.reference || sub.paymentMethod || sub.receiptImage) && (
+                      <div className="border-t border-border/50 pt-2 space-y-1 text-xs">
+                        {sub.paymentMethod && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Método</span>
+                            <span className="font-medium capitalize">{sub.paymentMethod}</span>
+                          </div>
+                        )}
+                        {sub.bankOrigin && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Banco</span>
+                            <span className="font-medium">{sub.bankOrigin}</span>
+                          </div>
+                        )}
+                        {sub.reference && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Referencia</span>
+                            <span className="font-mono font-medium">{sub.reference}</span>
+                          </div>
+                        )}
+                        {sub.paidAt && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Pagado</span>
+                            <span>{format(new Date(sub.paidAt), "dd/MM/yyyy HH:mm", { locale: es })}</span>
+                          </div>
+                        )}
+                        {sub.receiptImage && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Comprobante</span>
+                            <a href={sub.receiptImage} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium hover:text-primary/80">Ver imagen</a>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
