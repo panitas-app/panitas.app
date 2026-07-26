@@ -445,13 +445,14 @@
 
       /* ===== Hero tagline — minimal sans-serif ===== */
       .hero_tagline { font-family: "Systemia", "Inter", sans-serif; font-weight: 500; letter-spacing: -0.01em; text-shadow: none; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
-      .nav_links_item:has(.button_main_wrap) + .nav_links_item:has(.button_main_wrap) { margin-left: -1.5rem; }
+      .hero_home_content { bottom: 0 !important; top: 50%; transform: translateY(-50%); }
 
       /* ===== MOBILE (<= 768px) ===== */
       @media (width <= 768px) {
-        .hero_home_content { bottom: 10%; padding: 0 1.5rem 0 1rem; }
+        .hero_home_content { bottom: auto; top: 50%; transform: translateY(-50%); padding: 0 1.5rem; }
         .hero_home_wrap { min-height: 100dvh; }
-        .hero_tagline { margin: 0; font-size: clamp(0.95rem, 4vw, 1.25rem); }
+        .hero_tagline { margin: 0; font-size: clamp(0.95rem, 4vw, 1.25rem); max-width: 100%; }
+        .hero_ctas { display: none !important; }
         .nav_links_wrap .button_main_wrap { display: none; }
         .nav_mobile_overlay .button_main_wrap.cta-primary,
         .nav_mobile_overlay .button_main_wrap.cta-secondary {
@@ -588,14 +589,6 @@
                 </div>
               </div>
             </li>
-            <li class="nav_links_item">
-              <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;" aria-label="Comenzar prueba gratis">
-                <div class="button_main_element">
-                  <span class="button_main_text">Comenzar gratis</span>
-                  <div class="button_main_base"></div>
-                </div>
-              </a>
-            </li>
           </ul>
           <div class="button_menu_wrap" id="mobile-nav-toggle" onclick="toggleMobileMenu(event)" style="cursor:pointer;z-index:1002;-webkit-tap-highlight-color:transparent;touch-action:manipulation" aria-label="Abrir menú de navegación">
             <div class="button_menu_icon_line"></div>
@@ -640,11 +633,25 @@
 
         <!-- HERO -->
         <section id="hero" class="hero_home_wrap u-min-height-screen" data-animate-theme-to="dark">
-          <div class="hero_home_content">
-            <div class="hero_home_logo animate-up">
-              <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="eager" style="height: 100%; width: auto;" />
+          <div class="hero_home_content" style="flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1.25rem;">
+            <div class="hero_home_logo animate-up" style="height:clamp(4.5rem,10vw,7.5rem);margin:0;">
+              <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="eager" style="height:100%;width:auto;" />
             </div>
-            <h1 class="hero_tagline">Software administrativo para controlar inventario, vender online y administrar tu negocio desde un solo lugar.</h1>
+            <h1 class="hero_tagline" style="margin:0;max-width:42ch;align-self:center;">Software administrativo para controlar inventario, vender online y administrar tu negocio desde un solo lugar.</h1>
+            <div class="hero_ctas" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+              <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;" aria-label="Comenzar prueba gratis">
+                <div class="button_main_element">
+                  <span class="button_main_text">Comenzar gratis</span>
+                  <div class="button_main_base"></div>
+                </div>
+              </a>
+              <div class="button_main_wrap cta-secondary" onclick="event.stopPropagation();window.openDialog('modal-probar')" role="button" tabindex="0" aria-label="Iniciar sesión" style="cursor:pointer;">
+                <div class="button_main_element">
+                  <span class="button_main_text">Iniciar sesión</span>
+                  <div class="button_main_base"></div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="hero_home_visual_wrap">
             <div class="hero_home_visual" id="hero-cycler">
