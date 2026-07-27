@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { BLOG_CATEGORIES, BLOG_POSTS } from "@/lib/blog/posts"
+import { BlogCard, BlogFeaturedCard } from "@/components/blog/blog-card"
 
 export const metadata: Metadata = {
-  title: "Blog de Software Administrativo para Negocios | Panitas",
-  description: "Artículos sobre software administrativo, control de inventario, punto de venta, agenda de citas y consejos para hacer crecer tu negocio en Venezuela.",
+  title: "Panitas | Blog de Software Administrativo para Negocios",
+  description: "Artículos sobre software administrativo, control de inventario, punto de venta, agenda de citas, marketing digital y consejos para hacer crecer tu negocio en Venezuela.",
   alternates: { canonical: "/blog" },
   openGraph: {
     title: "Panitas | Blog de Software Administrativo para Negocios",
@@ -14,14 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-const categories = [
-  { name: "Inventario", slug: "inventario", desc: "Control de stock, códigos de barras y gestión de productos" },
-  { name: "Ventas y POS", slug: "ventas-pos", desc: "Punto de venta, facturación y métodos de pago" },
-  { name: "Agenda de citas", slug: "agenda-citas", desc: "Reservas online, recordatorios y calendario" },
-  { name: "Negocios", slug: "negocios", desc: "Emprendimiento, administración y crecimiento empresarial" },
-  { name: "Tienda online", slug: "tienda-online", desc: "E-commerce, catálogo digital y ventas por internet" },
-  { name: "Tutoriales", slug: "tutoriales", desc: "Guías paso a paso para usar Panitas" },
-]
+const sortedPosts = [...BLOG_POSTS].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
 export default function BlogPage() {
   return (
@@ -35,29 +30,59 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4">
+      <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Categorías</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((cat) => (
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Categorías</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+            {BLOG_CATEGORIES.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/blog/${cat.slug}`}
-                className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-colors"
+                className="bg-gray-50 rounded-xl p-5 hover:bg-gray-100 transition-colors"
               >
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{cat.name}</h3>
-                <p className="text-gray-600">{cat.desc}</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{cat.name}</h3>
+                <p className="text-sm text-gray-600">{cat.description}</p>
+                <span className="text-xs text-amber-600 font-medium mt-2 inline-block">{cat.postCount} artículos</span>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-gray-50 py-16 px-4 text-center">
+      <section className="py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">Últimos artículos</h2>
+          {sortedPosts.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedPosts.map((post, i) =>
+                i === 0 ? (
+                  <div key={post.slug} className="md:col-span-2 lg:col-span-3">
+                    <BlogFeaturedCard post={post} />
+                  </div>
+                ) : (
+                  <BlogCard key={post.slug} post={post} />
+                )
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg mb-6">Estamos preparando contenido nuevo para ti.</p>
+              <Link
+                href="/register"
+                className="inline-flex items-center px-6 py-3 bg-amber-400 text-gray-900 font-semibold rounded-lg hover:bg-amber-500 transition-colors"
+              >
+                Prueba Panitas gratis
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="bg-gray-50 py-12 px-4 text-center">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Próximamente</h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Estamos preparando artículos detallados para ayudarte a sacar el máximo provecho de Panitas.
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">¿Quieres aprender más?</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            Descubre cómo Panitas puede ayudarte a administrar tu inventario, ventas y agenda en un solo lugar.
           </p>
           <Link
             href="/register"

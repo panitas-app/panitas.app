@@ -12,6 +12,8 @@ Allow: /terminos
 Allow: /privacidad
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /blog
+Allow: /blog/*
 
 # Rutas privadas / autenticadas
 Disallow: /dashboard/

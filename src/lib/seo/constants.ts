@@ -178,4 +178,28 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
     title: "Panitas | Blog de Software Administrativo para Negocios",
     description: "Artículos sobre software administrativo, control de inventario, punto de venta, agenda de citas, marketing digital y consejos para hacer crecer tu negocio en Venezuela.",
   },
+  "/blog/inventario": {
+    title: "Inventario | Blog de Panitas",
+    description: "Artículos sobre control de inventario, stock, códigos de barras y gestión de productos para negocios en Venezuela.",
+  },
+  "/blog/ventas-pos": {
+    title: "Ventas y POS | Blog de Panitas",
+    description: "Artículos sobre punto de venta, facturación, métodos de pago y ventas para negocios en Venezuela.",
+  },
+  "/blog/agenda-citas": {
+    title: "Agenda de Citas | Blog de Panitas",
+    description: "Artículos sobre agenda de citas, reservas online, recordatorios y calendario para profesionales.",
+  },
+  "/blog/negocios": {
+    title: "Negocios | Blog de Panitas",
+    description: "Artículos sobre emprendimiento, administración y crecimiento empresarial para negocios en Venezuela.",
+  },
+  "/blog/tienda-online": {
+    title: "Tienda Online | Blog de Panitas",
+    description: "Artículos sobre e-commerce, catálogo digital y ventas por internet para negocios en Venezuela.",
+  },
+  "/blog/tutoriales": {
+    title: "Tutoriales | Blog de Panitas",
+    description: "Guías paso a paso para usar Panitas y sacar el máximo provecho de tu software administrativo.",
+  },
 }

@@ -1,4 +1,5 @@
 import { BASE_URL, SITE_NAME, SITE_DESCRIPTION } from "./constants"
+import type { BlogPost } from "@/lib/blog/posts"
 
 export function OrganizationSchema() {
   const schema = {
@@ -343,6 +344,115 @@ export function ReviewSchema({
       reviewBody: r.text,
       datePublished: r.date,
     })),
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+}
+
+export function ArticleSchema({ post }: { post: BlogPost }) {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.metaDescription,
+    image: `${BASE_URL}${post.image}`,
+    datePublished: post.date,
+    dateModified: post.dateModified,
+    author: {
+      "@type": "Organization",
+      name: post.author,
+      url: BASE_URL,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: BASE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${BASE_URL}/logo-square.svg`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${BASE_URL}/blog/${post.categorySlug}/${post.slug}`,
+    },
+    url: `${BASE_URL}/blog/${post.categorySlug}/${post.slug}`,
+    inLanguage: "es",
+    about: {
+      "@type": "Thing",
+      name: post.category,
+    },
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+}
+
+export function PricingOfferSchema() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Panitas – Planes y Precios",
+    url: `${BASE_URL}/pricing`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "Offer",
+            name: "Plan Agenda",
+            description: "Software de agenda online para profesionales con reservas, recordatorios y calendario.",
+            price: "15",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "15",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/pricing`,
+          },
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          item: {
+            "@type": "Offer",
+            name: "Plan Emprendedor",
+            description: "Software administrativo con inventario, ventas, tienda online, CRM y agenda.",
+            price: "25",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "25",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/pricing`,
+          },
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          item: {
+            "@type": "Offer",
+            name: "Plan Mayorista",
+            description: "Sistema administrativo completo para distribuidoras y mayoristas con B2B.",
+            price: "45",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: "45",
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+            availability: "https://schema.org/InStock",
+            url: `${BASE_URL}/pricing`,
+          },
+        },
+      ],
+    },
   }
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { PUBLIC_ROUTES, SEOPages } from "@/lib/seo/constants"
+import { BLOG_POSTS, BLOG_CATEGORIES } from "@/lib/blog/posts"
 
 // ============================================================
 //  SITEMAP — Panitas.app
@@ -88,6 +89,24 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
     changeFrequency: "weekly",
     priority: 0.6,
   })
+
+  for (const cat of BLOG_CATEGORIES) {
+    entries.push({
+      url: `${baseUrl}/blog/${cat.slug}`,
+      lastModified: today,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    })
+  }
+
+  for (const post of BLOG_POSTS) {
+    entries.push({
+      url: `${baseUrl}/blog/${post.categorySlug}/${post.slug}`,
+      lastModified: new Date(post.dateModified),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    })
+  }
 
   // ───────────────────────────────────────
   //  4. Tiendas públicas activas
