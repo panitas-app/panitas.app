@@ -443,13 +443,14 @@
       }
 
       /* ===== Hero tagline — minimal sans-serif ===== */
-      .hero_tagline { font-family: "Systemia", "Inter", sans-serif; font-weight: 500; letter-spacing: -0.01em; text-shadow: none; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+      .hero_tagline { font-family: "Systemia", "Inter", sans-serif; font-weight: 500; letter-spacing: -0.01em; text-shadow: none; font-size: clamp(1.05rem, 1.8vw, 1.4rem); color: rgba(255,255,255,0.85); }
       .hero_home_content { bottom: 0 !important; top: 50%; transform: translateY(-50%); }
 
       /* ===== MOBILE (<= 768px) ===== */
       @media (width <= 768px) {
-        .hero_home_content { bottom: auto; top: 50%; transform: translateY(-50%); padding: 0 1.5rem; }
+        .hero_home_content { bottom: 0; top: auto; transform: none; padding: 0 1.5rem 3rem; justify-content: flex-end !important; }
         .hero_home_wrap { min-height: 100dvh; }
+        .hero_home_logo { height: clamp(3rem, 8vw, 5rem) !important; max-width: 80%; overflow: hidden; }
         .hero_tagline { margin: 0; font-size: clamp(0.95rem, 4vw, 1.25rem); max-width: 100%; }
         .hero_ctas { display: none !important; }
         .nav_links_wrap .button_main_wrap { display: none; }
@@ -503,7 +504,7 @@
 
       /* ===== SMALL MOBILE (<= 480px) ===== */
       @media (width <= 480px) {
-        .hero_home_content { bottom: 8%; padding: 0 1rem; }
+        .hero_home_content { bottom: 0; padding: 0 1rem 2.5rem; }
         .button_main_wrap.cta-primary .button_main_element,
         .button_main_wrap.cta-secondary .button_main_element {
           padding: 0.65rem 1.25rem;
@@ -639,7 +640,7 @@
             <div class="hero_home_logo animate-up" style="height:clamp(4.5rem,10vw,7.5rem);margin:0;">
               <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="eager" style="height:100%;width:auto;" />
             </div>
-            <h1 class="hero_tagline" style="margin:0;max-width:42ch;align-self:flex-start;color:#000;">Controla tu inventario, vende por internet y administra citas o consultas con un software administrativo diseñado para empresas, comercios y profesionales independientes.</h1>
+            <h1 class="hero_tagline" style="margin:0;max-width:42ch;align-self:flex-start;">Controla tu inventario, vende por internet y administra citas o consultas con un software administrativo diseñado para empresas, comercios y profesionales independientes.</h1>
             <div class="hero_ctas" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:flex-start;">
               <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;" aria-label="Comenzar prueba gratis">
                 <div class="button_main_element">
