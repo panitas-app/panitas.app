@@ -7,7 +7,7 @@ export function OrganizationSchema() {
     "@id": `${BASE_URL}/#organization`,
     name: SITE_NAME,
     url: BASE_URL,
-    logo: `${BASE_URL}/logonuevo.png`,
+    logo: `${BASE_URL}/logo-square.svg`,
     image: `${BASE_URL}/og-image.jpg`,
     description: SITE_DESCRIPTION,
     email: "supportpanitas@gmail.com",
