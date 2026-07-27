@@ -330,6 +330,11 @@ Panitas está optimizada para:
 | Software para restaurantes | https://panitas.app/software-para-restaurantes |
 | Software para ferreterías | https://panitas.app/software-para-ferreterias |
 | Software para tiendas | https://panitas.app/software-para-tiendas |
+| Tabla de precios | https://panitas.app/precios |
+| Planes: Agenda | https://panitas.app/plan-agenda |
+| Planes: Emprendedor | https://panitas.app/plan-emprendedor |
+| Planes: Mayorista | https://panitas.app/plan-mayorista |
+| Panitas vs alternativas | https://panitas.app/panitas-vs-alternativas |
 | Documentación IA | https://panitas.app/llms.txt |
 | Documentación completa | https://panitas.app/llms-full.txt |
 

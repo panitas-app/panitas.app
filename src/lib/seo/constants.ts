@@ -46,6 +46,8 @@ export const SEOPages = [
   { route: "/plan-agenda", priority: 0.8, changefreq: "monthly" as const },
   { route: "/plan-emprendedor", priority: 0.8, changefreq: "monthly" as const },
   { route: "/plan-mayorista", priority: 0.8, changefreq: "monthly" as const },
+  { route: "/precios", priority: 0.9, changefreq: "monthly" as const },
+  { route: "/panitas-vs-alternativas", priority: 0.7, changefreq: "monthly" as const },
 ] as const
 
 export const PAGE_META: Record<string, { title: string; description: string }> = {
@@ -216,5 +218,13 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
   "/plan-mayorista": {
     title: "Panitas | Sistema B2B para Mayoristas y Distribuidoras — $45/mes",
     description: "Sistema B2B para distribuidoras y mayoristas en Venezuela. Comisiones de vendedores, notas de entrega, precios por volumen e inventario ilimitado. Desde $45/mes.",
+  },
+  "/precios": {
+    title: "Panitas | Planes y Precios del Software Administrativo",
+    description: "Compara los planes de Panitas: Agenda ($15/mes), Emprendedor ($25/mes) y Mayorista ($45/mes). Sin comisiones por transacción. Prueba gratis 14 días.",
+  },
+  "/panitas-vs-alternativas": {
+    title: "Panitas | Comparativa de Software Administrativo para Venezuela",
+    description: "Compara Panitas con otras soluciones de software administrativo: inventario, POS, agenda y tienda online. Ventajas para negocios en Venezuela.",
   },
 }

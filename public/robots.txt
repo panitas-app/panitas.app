@@ -6,6 +6,7 @@ User-agent: *
 Allow: /
 Allow: /store/*
 Allow: /pricing
+Allow: /precios
 Allow: /faq
 Allow: /contacto
 Allow: /terminos
@@ -14,6 +15,10 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /blog
 Allow: /blog/*
+Allow: /panitas-vs-alternativas
+Allow: /plan-agenda
+Allow: /plan-emprendedor
+Allow: /plan-mayorista
 
 # Rutas privadas / autenticadas
 Disallow: /dashboard/
@@ -48,9 +53,14 @@ Allow: /
 
 User-agent: GPTBot
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
 
 User-agent: ChatGPT-User
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: OAI-SearchBot
 Allow: /
@@ -60,12 +70,28 @@ Allow: /
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: Anthropic-AI
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: Amazonbot
 Allow: /

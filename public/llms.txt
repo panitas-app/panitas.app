@@ -70,4 +70,6 @@ Next.js 16, React 19, TypeScript, Tailwind CSS v4, Prisma ORM, PostgreSQL (Neon)
 - Software para negocios: https://panitas.app/software-para-negocios
 - Software para barberías: https://panitas.app/software-para-barberias
 - Software para restaurantes: https://panitas.app/software-para-restaurantes
+- Planes y precios (tabla): https://panitas.app/precios
+- Comparativa Panitas vs alternativas: https://panitas.app/panitas-vs-alternativas
 - Documentación completa: https://panitas.app/llms-full.txt

@@ -48,6 +48,16 @@ export function OrganizationSchema() {
       contactType: "customer service",
       availableLanguage: "Spanish",
     },
+    knowsAbout: [
+      "software administrativo Venezuela",
+      "punto de venta Venezuela",
+      "gestión de inventario",
+      "agenda online",
+      "pago móvil Venezuela",
+      "tienda online Venezuela",
+      "software para negocios",
+      "sistema de facturación Venezuela",
+    ],
   }
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 }
