@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { PUBLIC_ROUTES } from "@/lib/seo/constants"
+import { PUBLIC_ROUTES, SEOPages } from "@/lib/seo/constants"
 
 // ============================================================
 //  SITEMAP — Panitas.app
@@ -68,21 +68,29 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
   }
 
   // ───────────────────────────────────────
-  //  2. Páginas SEO futuras (preparadas)
-  //     Activar cuando la página exista:
-  //
-  //   if (await pageExists("/software-administrativo")) {
-  //     entries.push({
-  //       url: `${baseUrl}/software-administrativo`,
-  //       lastModified: today,
-  //       changeFrequency: "monthly",
-  //       priority: 0.6,
-  //     })
-  //   }
+  //  2. Páginas SEO de contenido
   // ───────────────────────────────────────
+  for (const page of SEOPages) {
+    entries.push({
+      url: `${baseUrl}${page.route}`,
+      lastModified: today,
+      changeFrequency: page.changefreq as Changefreq,
+      priority: page.priority,
+    })
+  }
 
   // ───────────────────────────────────────
-  //  3. Tiendas públicas activas
+  //  3. Blog
+  // ───────────────────────────────────────
+  entries.push({
+    url: `${baseUrl}/blog`,
+    lastModified: today,
+    changeFrequency: "weekly",
+    priority: 0.6,
+  })
+
+  // ───────────────────────────────────────
+  //  4. Tiendas públicas activas
   // ───────────────────────────────────────
   try {
     const stores = await prisma.store.findMany({

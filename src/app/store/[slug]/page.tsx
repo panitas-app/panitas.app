@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   if (!store) {
     return {
-      title: "Perfil No Encontrado | Panitas",
+      title: "Perfil No Encontrado",
       description: "El perfil que buscas no existe o ha sido desactivado temporalmente.",
       robots: { index: false, follow: false },
     }
@@ -30,7 +30,7 @@ export async function generateMetadata({
 
   if (store.planStatus !== "active" && store.planStatus !== "trial" && store.planStatus !== "activo") {
     return {
-      title: `${store.name} | Panitas`,
+      title: `${store.name}`,
       description: store.description || `Perfil de ${store.name} en Panitas.`,
       robots: { index: false, follow: false },
     }
@@ -45,7 +45,7 @@ export async function generateMetadata({
       metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"),
       alternates: { canonical: `/store/${slug}` },
       openGraph: {
-        title: `${store.name} | Panitas`,
+        title: `${store.name}`,
         description: store.description || `Reserva tu cita con ${store.name}.`,
         images: store.logo ? [{ url: store.logo, width: 800, height: 600, alt: store.name }] : [],
         type: "profile",
@@ -54,7 +54,7 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: `${store.name} | Panitas`,
+        title: `${store.name}`,
         description: store.description || `Reserva tu cita con ${store.name}.`,
         images: store.logo ? [store.logo] : [],
       },
@@ -71,12 +71,12 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${store.name} | Panitas`,
-    description: store.description || `Compra en la tienda oficial de ${store.name} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`,
+title: `${store.name}`,
+      description: store.description || `Compra en la tienda oficial de ${store.name} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`,
     metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"),
     alternates: { canonical: `/store/${slug}` },
     openGraph: {
-      title: `${store.name} | Panitas`,
+      title: `${store.name}`,
       description: store.description || `Visita el catálogo en línea de ${store.name}.`,
       images: store.logo ? [{ url: store.logo, width: 800, height: 600, alt: store.name }] : [],
       type: "website",
@@ -85,7 +85,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${store.name} | Panitas`,
+      title: `${store.name}`,
       description: store.description || `Visita el catálogo en línea de ${store.name}.`,
       images: store.logo ? [store.logo] : [],
     },

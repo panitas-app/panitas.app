@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
-import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema, LocalBusinessSchema } from "@/lib/seo/schema";
+import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema, LocalBusinessSchema, WebPageSchema } from "@/lib/seo/schema";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app";
 
@@ -18,11 +18,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala",
+    default: "Panitas | Software Administrativo para Negocios en Venezuela",
     template: "%s | Panitas",
   },
   description:
-    "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B. Sin complicaciones técnicas, adaptado a Venezuela.",
+    "Software administrativo en la nube para controlar inventario, vender online con POS, agendar citas y administrar clientes. Diseñado para negocios venezolanos. Prueba gratis 14 días.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_VE",
     siteName: "Panitas",
-    title: "Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala",
+    title: "Panitas | Software Administrativo para Negocios en Venezuela",
     description:
-      "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B.",
+      "Software administrativo en la nube para controlar inventario, vender online con POS, agendar citas y administrar clientes. Diseñado para negocios venezolanos.",
     url: baseUrl,
     images: [{ url: `${baseUrl}/og-image.jpg`, width: 1200, height: 630, alt: "Panitas – Software administrativo para negocios en Venezuela" }],
   },
@@ -58,9 +58,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@panitasapp",
     creator: "@panitasapp",
-    title: "Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala",
+    title: "Panitas | Software Administrativo para Negocios en Venezuela",
     description:
-      "SaaS venezolano todo-en-uno para gestionar tu negocio: tienda online, agenda de citas, CRM y control B2B.",
+      "Software administrativo en la nube para controlar inventario, vender online con POS, agendar citas y administrar clientes. Diseñado para negocios venezolanos.",
     images: [`${baseUrl}/og-image.jpg`],
   },
   robots: {
@@ -95,6 +95,7 @@ export default function RootLayout({
         <SoftwareApplicationSchema />
         <WebSiteSchema />
         <LocalBusinessSchema />
+        <WebPageSchema title="Panitas | Software Administrativo para Negocios en Venezuela" description="Software administrativo en la nube para controlar inventario, vender online con POS, agendar citas y administrar clientes. Diseñado para negocios venezolanos. Prueba gratis 14 días." path="" />
       </head>
       <body className="min-h-full flex flex-col font-body bg-white text-[#050505]">
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TDP569Q9"

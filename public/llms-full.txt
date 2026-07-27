@@ -315,6 +315,21 @@ Panitas está optimizada para:
 | Iniciar sesión | https://panitas.app/login |
 | Términos y condiciones | https://panitas.app/terminos |
 | Política de privacidad | https://panitas.app/privacidad |
+| Blog | https://panitas.app/blog |
+| Software administrativo | https://panitas.app/software-administrativo |
+| Sistema de inventario | https://panitas.app/software-inventario |
+| Punto de venta (POS) | https://panitas.app/software-pos |
+| Agenda online | https://panitas.app/agenda-online |
+| Agenda de citas | https://panitas.app/agenda-de-citas |
+| Tienda online | https://panitas.app/tienda-online |
+| Software para negocios | https://panitas.app/software-para-negocios |
+| Software para barberías | https://panitas.app/software-para-barberias |
+| Software para peluquerías | https://panitas.app/software-para-peluquerias |
+| Software para clínicas | https://panitas.app/software-para-clinicas |
+| Software para médicos | https://panitas.app/software-para-medicos |
+| Software para restaurantes | https://panitas.app/software-para-restaurantes |
+| Software para ferreterías | https://panitas.app/software-para-ferreterias |
+| Software para tiendas | https://panitas.app/software-para-tiendas |
 | Documentación IA | https://panitas.app/llms.txt |
 | Documentación completa | https://panitas.app/llms-full.txt |
 

@@ -235,6 +235,32 @@ export function BreadcrumbSchema({ items }: { items: { name: string; path: strin
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
 }
 
+export function CollectionPageSchema({
+  title,
+  description,
+  path,
+  itemCount,
+}: {
+  title: string
+  description: string
+  path: string
+  itemCount?: number
+}) {
+  const schema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${BASE_URL}${path}/#collection`,
+    url: `${BASE_URL}${path}`,
+    name: title,
+    description,
+    inLanguage: "es-VE",
+    isPartOf: { "@id": `${BASE_URL}/#website` },
+    about: { "@id": `${BASE_URL}/#organization` },
+    mainEntity: { "@type": "ItemList", numberOfItems: itemCount || 0 },
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+}
+
 export function ProductSchema({
   name,
   description,

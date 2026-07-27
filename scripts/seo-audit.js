@@ -266,6 +266,56 @@ async function auditLlmsTxt() {
   }
 }
 
+async function auditSeoPages() {
+  section("10. SEO Landing Pages")
+  const pages = [
+    "/software-administrativo", "/software-inventario", "/software-pos",
+    "/agenda-online", "/agenda-de-citas", "/agenda-para-profesionales",
+    "/tienda-online", "/software-para-negocios",
+    "/software-para-barberias", "/software-para-restaurantes",
+    "/software-para-ferreterias", "/software-para-tiendas",
+    "/software-para-minimarket", "/software-para-salones-de-belleza",
+    "/software-para-peluquerias", "/software-para-clinicas",
+    "/software-para-medicos", "/software-para-odontologos",
+    "/software-para-psicologos", "/software-para-esteticas",
+    "/software-para-spa", "/blog"
+  ]
+  for (const page of pages) {
+    const { status, text, headers } = await fetchText(page)
+    if (status === 200 && text) {
+      pass(`${page} → HTTP 200 (${text.length} chars)`)
+      if (text.includes("<h1")) pass(`${page} → H1 presente`)
+      else warn(`${page} → Sin H1`)
+      if (text.includes('rel="canonical"')) pass(`${page} → canonical presente`)
+      else warn(`${page} → Sin canonical`)
+      if (text.includes("Panitas |")) pass(`${page} → Title brand-first`)
+      else warn(`${page} → Title no comienza con Panitas`)
+    } else {
+      fail(`${page} → HTTP ${status}`)
+    }
+  }
+}
+
+async function auditSitemapUrls() {
+  section("11. Sitemap URLs")
+  const { text } = await fetchText("/sitemap.xml")
+  if (!text) return
+  const urls = [...text.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1])
+  
+  const expectedPages = [
+    "/", "/pricing", "/contacto", "/faq", "/terminos", "/privacidad",
+    "/software-administrativo", "/software-inventario", "/software-pos",
+    "/agenda-online", "/tienda-online", "/software-para-barberias",
+    "/software-para-restaurantes", "/software-para-ferreterias",
+    "/blog"
+  ]
+  for (const page of expectedPages) {
+    const found = urls.some(u => u.includes(page === "/" ? "panitas.app</loc>" : `${page}</loc>`))
+    if (found) pass(`Sitemap incluye ${page}`)
+    else fail(`Sitemap NO incluye ${page}`)
+  }
+}
+
 async function main() {
   console.log(`\n🔍 Panitas SEO Audit — ${BASE}\n`)
 
@@ -278,6 +328,8 @@ async function main() {
   await auditPrivateRoutes()
   await auditRendering()
   await auditLlmsTxt()
+  await auditSeoPages()
+  await auditSitemapUrls()
 
   console.log(`\n━━━ RESUMEN ━━━`)
   console.log(`  ${OK} Pass: ${totalPass}`)
