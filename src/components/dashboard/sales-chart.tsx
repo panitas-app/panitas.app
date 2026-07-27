@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useMemo, useCallback, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { CalendarDays, TrendingUp } from "lucide-react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
+import { TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBcvRate } from "@/lib/bcv-context"
 
@@ -18,7 +17,7 @@ interface Props {
   bcvRate: number
 }
 
-type Period = "day" | "week" | "month" | "custom"
+type Period = "day" | "week" | "month"
 
 const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
@@ -43,19 +42,6 @@ function fmtShortDate(d: Date): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 
-function fmtInput(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${y}-${m}-${day}`
-}
-
-function parseInput(s: string): Date | null {
-  const p = s.split("-").map(Number)
-  if (p.length !== 3 || p.some(isNaN)) return null
-  return new Date(p[0], p[1] - 1, p[2])
-}
-
 interface DataPoint {
   label: string
   shortLabel: string
@@ -65,22 +51,8 @@ interface DataPoint {
   orderCount: number
 }
 
-function linearRegression(points: { x: number; y: number }[]): { slope: number; intercept: number } {
-  const n = points.length
-  if (n < 2) return { slope: 0, intercept: points[0]?.y ?? 0 }
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0
-  for (const p of points) {
-    sumX += p.x; sumY += p.y; sumXY += p.x * p.y; sumX2 += p.x * p.x
-  }
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
-  const intercept = (sumY - slope * sumX) / n
-  return { slope, intercept }
-}
-
 function computeData(
   period: Period,
-  customStart: Date,
-  customEnd: Date,
   today: Date,
   orders: OrderData[],
   bcvRate: number,
@@ -156,83 +128,27 @@ function computeData(
     }
   }
 
-  if (period === "month") {
-    const monthsCount = 12
-    const points: DataPoint[] = []
-    let totalUsd = 0, totalVes = 0
-    for (let i = monthsCount - 1; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-      const filtered = orders.filter((o) => {
-        const od = new Date(o.createdAt)
-        return od >= d && od <= monthEnd
-      })
-      const { usd, ves } = aggregate(filtered)
-      totalUsd += usd; totalVes += ves
-      const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
-      points.push({
-        label: `${MONTHS[d.getMonth()]} ${d.getFullYear()}`,
-        shortLabel: `${MONTHS[d.getMonth()]}`,
-        tooltipLabel: `${MONTHS[d.getMonth()]} ${d.getFullYear()}${isCurrentMonth ? " (Actual)" : ""}`,
-        usd, ves, orderCount: filtered.length,
-      })
-    }
-    const subtitle = `${MONTHS[new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getMonth()]} ${new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getFullYear()} – ${MONTHS[today.getMonth()]} ${today.getFullYear()}`
-    const nonZero = points.filter((b) => b.usd > 0)
-    return {
-      points, totalUsd, totalVes, subtitle,
-      avgUsd: nonZero.length > 0 ? totalUsd / nonZero.length : 0,
-      maxUsd: Math.max(...points.map((b) => b.usd), 1),
-    }
-  }
-
-  if (customStart > customEnd) {
-    return { points: [], totalUsd: 0, totalVes: 0, subtitle: "Rango inválido", avgUsd: 0, maxUsd: 1 }
-  }
-
-  const rangeDays = Math.floor((customEnd.getTime() - customStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  const subtitle = `${fmtShortDate(customStart)} – ${fmtShortDate(customEnd)}`
+  const monthsCount = 12
   const points: DataPoint[] = []
   let totalUsd = 0, totalVes = 0
-
-  if (rangeDays <= 60) {
-    const cursor = new Date(customStart)
-    while (cursor <= customEnd) {
-      const day = new Date(cursor)
-      const filtered = orders.filter((o) => isSameDay(new Date(o.createdAt), day))
-      const { usd, ves } = aggregate(filtered)
-      totalUsd += usd; totalVes += ves
-      points.push({
-        label: `${day.getDate()} ${MONTHS[day.getMonth()]}`,
-        shortLabel: `${day.getDate()}/${day.getMonth() + 1}`,
-        tooltipLabel: `${WEEKDAYS[day.getDay()]} ${day.getDate()} ${MONTHS[day.getMonth()]}`,
-        usd, ves, orderCount: filtered.length,
-      })
-      cursor.setDate(cursor.getDate() + 1)
-    }
-  } else {
-    const weeksCount = Math.ceil(rangeDays / 7)
-    for (let i = 0; i < weeksCount; i++) {
-      const ws = new Date(customStart)
-      ws.setDate(ws.getDate() + i * 7)
-      const we = new Date(ws)
-      we.setDate(we.getDate() + 6)
-      if (we > customEnd) we.setTime(customEnd.getTime())
-      const filtered = orders.filter((o) => {
-        const d = startOfDay(new Date(o.createdAt))
-        return d >= ws && d <= we
-      })
-      const { usd, ves } = aggregate(filtered)
-      totalUsd += usd; totalVes += ves
-      points.push({
-        label: `${fmtShortDate(ws)} - ${fmtShortDate(we)}`,
-        shortLabel: `${ws.getDate()}/${ws.getMonth() + 1}`,
-        tooltipLabel: `${fmtShortDate(ws)} – ${fmtShortDate(we)}`,
-        usd, ves, orderCount: filtered.length,
-      })
-    }
+  for (let i = monthsCount - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+    const filtered = orders.filter((o) => {
+      const od = new Date(o.createdAt)
+      return od >= d && od <= monthEnd
+    })
+    const { usd, ves } = aggregate(filtered)
+    totalUsd += usd; totalVes += ves
+    const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear()
+    points.push({
+      label: `${MONTHS[d.getMonth()]} ${d.getFullYear()}`,
+      shortLabel: `${MONTHS[d.getMonth()]}`,
+      tooltipLabel: `${MONTHS[d.getMonth()]} ${d.getFullYear()}${isCurrentMonth ? " (Actual)" : ""}`,
+      usd, ves, orderCount: filtered.length,
+    })
   }
-
+  const subtitle = `${MONTHS[new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getMonth()]} ${new Date(today.getFullYear(), today.getMonth() - monthsCount + 1, 1).getFullYear()} – ${MONTHS[today.getMonth()]} ${today.getFullYear()}`
   const nonZero = points.filter((b) => b.usd > 0)
   return {
     points, totalUsd, totalVes, subtitle,
@@ -241,35 +157,36 @@ function computeData(
   }
 }
 
-const CHART_H = 240
-const PAD_TOP = 28
-const PAD_BOTTOM = 32
-const PAD_LEFT = 48
-const PAD_RIGHT = 20
+const PAD_TOP = 20
+const PAD_BOTTOM = 28
+const PAD_LEFT = 44
+const PAD_RIGHT = 16
 
 const BRAND_BLUE = "#0066FF"
-const BRAND_AMBER = "#FFB92E"
-const BRAND_YELLOW = "#FFD600"
 
 export function SalesChart({ orders, bcvRate }: Props) {
   const { rate, showBolivares } = useBcvRate()
   const [period, setPeriod] = useState<Period>("week")
   const [now, setNow] = useState(() => startOfDay(new Date()))
   const today = now
-  const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
-  const [customStart, setCustomStart] = useState<Date>(() => {
-    const d = new Date(today)
-    d.setDate(d.getDate() - 30)
-    return startOfDay(d)
-  })
-  const [customEnd, setCustomEnd] = useState<Date>(today)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) setContainerWidth(entry.contentRect.width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const { points, totalUsd, totalVes, subtitle, avgUsd, maxUsd } = useMemo(
-    () => computeData(period, customStart, customEnd, today, orders, rate),
-    [period, customStart, customEnd, today, orders, rate],
+    () => computeData(period, today, orders, rate),
+    [period, today, orders, rate],
   )
 
   const handlePeriodChange = useCallback((p: Period) => {
@@ -280,17 +197,17 @@ export function SalesChart({ orders, bcvRate }: Props) {
 
   const activeRate = rate || bcvRate
 
-  const minBarWidth = period === "day" ? 60 : period === "week" ? 80 : 70
-  const chartW = Math.max(points.length * minBarWidth, 350)
+  const chartW = Math.max(containerWidth - 2, 300)
   const plotW = chartW - PAD_LEFT - PAD_RIGHT
-  const plotH = CHART_H - PAD_TOP - PAD_BOTTOM
+  const chartH = Math.max(220, Math.min(360, chartW * 0.45))
+  const plotH = chartH - PAD_TOP - PAD_BOTTOM
 
-  const { linePath, areaPath, trendPath, dots, trendY, usableMax } = useMemo(() => {
-    if (points.length === 0) return { linePath: "", areaPath: "", trendPath: "", dots: [], trendY: [], usableMax: 1 }
+  const { linePath, areaPath, dots, trendY } = useMemo(() => {
+    if (points.length === 0 || plotW <= 0 || plotH <= 0) return { linePath: "", areaPath: "", dots: [], trendY: [] }
 
-    const rawMax = maxUsd * 1.15 || 1
-    const rounded = Math.pow(10, Math.floor(Math.log10(rawMax)))
-    const usableMax = Math.ceil(rawMax / rounded) * rounded || 1
+    const rawMax = maxUsd * 1.12 || 1
+    const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)))
+    const usableMax = Math.ceil(rawMax / magnitude) * magnitude || 1
 
     const getX = (i: number) => PAD_LEFT + (i / Math.max(points.length - 1, 1)) * plotW
     const getY = (v: number) => PAD_TOP + plotH - (v / usableMax) * plotH
@@ -312,265 +229,233 @@ export function SalesChart({ orders, bcvRate }: Props) {
 
     const areaPath = linePath + ` L ${pts[pts.length - 1].x} ${PAD_TOP + plotH} L ${pts[0].x} ${PAD_TOP + plotH} Z`
 
-    const regPoints = points.map((p, i) => ({ x: i, y: p.usd }))
-    const { slope, intercept } = linearRegression(regPoints)
-    const trendStart = intercept
-    const trendEnd = slope * (points.length - 1) + intercept
-    const trendPath = `M ${getX(0)} ${getY(trendStart)} L ${getX(points.length - 1)} ${getY(trendEnd)}`
-
     const tickCount = 4
     const trendY = Array.from({ length: tickCount + 1 }, (_, i) => {
       const val = (usableMax / tickCount) * i
       return { val, y: getY(val) }
     })
 
-    return { linePath, areaPath, trendPath, dots: pts, trendY, usableMax }
+    return { linePath, areaPath, dots: pts, trendY }
   }, [points, maxUsd, plotW, plotH])
 
+  const effectiveRate = activeRate
+
   return (
-    <Card className="rounded-2xl bg-card shadow-sm overflow-hidden border border-border/60">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${BRAND_BLUE}15` }}>
-                <TrendingUp className="size-4" style={{ color: BRAND_BLUE }} />
-              </div>
-              <h3 className="font-heading text-base sm:text-lg font-bold text-foreground">Historial de ventas</h3>
-            </div>
-            <p className="text-[11px] text-muted-foreground font-medium pl-10">{subtitle}</p>
+    <div
+      ref={containerRef}
+      className="w-full rounded-2xl bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-[#0066FF]/10">
+            <TrendingUp className="size-4 text-[#0066FF]" />
           </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex rounded-xl bg-muted/70 p-0.5">
-              {([["day", "Día"], ["week", "Semana"], ["month", "Mes"], ["custom", "Rango"]] as [Period, string][]).map(([p, label]) => (
-                <button
-                  key={p}
-                  onClick={() => handlePeriodChange(p)}
-                  className={cn(
-                    "px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all duration-200",
-                    period === p
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground/70",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div>
+            <h3 className="text-sm font-semibold text-[#050505]">Ventas</h3>
+            <p className="text-[11px] text-[#6B7280] font-medium">{subtitle}</p>
           </div>
         </div>
 
-        {period === "custom" && (
-          <div className="flex items-center gap-2 mb-5 pl-10 flex-wrap">
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              Desde
-              <input type="date" value={fmtInput(customStart)} max={fmtInput(customEnd)}
-                onChange={(e) => { const d = parseInput(e.target.value); if (d) setCustomStart(startOfDay(d)) }}
-                className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground" />
-            </label>
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              Hasta
-              <input type="date" value={fmtInput(customEnd)} min={fmtInput(customStart)} max={fmtInput(today)}
-                onChange={(e) => { const d = parseInput(e.target.value); if (d) setCustomEnd(startOfDay(d)) }}
-                className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground" />
-            </label>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-          <SummaryCard label="Total" value={totalUsd} ves={totalVes} showVes={showBolivares} accent />
-          <SummaryCard label="Promedio" value={avgUsd} ves={avgUsd * activeRate} showVes={showBolivares} />
-          <SummaryCard label="Máximo" value={maxUsd} ves={maxUsd * activeRate} showVes={showBolivares} />
-          <SummaryCard label="Pedidos" value={null} count={points.reduce((s, b) => s + b.orderCount, 0)} />
+        <div className="flex items-center gap-1 rounded-xl bg-[#F5F5F5] p-0.5">
+          {([["day", "Día"], ["week", "Semana"], ["month", "Mes"]] as [Period, string][]).map(([p, label]) => (
+            <button
+              key={p}
+              onClick={() => handlePeriodChange(p)}
+              className={cn(
+                "px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-all duration-200",
+                period === p
+                  ? "bg-white text-[#050505] shadow-sm"
+                  : "text-[#6B7280] hover:text-[#050505]",
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+      </div>
 
+      {/* Summary */}
+      {points.some((b) => b.usd > 0 || b.orderCount > 0) && (
+        <div className="grid grid-cols-4 gap-2 px-5 pb-3">
+          <div className="rounded-xl bg-gradient-to-br from-[#0066FF]/5 to-transparent border border-[#0066FF]/10 px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280] mb-0.5">Total</p>
+            <p className="text-sm font-bold text-[#0066FF] tabular-nums">${totalUsd.toFixed(2)}</p>
+            {showBolivares && totalVes > 0 && (
+              <p className="text-[10px] text-[#6B7280] font-medium tabular-nums">Bs. {totalVes.toFixed(2)}</p>
+            )}
+          </div>
+          <div className="rounded-xl bg-[#F5F5F5]/50 border border-[#E5E7EB]/40 px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280] mb-0.5">Promedio</p>
+            <p className="text-sm font-bold text-[#050505] tabular-nums">${avgUsd.toFixed(2)}</p>
+            {showBolivares && (
+              <p className="text-[10px] text-[#6B7280] font-medium tabular-nums">Bs. {(avgUsd * effectiveRate).toFixed(2)}</p>
+            )}
+          </div>
+          <div className="rounded-xl bg-[#F5F5F5]/50 border border-[#E5E7EB]/40 px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280] mb-0.5">Máximo</p>
+            <p className="text-sm font-bold text-[#050505] tabular-nums">${maxUsd.toFixed(2)}</p>
+            {showBolivares && (
+              <p className="text-[10px] text-[#6B7280] font-medium tabular-nums">Bs. {(maxUsd * effectiveRate).toFixed(2)}</p>
+            )}
+          </div>
+          <div className="rounded-xl bg-[#F5F5F5]/50 border border-[#E5E7EB]/40 px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[#6B7280] mb-0.5">Pedidos</p>
+            <p className="text-sm font-bold text-[#050505] tabular-nums">{points.reduce((s, b) => s + b.orderCount, 0)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Chart */}
+      <div className="px-4 pb-4">
         {points.length === 0 || points.every((b) => b.usd === 0 && b.orderCount === 0) ? (
-          <div className="flex flex-col items-center gap-3 py-16">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/50">
-              <CalendarDays className="size-5 text-muted-foreground/50" />
+          <div className="flex flex-col items-center gap-3 py-14">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-[#F5F5F5]">
+              <TrendingUp className="size-5 text-[#6B7280]/40" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-semibold text-foreground/80">Sin ventas en este período</p>
-              <p className="text-xs text-muted-foreground mt-1">Las ventas aparecerán aquí cuando registres pedidos</p>
+              <p className="text-sm font-semibold text-[#050505]/70">Sin ventas</p>
+              <p className="text-xs text-[#6B7280] mt-0.5">Las ventas aparecerán aquí cuando registres pedidos</p>
             </div>
           </div>
         ) : (
-          <div className="relative" ref={containerRef}>
-            <div className="overflow-x-auto pb-2 scrollbar-thin">
-              <svg
-                ref={svgRef}
-                viewBox={`0 0 ${chartW} ${CHART_H}`}
-                className="w-full"
-                style={{ minWidth: chartW, height: CHART_H }}
-              >
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity="0.18" />
-                    <stop offset="50%" stopColor={BRAND_BLUE} stopOpacity="0.08" />
-                    <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity="0.01" />
-                  </linearGradient>
-                  <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity="0.7" />
-                    <stop offset="60%" stopColor={BRAND_BLUE} stopOpacity="1" />
-                    <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity="0.85" />
-                  </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
+          <svg
+            viewBox={`0 0 ${chartW} ${chartH}`}
+            className="w-full"
+            style={{ height: chartH }}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity="0.14" />
+                <stop offset="60%" stopColor={BRAND_BLUE} stopOpacity="0.05" />
+                <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity="0.005" />
+              </linearGradient>
+              <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity="0.6" />
+                <stop offset="50%" stopColor={BRAND_BLUE} stopOpacity="1" />
+                <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity="0.85" />
+              </linearGradient>
+              <filter id="lineGlow">
+                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-                {trendY.map((t, i) => (
-                  <g key={i}>
-                    <line
-                      x1={PAD_LEFT} y1={t.y} x2={chartW - PAD_RIGHT} y2={t.y}
-                      stroke="hsl(var(--border))" strokeWidth="1"
-                      strokeDasharray={i === 0 ? "0" : "3,3"}
-                    />
-                    <text x={PAD_LEFT - 8} y={t.y + 3.5} textAnchor="end" fill="hsl(var(--muted-foreground))" fontSize="9" fontWeight="600">
-                      ${t.val >= 1000 ? `${(t.val / 1000).toFixed(1)}k` : t.val.toFixed(0)}
+            {trendY.map((t, i) => (
+              <g key={i}>
+                <line
+                  x1={PAD_LEFT} y1={t.y} x2={chartW - PAD_RIGHT} y2={t.y}
+                  stroke="#E5E7EB" strokeWidth="1"
+                  strokeDasharray={i === 0 ? "0" : "3,3"}
+                />
+                <text x={PAD_LEFT - 8} y={t.y + 3.5} textAnchor="end" fill="#6B7280" fontSize="9" fontWeight="500">
+                  {t.val >= 1000 ? `${(t.val / 1000).toFixed(1)}k` : t.val.toFixed(0)}
+                </text>
+              </g>
+            ))}
+
+            {dots.length > 1 && (
+              <>
+                <path d={areaPath} fill="url(#areaGrad)" />
+                <path d={linePath} fill="none" stroke="url(#lineGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#lineGlow)" />
+              </>
+            )}
+
+            {dots.map((dot, idx) => {
+              const bar = points[idx]
+              const isHovered = hoveredIdx === idx
+              const isLast = idx === points.length - 1
+              const boxW = plotW / points.length
+
+              let tooltipX = dot.x
+              let tooltipBoxX = dot.x - 72
+              if (tooltipBoxX < PAD_LEFT) { tooltipBoxX = PAD_LEFT; tooltipX = PAD_LEFT + 72 }
+              if (tooltipBoxX + 144 > chartW - PAD_RIGHT) { tooltipBoxX = chartW - PAD_RIGHT - 144; tooltipX = tooltipBoxX + 72 }
+
+              let tooltipY = dot.y - 52
+              let arrowDown = true
+              if (tooltipY < 4) { tooltipY = dot.y + 14; arrowDown = false }
+
+              return (
+                <g key={idx}>
+                  <rect
+                    x={dot.x - boxW / 2}
+                    y={PAD_TOP}
+                    width={boxW}
+                    height={plotH}
+                    fill="transparent"
+                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  {isHovered && (
+                    <line x1={dot.x} y1={PAD_TOP} x2={dot.x} y2={PAD_TOP + plotH} stroke={BRAND_BLUE} strokeWidth="0.5" strokeDasharray="2,3" opacity="0.25" />
+                  )}
+                  <circle
+                    cx={dot.x}
+                    cy={dot.y}
+                    r={isHovered ? 5 : isLast ? 4 : 2.5}
+                    fill={isHovered ? BRAND_BLUE : "#ffffff"}
+                    stroke={BRAND_BLUE}
+                    strokeWidth={isHovered ? 2.5 : 1.5}
+                    className="transition-all duration-200"
+                    style={{ filter: isHovered ? "drop-shadow(0 1px 4px rgba(0,102,255,0.3))" : "none" }}
+                  />
+                  {(points.length <= 12 || idx % Math.ceil(points.length / 10) === 0 || idx === points.length - 1) && (
+                    <text
+                      x={dot.x}
+                      y={chartH - 6}
+                      textAnchor="middle"
+                      fill={isHovered ? BRAND_BLUE : "#6B7280"}
+                      fontSize="9"
+                      fontWeight={isHovered ? "600" : "500"}
+                      className="transition-all duration-200"
+                    >
+                      {bar.shortLabel}
                     </text>
-                  </g>
-                ))}
-
-                {dots.length > 0 && (
-                  <>
-                    <path d={areaPath} fill="url(#areaGrad)" />
-                    <path d={linePath} fill="none" stroke="url(#lineGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" />
-                    <path d={trendPath} fill="none" stroke={BRAND_AMBER} strokeWidth="1.5" strokeDasharray="6,3" opacity="0.7" />
-                  </>
-                )}
-
-                {dots.map((dot, idx) => {
-                  const bar = points[idx]
-                  const isHovered = hoveredIdx === idx
-                  const isLast = idx === points.length - 1
-                  const boxW = plotW / points.length
-
-                  let tooltipX = dot.x
-                  let tooltipBoxX = dot.x - 72
-                  if (tooltipBoxX < PAD_LEFT) { tooltipBoxX = PAD_LEFT; tooltipX = PAD_LEFT + 72 }
-                  if (tooltipBoxX + 144 > chartW - PAD_RIGHT) { tooltipBoxX = chartW - PAD_RIGHT - 144; tooltipX = tooltipBoxX + 72 }
-
-                  let tooltipY = dot.y - 56
-                  let arrowY = dot.y - 8
-                  if (tooltipY < 4) { tooltipY = dot.y + 16; arrowY = dot.y + 10 }
-
-                  return (
-                    <g key={idx}>
+                  )}
+                  {isHovered && (
+                    <g>
                       <rect
-                        x={dot.x - boxW / 2}
-                        y={PAD_TOP}
-                        width={boxW}
-                        height={plotH}
-                        fill="transparent"
-                        onMouseEnter={() => setHoveredIdx(idx)}
-                        onMouseLeave={() => setHoveredIdx(null)}
-                        style={{ cursor: "pointer" }}
+                        x={tooltipBoxX}
+                        y={tooltipY}
+                        width={144}
+                        height={44}
+                        rx={8}
+                        fill="#050505"
+                        opacity="0.95"
                       />
-                      {isHovered && (
-                        <line x1={dot.x} y1={PAD_TOP} x2={dot.x} y2={PAD_TOP + plotH} stroke={BRAND_BLUE} strokeWidth="0.5" strokeDasharray="2,3" opacity="0.35" />
-                      )}
-                      <circle
-                        cx={dot.x}
-                        cy={dot.y}
-                        r={isHovered ? 5.5 : isLast ? 4.5 : 3}
-                        fill={isHovered ? BRAND_BLUE : isLast ? BRAND_AMBER : "#ffffff"}
-                        stroke={isLast && !isHovered ? BRAND_AMBER : BRAND_BLUE}
-                        strokeWidth={isHovered ? 2.5 : 2}
-                        className="transition-all duration-200"
-                        style={{ filter: isHovered || isLast ? "drop-shadow(0 1px 3px rgba(0,0,0,0.15))" : "none" }}
-                      />
-                      {(points.length <= 12 || idx % Math.ceil(points.length / 10) === 0 || idx === points.length - 1) && (
-                        <text
-                          x={dot.x}
-                          y={CHART_H - 6}
-                          textAnchor="middle"
-                          fill={isHovered ? BRAND_BLUE : "hsl(var(--muted-foreground))"}
-                          fontSize="9"
-                          fontWeight={isHovered ? "700" : "500"}
-                          className="transition-all duration-200"
-                        >
-                          {bar.shortLabel}
+                      <text x={tooltipX} y={tooltipY + 15} textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="600">
+                        {bar.tooltipLabel.length > 24 ? bar.tooltipLabel.slice(0, 24) + "…" : bar.tooltipLabel}
+                      </text>
+                      <text x={tooltipX} y={tooltipY + 29} textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="700">
+                        ${bar.usd.toFixed(2)}
+                        {showBolivares && bar.ves > 0 && (
+                          <tspan fill="#9CA3AF" fontWeight="500"> · Bs. {bar.ves.toFixed(2)}</tspan>
+                        )}
+                      </text>
+                      {bar.orderCount > 0 && (
+                        <text x={tooltipX} y={tooltipY + 40} textAnchor="middle" fill="#9CA3AF" fontSize="8" fontWeight="500">
+                          {bar.orderCount} pedido{bar.orderCount !== 1 ? "s" : ""}
                         </text>
                       )}
-                      {isHovered && (
-                        <g>
-                          <rect
-                            x={tooltipBoxX}
-                            y={tooltipY}
-                            width={144}
-                            height={48}
-                            rx={8}
-                            fill="#050505"
-                            opacity="0.95"
-                          />
-                          <text x={tooltipX} y={tooltipY + 16} textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="700">
-                            {bar.tooltipLabel.length > 24 ? bar.tooltipLabel.slice(0, 24) + "…" : bar.tooltipLabel}
-                          </text>
-                          <text x={tooltipX} y={tooltipY + 30} textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="700">
-                            ${bar.usd.toFixed(2)}
-                            {showBolivares && bar.ves > 0 && (
-                              <tspan fill="#9CA3AF" fontWeight="500"> · Bs. {bar.ves.toFixed(2)}</tspan>
-                            )}
-                          </text>
-                          {bar.orderCount > 0 && (
-                            <text x={tooltipX} y={tooltipY + 42} textAnchor="middle" fill="#9CA3AF" fontSize="8" fontWeight="500">
-                              {bar.orderCount} pedido{bar.orderCount !== 1 ? "s" : ""}
-                            </text>
-                          )}
-                          {arrowY < PAD_TOP + plotH / 2 ? (
-                            <polygon points={`${dot.x - 5},${arrowY} ${dot.x + 5},${arrowY} ${dot.x},${arrowY + 6}`} fill="#050505" opacity="0.95" />
-                          ) : (
-                            <polygon points={`${dot.x - 5},${arrowY} ${dot.x + 5},${arrowY} ${dot.x},${arrowY - 6}`} fill="#050505" opacity="0.95" />
-                          )}
-                        </g>
+                      {arrowDown ? (
+                        <polygon points={`${dot.x - 5},${tooltipY + 44} ${dot.x + 5},${tooltipY + 44} ${dot.x},${tooltipY + 50}`} fill="#050505" opacity="0.95" />
+                      ) : (
+                        <polygon points={`${dot.x - 5},${tooltipY} ${dot.x + 5},${tooltipY} ${dot.x},${tooltipY - 6}`} fill="#050505" opacity="0.95" />
                       )}
                     </g>
-                  )
-                })}
-              </svg>
-            </div>
-          </div>
+                  )}
+                </g>
+              )
+            })}
+          </svg>
         )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function SummaryCard({
-  label, value, ves, showVes, count, accent,
-}: {
-  label: string; value: number | null; ves?: number; showVes?: boolean; count?: number; accent?: boolean
-}) {
-  return (
-    <div className={cn(
-      "rounded-xl px-3 py-2.5 border transition-colors",
-      accent ? "border-[#FFB92E]/20" : "bg-muted/30 border-border/40",
-    )}
-      style={accent ? { backgroundColor: "#FFB92E0A" } : undefined}
-    >
-      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">{label}</p>
-      {value !== null ? (
-        <>
-          <p className={cn("text-base sm:text-lg font-black tabular-nums", accent ? "text-[#0066FF]" : "text-foreground")}>
-            ${value.toFixed(2)}
-          </p>
-          {showVes && ves !== undefined && ves > 0 && (
-            <p className="text-[10px] sm:text-[11px] text-muted-foreground font-semibold tabular-nums">
-              Bs. {ves.toFixed(2)}
-            </p>
-          )}
-        </>
-      ) : (
-        <p className={cn("text-base sm:text-lg font-black tabular-nums", accent ? "text-[#0066FF]" : "text-foreground")}>
-          {count ?? 0}
-        </p>
-      )}
+      </div>
     </div>
   )
 }
