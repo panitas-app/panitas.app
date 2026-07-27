@@ -43,6 +43,9 @@ export const SEOPages = [
   { route: "/agenda-de-citas", priority: 0.6, changefreq: "monthly" as const },
   { route: "/agenda-para-profesionales", priority: 0.6, changefreq: "monthly" as const },
   { route: "/tienda-online", priority: 0.6, changefreq: "monthly" as const },
+  { route: "/plan-agenda", priority: 0.8, changefreq: "monthly" as const },
+  { route: "/plan-emprendedor", priority: 0.8, changefreq: "monthly" as const },
+  { route: "/plan-mayorista", priority: 0.8, changefreq: "monthly" as const },
 ] as const
 
 export const PAGE_META: Record<string, { title: string; description: string }> = {
@@ -201,5 +204,17 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
   "/blog/tutoriales": {
     title: "Tutoriales | Blog de Panitas",
     description: "Guías paso a paso para usar Panitas y sacar el máximo provecho de tu software administrativo.",
+  },
+  "/plan-agenda": {
+    title: "Panitas | Software de Agenda Online para Venezuela — $15/mes",
+    description: "Software de agenda online para barberías, clínicas, consultorios y spas en Venezuela. Reservas 24/7, recordatorios automáticos y gestión de profesionales. Desde $15/mes.",
+  },
+  "/plan-emprendedor": {
+    title: "Panitas | Software Todo en Uno para Emprendedores — $25/mes",
+    description: "Software administrativo para tiendas y comercios en Venezuela. Tienda online, POS, inventario, CRM y agenda integrados. Sin instalar nada. Desde $25/mes.",
+  },
+  "/plan-mayorista": {
+    title: "Panitas | Sistema B2B para Mayoristas y Distribuidoras — $45/mes",
+    description: "Sistema B2B para distribuidoras y mayoristas en Venezuela. Comisiones de vendedores, notas de entrega, precios por volumen e inventario ilimitado. Desde $45/mes.",
   },
 }
