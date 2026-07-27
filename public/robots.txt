@@ -10,6 +10,8 @@ Allow: /faq
 Allow: /contacto
 Allow: /terminos
 Allow: /privacidad
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 # Rutas privadas / autenticadas
 Disallow: /dashboard/
@@ -25,45 +27,58 @@ Disallow: /join
 Disallow: /choose-plan
 Disallow: /subscribe
 Disallow: /restablecer
+Disallow: /recuperar
 
 # APIs y archivos internos
 Disallow: /api/
-Disallow: /_next/
-Disallow: /node_modules/
-Disallow: /assets/
 
 # Archivos de configuración
 Disallow: /.git/
-Disallow: /.well-known/
 
 # Sitemap
 Sitemap: https://panitas.app/sitemap.xml
 
-# User-agent específico para IA (permite lectura completa)
+# Googlebot explícito
+User-agent: Googlebot
+Allow: /
+
+# === AI Crawlers — Permitir lectura completa ===
+
 User-agent: GPTBot
 Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
 
 User-agent: Google-Extended
 Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
 
 User-agent: ClaudeBot
 Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
 
-User-agent: Amazonbot
+User-agent: Anthropic-AI
 Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
 
 User-agent: PerplexityBot
 Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
 
 User-agent: Bytespider
 Disallow: /

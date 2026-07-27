@@ -563,6 +563,7 @@
     <div class="page_wrap">
 
       <!-- Navigation -->
+      <header>
       <nav class="nav_component" aria-label="Navegación principal">
         <div class="nav_desktop_contain u-container-full">
           <a href="#hero" class="nav_desktop_logo" data-tooltip="Inicio">
@@ -623,6 +624,8 @@
         </ul>
       </div>
 
+      </header>
+
       <!-- Custom Cursor Tooltip -->
       <div class="tooltip" id="custom-cursor">
         <p class="tooltip_text" id="custom-cursor-text">Inicio</p>
@@ -637,7 +640,7 @@
             <div class="hero_home_logo animate-up" style="height:clamp(4.5rem,10vw,7.5rem);margin:0;">
               <img src="/logonuevo.png" alt="Panitas software administrativo" width="40" height="40" loading="eager" style="height:100%;width:auto;" />
             </div>
-            <h1 class="hero_tagline" style="margin:0;max-width:42ch;align-self:flex-start;">Software administrativo para controlar inventario, vender online y administrar tu negocio desde un solo lugar.</h1>
+            <h1 class="hero_tagline" style="margin:0;max-width:42ch;align-self:flex-start;color:#000;">Controla tu inventario, vende por internet y administra citas o consultas con un software administrativo diseñado para empresas, comercios y profesionales independientes.</h1>
             <div class="hero_ctas" style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:flex-start;">
               <a href="/register" class="button_main_wrap cta-primary" style="text-decoration:none;" aria-label="Comenzar prueba gratis">
                 <div class="button_main_element">
@@ -1454,7 +1457,7 @@
                     <div class="form_fieldset_list">
                       <label class="form_label_wrap">
                         <span class="form_label_text">Correo electrónico</span>
-                        <input name="email" type="email" placeholder="correo@ejemplo.com" required class="form_field" autocomplete="email" />
+                        <input name="email" type="email" placeholder="correo@ejemplo.com" required class="form_field" autocomplete="email" aria-label="Correo electrónico" />
                       </label>
                       <label class="form_label_wrap">
                         <span class="form_label_text">Clave</span>
@@ -1503,7 +1506,7 @@
       </dialog>
 
       <!-- Modal: Contacto -->
-      <dialog class="modal_dialog" id="modal-contacto">
+      <dialog class="modal_dialog" id="modal-contacto" aria-label="Contacto con Panitas">
         <div class="modal_inner">
           <div class="modal_backdrop" data-modal-close></div>
           <div class="modal_content_wrap">
@@ -1563,16 +1566,16 @@
           <div class="footer_layout">
             <nav class="footer_nav" aria-label="Enlaces del pie de página">
               <a href="#planes" class="footer_link_wrap">
-                <h2 class="footer_link_text">Planes</h2>
+                <p class="footer_link_text">Planes</p>
               </a>
               <a href="#como-funciona" class="footer_link_wrap">
-                <h2 class="footer_link_text">Cómo funciona</h2>
+                <p class="footer_link_text">Cómo funciona</p>
               </a>
               <a href="#planes-detalle" class="footer_link_wrap">
-                <h2 class="footer_link_text">Precios</h2>
+                <p class="footer_link_text">Precios</p>
               </a>
               <a href="#faq" class="footer_link_wrap">
-                <h2 class="footer_link_text">FAQ</h2>
+                <p class="footer_link_text">FAQ</p>
               </a>
             </nav>
 
@@ -1582,10 +1585,10 @@
                 <p style="opacity: 0.5; font-size: 0.85rem;">Lun - Vie 9:00 AM - 6:00 PM (VET)</p>
               </div>
               <div class="footer_form_wrap">
-                <h4 class="footer_form_title">Suscríbete para recibir novedades y actualizaciones del software.</h4>
+                <p class="footer_form_title">Suscríbete para recibir novedades y actualizaciones del software.</p>
                 <form id="newsletter-form">
                   <div class="form_field_wrap">
-                    <input name="email" type="email" placeholder="tu@email.com" required class="form_field is-newsletter" />
+                    <input name="email" type="email" placeholder="tu@email.com" required class="form_field is-newsletter" aria-label="Correo electrónico para newsletter" />
                     <div class="button_arrow_wrap">
                       <button type="submit" class="button_arrow_element">
                         <svg viewBox="0 0 16 16" class="button_arrow_icon">

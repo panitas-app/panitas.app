@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { DollarSign, ShoppingCart, Calendar, TrendingUp, Users, Briefcase, BarChart3, ArrowRight, CreditCard, XCircle, CheckCircle, Clock, Wallet } from "lucide-react"
+import { SalesChart } from "@/components/dashboard/sales-chart"
 import type { Store } from "@prisma/client"
 import { formatBCV } from "@/lib/bcv/format"
 
@@ -115,9 +116,7 @@ export function DashboardNegocio({ store, rate, sales, appointments, orders, vis
                 <p className="text-lg font-black text-blue-600">${(sales.weekRevenue + appointments.completed * 25).toFixed(2)}</p>
               </div>
             </div>
-            <div className="h-48 bg-muted rounded-xl flex items-center justify-center text-muted-foreground text-sm">
-              <BarChart3 className="size-5 mr-2" /> Gráfico de ventas por día
-            </div>
+            <SalesChart orders={orders} bcvRate={rate} />
           </CardContent>
         </Card>
 

@@ -17,6 +17,23 @@ export const PUBLIC_ROUTES = [
   { path: "/privacidad", label: "Política de Privacidad", changefreq: "yearly", priority: 0.4 },
 ] as const
 
+/**
+ * Páginas SEO de contenido preparadas para el futuro.
+ * Cuando una ruta tenga una página real, se activa en sitemap.ts
+ * Route = ruta, priority = prioridad en sitemap, keywords = términos objetivo
+ */
+export const FUTURE_SEO_PAGES = [
+  { route: "/software-administrativo", priority: 0.6, changefreq: "monthly" as const, keywords: "software administrativo, sistema administrativo" },
+  { route: "/software-inventario", priority: 0.6, changefreq: "monthly" as const, keywords: "software inventario, control inventario" },
+  { route: "/agenda-online", priority: 0.6, changefreq: "monthly" as const, keywords: "agenda online, sistema de citas" },
+  { route: "/agenda-para-profesionales", priority: 0.6, changefreq: "monthly" as const, keywords: "agenda profesionales, agenda barberias" },
+  { route: "/software-para-barberias", priority: 0.6, changefreq: "monthly" as const, keywords: "software barberia, sistema barberia" },
+  { route: "/software-para-peluquerias", priority: 0.6, changefreq: "monthly" as const, keywords: "software peluqueria, sistema salones" },
+  { route: "/software-para-negocios", priority: 0.6, changefreq: "monthly" as const, keywords: "software para negocios, sistema pymes" },
+  { route: "/tienda-online", priority: 0.6, changefreq: "monthly" as const, keywords: "tienda online, crear tienda virtual" },
+  { route: "/software-pos", priority: 0.6, changefreq: "monthly" as const, keywords: "software pos, punto de venta" },
+] as const
+
 export const PAGE_META: Record<string, { title: string; description: string; keywords?: string }> = {
   "/": {
     title: "Panitas – Gestiona tu negocio, vende online, organiza tus citas y escala",
