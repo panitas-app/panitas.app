@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Users, Store, Layers, TrendingUp, Activity,
   Banknote, Settings2, ChevronDown, ChevronRight, MessageCircle,
-  DollarSign, Shield, CreditCard, Menu, X,
+  DollarSign, Shield, CreditCard, Menu, X, Target,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -18,6 +18,19 @@ interface NavGroup {
 }
 
 const groups: NavGroup[] = [
+  {
+    label: "Clientes Potenciales",
+    icon: Target,
+    children: [
+      { href: "/admin/prospects", label: "Dashboard" },
+      { href: "/admin/prospects/lista", label: "Prospectos" },
+      { href: "/admin/prospects/seguimientos", label: "Seguimientos" },
+      { href: "/admin/prospects/ganados", label: "Clientes Ganados" },
+      { href: "/admin/prospects/perdidos", label: "Clientes Perdidos" },
+      { href: "/admin/prospects/reportes", label: "Reportes" },
+      { href: "/admin/prospects/configuracion", label: "Configuracion" },
+    ],
+  },
   {
     label: "Usuarios",
     icon: Users,

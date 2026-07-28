@@ -1285,3 +1285,205 @@ model SellerCommission {
   @@index([sellerId])
   @@index([orderId])
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLIENTES POTENCIALES — CRM COMERCIAL
+// ═══════════════════════════════════════════════════════════════════════
+
+model PotentialClient {
+  id              String   @id @default(cuid())
+  nombreNegocio   String
+  propietario     String
+  telefono        String?
+  whatsapp        String?
+  email           String?
+  instagram       String?
+  facebook        String?
+  paginaWeb       String?
+  ciudad          String?
+  estado          String?
+  pais            String?  @default("Venezuela")
+  direccion       String?
+  categoria       String
+  lat             Float?
+  lng             Float?
+  estadoProspecto String   @default("nuevo")
+  puntuacion      Int      @default(0)
+  temperatura     String   @default("frio")
+  notas           String?
+  convertidoAt    DateTime?
+  convertidoUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  activities  PotentialClientActivity[]
+  files       PotentialClientFile[]
+  reminders   PotentialClientReminder[]
+  sessions    SalesSession[]
+
+  @@index([estadoProspecto])
+  @@index([categoria])
+  @@index([ciudad])
+  @@index([createdAt])
+}
+
+model PotentialClientActivity {
+  id          String   @id @default(cuid())
+  tipo        String
+  titulo      String
+  descripcion String?
+  fecha       DateTime @default(now())
+  lat         Float?
+  lng         Float?
+  duracionMin Int?
+  fechaProx   DateTime?
+  completado  Boolean  @default(false)
+  adminId     String?
+  createdAt   DateTime @default(now())
+  prospectId  String
+  prospect    PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId, fecha])
+}
+
+model PotentialClientFile {
+  id          String   @id @default(cuid())
+  nombre      String
+  url         String
+  tipo        String
+  size        Int?
+  esFoto      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  prospectId  String
+  prospect    PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+}
+
+model PotentialClientReminder {
+  id          String   @id @default(cuid())
+  titulo      String
+  descripcion String?
+  fecha       DateTime
+  completado  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  prospectId  String
+  prospect    PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId, fecha])
+  @@index([completado, fecha])
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ASISTENTE INTELIGENTE DE VENTA
+// ═══════════════════════════════════════════════════════════════════════
+
+model SalesSection {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  icono       String?
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions SalesQuestion[]
+  sessions  SalesSession[]
+
+  @@index([orden])
+}
+
+model SalesQuestion {
+  id              String   @id @default(cuid())
+  texto           String
+  subtexto        String?
+  tipo            String   @default("radio")
+  opciones        String?
+  requerida       Boolean  @default(true)
+  orden           Int      @default(0)
+  activo          Boolean  @default(true)
+  puntaje         String?
+  condicionLogica String?
+  categoria       String?
+  placeholder     String?
+  maxChars        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  sectionId       String
+  section         SalesSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  answers SalesAnswer[]
+
+  @@index([sectionId, orden])
+  @@index([categoria])
+}
+
+model SalesSession {
+  id              String   @id @default(cuid())
+  estado          String   @default("en_curso")
+  puntuacion      Int      @default(0)
+  temperatura     String   @default("frio")
+  planRecomendado String?
+  resumen         String?
+  objeciones      String?
+  notasAdicionales String?
+  completadaAt    DateTime?
+  adminId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  prospectId      String
+  prospect        PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  sectionId       String?
+  section         SalesSection?   @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  answers SalesAnswer[]
+
+  @@index([prospectId])
+  @@index([estado])
+  @@index([completadaAt])
+}
+
+model SalesAnswer {
+  id        String   @id @default(cuid())
+  valor     String
+  valorJson String?
+  puntaje   Int      @default(0)
+  createdAt DateTime @default(now())
+  sessionId  String
+  session    SalesSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  question   SalesQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+}
+
+model SalesScoringRule {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  campo       String
+  valor       String
+  puntos      Int      @default(0)
+  operador    String   @default("equals")
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([activo])
+}
+
+model SalesPlanRecommendation {
+  id            String   @id @default(cuid())
+  plan          String
+  minPuntuacion Int      @default(0)
+  maxPuntuacion Int?
+  condiciones   String?
+  descripcion   String?
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([plan])
+}
