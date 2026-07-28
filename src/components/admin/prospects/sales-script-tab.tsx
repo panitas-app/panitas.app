@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { SalesScoringBar } from "./sales-scoring-bar"
 import { SalesPhase, SalesPhaseNav } from "./sales-phase"
 import { SalesSummary } from "./sales-summary"
+import Link from "next/link"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
@@ -26,6 +27,7 @@ import {
   Lock,
   Stethoscope,
   Scissors,
+  AlertTriangle,
 } from "lucide-react"
 
 interface Question {
@@ -467,21 +469,44 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
 
       {mode === "in_progress" && sessionId && (
         <>
-          <SalesScoringBar score={score} temperatura={temperatura} />
-          <SalesPhase
-            section={sections[currentSectionIndex]}
-            answers={answers}
-            onAnswer={handleAnswer}
-            currentIndex={currentSectionIndex}
-            totalSections={sections.length}
-          />
-          <SalesPhaseNav
-            onPrev={handlePrev}
-            onNext={handleNext}
-            isFirst={currentSectionIndex === 0}
-            isLast={currentSectionIndex === sections.length - 1}
-            canAdvance={canAdvance}
-          />
+          {sections.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center space-y-3">
+                <div className="mx-auto size-12 rounded-full bg-muted flex items-center justify-center">
+                  <AlertTriangle className="size-6 text-muted-foreground" />
+                </div>
+                <p className="font-medium">Guion no configurado</p>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  No hay secciones de guion para esta ruta. Ve a{" "}
+                  <Link
+                    href="/admin/prospects/configuracion/guion"
+                    className="text-primary underline"
+                  >
+                    Configuracion &gt; Guion de Venta
+                  </Link>{" "}
+                  y haz clic en "Sembrar datos iniciales".
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <SalesScoringBar score={score} temperatura={temperatura} />
+              <SalesPhase
+                section={sections[currentSectionIndex]}
+                answers={answers}
+                onAnswer={handleAnswer}
+                currentIndex={currentSectionIndex}
+                totalSections={sections.length}
+              />
+              <SalesPhaseNav
+                onPrev={handlePrev}
+                onNext={handleNext}
+                isFirst={currentSectionIndex === 0}
+                isLast={currentSectionIndex === sections.length - 1}
+                canAdvance={canAdvance}
+              />
+            </>
+          )}
         </>
       )}
 
