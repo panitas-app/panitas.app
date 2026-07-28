@@ -134,6 +134,7 @@ export function SalesScriptAdmin() {
   const [planRules, setPlanRules] = useState<PlanRule[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [expandedSections, setExpandedSections] = useState<AccordionState>({})
 
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false)
@@ -175,6 +176,24 @@ export function SalesScriptAdmin() {
       toast.error("Error al cargar configuracion")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSeed() {
+    setSeeding(true)
+    try {
+      const res = await fetch("/api/admin/sales-script/seed", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Error al sembrar datos")
+        return
+      }
+      toast.success(`Datos sembrados: ${data.sections} secciones, ${data.questions} preguntas, ${data.scoringRules} reglas de scoring, ${data.planRules} reglas de plan`)
+      loadData()
+    } catch {
+      toast.error("Error al sembrar datos iniciales")
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -532,8 +551,23 @@ export function SalesScriptAdmin() {
 
         {sections.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No hay secciones creadas. Agrega la primera para comenzar.
+            <CardContent className="py-8 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">
+                No hay secciones creadas. Agrega la primera para comenzar o siembra los datos iniciales.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSeed}
+                disabled={seeding}
+              >
+                {seeding ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Plus className="size-3.5" />
+                )}
+                {seeding ? "Sembrando..." : "Sembrar datos iniciales"}
+              </Button>
             </CardContent>
           </Card>
         ) : (

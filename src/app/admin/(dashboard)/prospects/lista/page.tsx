@@ -114,11 +114,6 @@ export default function ProspectsListPage() {
     fetchData()
   }, [fetchData])
 
-  function openCreate() {
-    setEditingProspect(null)
-    setSheetOpen(true)
-  }
-
   function openEdit(p: Prospect) {
     setEditingProspect(p)
     setSheetOpen(true)
@@ -161,10 +156,12 @@ export default function ProspectsListPage() {
           <h1 className="text-2xl font-bold">Prospectos</h1>
           <p className="text-sm text-muted-foreground">{data.length} prospectos en esta pagina</p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="size-4" />
-          <span className="hidden sm:inline">Nuevo Prospecto</span>
-        </Button>
+        <Link href="/admin/prospects/nuevo">
+          <Button className="gap-2">
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Nuevo Prospecto</span>
+          </Button>
+        </Link>
       </div>
 
       <div className="flex flex-wrap gap-3">

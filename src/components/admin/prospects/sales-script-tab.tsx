@@ -65,6 +65,8 @@ interface Session {
 
 interface SalesScriptTabProps {
   prospectId: string
+  autoStart?: boolean
+  onSessionComplete?: (prospectId: string) => void
   prospect: {
     nombreNegocio: string
     propietario: string
@@ -91,7 +93,7 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
   empresarial: <Building2 className="size-8" />,
 }
 
-export function SalesScriptTab({ prospectId, prospect }: SalesScriptTabProps) {
+export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prospect }: SalesScriptTabProps) {
   const [mode, setMode] = useState<ViewMode>("idle")
   const [loading, setLoading] = useState(true)
   const [sections, setSections] = useState<Section[]>([])
@@ -138,11 +140,11 @@ export function SalesScriptTab({ prospectId, prospect }: SalesScriptTabProps) {
         } else {
           setSections(data.sections || [])
           setCompletedSessions(data.completedSessions || [])
-          setMode("idle")
+          setMode(autoStart ? "plan_selection" : "idle")
         }
       } else {
         setSections([])
-        setMode("idle")
+        setMode(autoStart ? "plan_selection" : "idle")
       }
     } catch {
       toast.error("Error al cargar datos del guion")
@@ -264,6 +266,7 @@ export function SalesScriptTab({ prospectId, prospect }: SalesScriptTabProps) {
       setCompletedSessions((prev) => [data.session, ...prev])
       setMode("completed")
       toast.success("Visita finalizada exitosamente")
+      if (onSessionComplete) onSessionComplete(prospectId)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error inesperado")
     } finally {
