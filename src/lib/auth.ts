@@ -5,10 +5,6 @@ import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { authConfig } from "./auth.config"
 
-if (process.env.VERCEL) {
-  process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'https://panitas.app'
-}
-
 function validateEmail(email: unknown): string | null {
   if (typeof email !== "string") return null
   const trimmed = email.trim().toLowerCase()
@@ -18,6 +14,7 @@ function validateEmail(email: unknown): string | null {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
+  secret: process.env.AUTH_SECRET,
   adapter: undefined,
   providers: [
     Google({
