@@ -23,8 +23,8 @@ export default function NuevoProspectoPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            nombreNegocio: "",
-            propietario: "",
+            nombreNegocio: "Nuevo Prospecto",
+            propietario: "Pendiente",
             categoria: "Otro",
             pais: "Venezuela",
           }),
