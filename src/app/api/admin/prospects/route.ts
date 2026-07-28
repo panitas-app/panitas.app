@@ -77,26 +77,34 @@ export async function POST(req: NextRequest) {
         pais: body.pais || "Venezuela",
         direccion: body.direccion || null,
         categoria: body.categoria || "",
-        lat: body.lat || null,
-        lng: body.lng || null,
         estadoProspecto: body.estadoProspecto || "nuevo",
         puntuacion: body.puntuacion || 0,
         temperatura: body.temperatura || "frio",
+        lat: body.lat || null,
+        lng: body.lng || null,
         notas: body.notas || null,
       },
     })
 
-    await createAuditEntry({
-      action: "prospect.created",
-      entity: "PotentialClient",
-      entityId: prospect.id,
-      userId: admin.id,
-      metadata: { nombreNegocio: prospect.nombreNegocio, propietario: prospect.propietario },
-    })
+    try {
+      await createAuditEntry({
+        action: "prospect.created",
+        entity: "PotentialClient",
+        entityId: prospect.id,
+        userId: admin.id,
+        metadata: { nombreNegocio: prospect.nombreNegocio, propietario: prospect.propietario },
+      })
+    } catch (auditErr) {
+      console.error("[admin prospects POST] audit failed (non-blocking)", auditErr)
+    }
 
     return NextResponse.json(prospect, { status: 201 })
   } catch (error) {
     console.error("[admin prospects POST]", error)
-    return NextResponse.json({ error: "Error al crear prospecto" }, { status: 500 })
+    const msg =
+      process.env.NODE_ENV === "development"
+        ? `Error al crear prospecto: ${error instanceof Error ? error.message : String(error)}`
+        : "Error al crear prospecto"
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
       nombre: body.nombre.trim(),
       descripcion: body.descripcion ?? undefined,
       icono: body.icono ?? undefined,
+      tipo: body.tipo ?? "questions",
+      route: body.route ?? undefined,
+      guiaVendedor: body.guiaVendedor ?? undefined,
       orden: body.orden ?? 0,
     },
   })

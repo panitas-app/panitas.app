@@ -49,7 +49,6 @@ export function ProspectForm({ initialData, onSuccess, onCancel }: ProspectFormP
     email: initialData?.email ?? "",
     instagram: initialData?.instagram ?? "",
     facebook: initialData?.facebook ?? "",
-    paginaWeb: initialData?.paginaWeb ?? "",
     ciudad: initialData?.ciudad ?? "",
     estado: initialData?.estado ?? "",
     pais: initialData?.pais ?? "Venezuela",
@@ -91,7 +90,6 @@ export function ProspectForm({ initialData, onSuccess, onCancel }: ProspectFormP
           email: form.email.trim() || null,
           instagram: form.instagram.trim() || null,
           facebook: form.facebook.trim() || null,
-          paginaWeb: form.paginaWeb.trim() || null,
           ciudad: form.ciudad.trim() || null,
           estado: form.estado.trim() || null,
           pais: form.pais.trim() || "Venezuela",
@@ -189,17 +187,6 @@ export function ProspectForm({ initialData, onSuccess, onCancel }: ProspectFormP
             value={form.facebook}
             onChange={(e) => updateField("facebook", e.target.value)}
             placeholder="URL o usuario"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="paginaWeb">Página web</Label>
-          <Input
-            id="paginaWeb"
-            type="url"
-            value={form.paginaWeb}
-            onChange={(e) => updateField("paginaWeb", e.target.value)}
-            placeholder="https://..."
           />
         </div>
 

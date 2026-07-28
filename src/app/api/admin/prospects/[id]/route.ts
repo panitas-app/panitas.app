@@ -65,13 +65,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     })
 
-    await createAuditEntry({
-      action: "prospect.updated",
-      entity: "PotentialClient",
-      entityId: id,
-      userId: admin.id,
-      metadata: { changes: Object.keys(body) },
-    })
+    try {
+      await createAuditEntry({
+        action: "prospect.updated",
+        entity: "PotentialClient",
+        entityId: id,
+        userId: admin.id,
+        metadata: { changes: Object.keys(body) },
+      })
+    } catch (auditErr) {
+      console.error("[admin prospect PUT] audit failed (non-blocking)", auditErr)
+    }
 
     return NextResponse.json(updated)
   } catch (error) {
@@ -92,13 +96,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     await prisma.potentialClient.delete({ where: { id } })
 
-    await createAuditEntry({
-      action: "prospect.deleted",
-      entity: "PotentialClient",
-      entityId: id,
-      userId: admin.id,
-      metadata: { nombreNegocio: prospect.nombreNegocio },
-    })
+    try {
+      await createAuditEntry({
+        action: "prospect.deleted",
+        entity: "PotentialClient",
+        entityId: id,
+        userId: admin.id,
+        metadata: { nombreNegocio: prospect.nombreNegocio },
+      })
+    } catch (auditErr) {
+      console.error("[admin prospect DELETE] audit failed (non-blocking)", auditErr)
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {

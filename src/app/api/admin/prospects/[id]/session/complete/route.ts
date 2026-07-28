@@ -50,10 +50,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (session.prospectId !== id) return NextResponse.json({ error: "Sesion no pertenece a este prospecto" }, { status: 403 })
     if (session.estado !== "en_curso") return NextResponse.json({ error: "La sesion ya fue completada" }, { status: 400 })
 
+    const prospect = await prisma.potentialClient.findUnique({ where: { id } })
+
     const puntuacion = calculateScoreFromAnswers(session.answers)
     const temperatura = calculateTemperature(puntuacion)
-    const planRecomendado = recommendPlan(session.answers, puntuacion)
-    const resumen = generateSummary(session.answers, planRecomendado)
+    const planRecomendado = session.planSeleccionado || recommendPlan(session.answers, puntuacion)
+    const resumen = generateSummary(session.answers, planRecomendado, prospect, session.routeSeleccionada)
 
     const completedSession = await prisma.salesSession.update({
       where: { id: body.sessionId },
@@ -68,13 +70,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
 
     const prospectStatus = mapTemperatureToStatus(temperatura)
+    const prospectUpdate: Record<string, unknown> = {
+      puntuacion,
+      temperatura,
+      estadoProspecto: prospectStatus,
+    }
+
+    if (body.prospectData) {
+      const pd = body.prospectData
+      if (pd.nombreNegocio) prospectUpdate.nombreNegocio = pd.nombreNegocio
+      if (pd.propietario) prospectUpdate.propietario = pd.propietario
+      if (pd.telefono !== undefined) prospectUpdate.telefono = pd.telefono || null
+      if (pd.whatsapp !== undefined) prospectUpdate.whatsapp = pd.whatsapp || null
+      if (pd.email !== undefined) prospectUpdate.email = pd.email || null
+      if (pd.instagram !== undefined) prospectUpdate.instagram = pd.instagram || null
+      if (pd.facebook !== undefined) prospectUpdate.facebook = pd.facebook || null
+      if (pd.paginaWeb !== undefined) prospectUpdate.paginaWeb = pd.paginaWeb || null
+      if (pd.ciudad !== undefined) prospectUpdate.ciudad = pd.ciudad || null
+      if (pd.estado !== undefined) prospectUpdate.estado = pd.estado || null
+      if (pd.pais !== undefined) prospectUpdate.pais = pd.pais || null
+      if (pd.direccion !== undefined) prospectUpdate.direccion = pd.direccion || null
+      if (pd.categoria) prospectUpdate.categoria = pd.categoria
+      if (pd.notas !== undefined) prospectUpdate.notas = pd.notas || null
+    }
+
     await prisma.potentialClient.update({
       where: { id },
-      data: {
-        puntuacion,
-        temperatura,
-        estadoProspecto: prospectStatus,
-      },
+      data: prospectUpdate,
     })
 
     const tempLabel =
@@ -92,13 +114,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     })
 
-    await createAuditEntry({
-      action: "session.completed",
-      entity: "SalesSession",
-      entityId: body.sessionId,
-      userId: admin.id,
-      metadata: { prospectId: id, puntuacion, temperatura, planRecomendado },
-    })
+    try {
+      await createAuditEntry({
+        action: "session.completed",
+        entity: "SalesSession",
+        entityId: body.sessionId,
+        userId: admin.id,
+        metadata: { prospectId: id, puntuacion, temperatura, planRecomendado },
+      })
+    } catch (auditErr) {
+      console.error("[admin session complete POST] audit failed (non-blocking)", auditErr)
+    }
 
     const noDecisionAnswer = session.answers.find(
       (a) => a.valor.toLowerCase() === "no puede tomar decisiones"

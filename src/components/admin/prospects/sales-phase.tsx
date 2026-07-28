@@ -22,6 +22,8 @@ interface Section {
   nombre: string
   descripcion?: string | null
   icono?: string | null
+  tipo?: string
+  guiaVendedor?: string | null
   questions: Question[]
 }
 
@@ -73,6 +75,12 @@ export function SalesPhase({
       </div>
 
       <div className="space-y-6">
+        {section.tipo === "info" && section.guiaVendedor && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
+            <p className="text-sm font-semibold text-blue-800">Guia para el vendedor</p>
+            <p className="text-sm text-blue-700 whitespace-pre-line">{section.guiaVendedor}</p>
+          </div>
+        )}
         {visibleQuestions.map((question) => (
           <SalesQuestionRenderer
             key={question.id}

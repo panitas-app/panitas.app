@@ -68,6 +68,9 @@ interface Section {
   nombre: string
   descripcion?: string | null
   icono?: string | null
+  tipo?: string
+  route?: string | null
+  guiaVendedor?: string | null
   orden: number
   questions: Question[]
 }
@@ -106,6 +109,9 @@ const emptySection = {
   nombre: "",
   descripcion: "",
   icono: "",
+  tipo: "questions",
+  route: "",
+  guiaVendedor: "",
 }
 
 const emptyScoringRule = {
@@ -188,6 +194,9 @@ export function SalesScriptAdmin() {
       nombre: section.nombre,
       descripcion: section.descripcion || "",
       icono: section.icono || "",
+      tipo: section.tipo || "questions",
+      route: section.route || "",
+      guiaVendedor: section.guiaVendedor || "",
     })
     setSectionDialogOpen(true)
   }
@@ -200,8 +209,8 @@ export function SalesScriptAdmin() {
     setSaving(true)
     try {
       const url = editingSection
-        ? `/api/admin/sales-script/sections/${editingSection.id}`
-        : "/api/admin/sales-script/sections"
+        ? `/api/admin/sales-sections/${editingSection.id}`
+        : "/api/admin/sales-sections"
       const res = await fetch(url, {
         method: editingSection ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -209,6 +218,9 @@ export function SalesScriptAdmin() {
           nombre: sectionForm.nombre.trim(),
           descripcion: sectionForm.descripcion.trim() || null,
           icono: sectionForm.icono.trim() || null,
+          tipo: sectionForm.tipo || "questions",
+          route: sectionForm.route?.trim() || null,
+          guiaVendedor: sectionForm.guiaVendedor?.trim() || null,
           orden: editingSection ? editingSection.orden : sections.length,
         }),
       })
@@ -229,7 +241,7 @@ export function SalesScriptAdmin() {
   async function deleteSection(id: string) {
     if (!confirm("Eliminar esta seccion y todas sus preguntas?")) return
     try {
-      const res = await fetch(`/api/admin/sales-script/sections/${id}`, {
+      const res = await fetch(`/api/admin/sales-sections/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Error al eliminar")
@@ -253,7 +265,7 @@ export function SalesScriptAdmin() {
     setSections(ordered)
 
     try {
-      await fetch("/api/admin/sales-script/reorder", {
+      await fetch("/api/admin/sales-sections/reorder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -298,8 +310,8 @@ export function SalesScriptAdmin() {
     try {
       const section = sections.find((s) => s.id === activeSectionId)
       const url = editingQuestion
-        ? `/api/admin/sales-script/questions/${editingQuestion.id}`
-        : "/api/admin/sales-script/questions"
+        ? `/api/admin/sales-questions/${editingQuestion.id}`
+        : "/api/admin/sales-questions"
       const res = await fetch(url, {
         method: editingQuestion ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -334,7 +346,7 @@ export function SalesScriptAdmin() {
   async function deleteQuestion(id: string) {
     if (!confirm("Eliminar esta pregunta?")) return
     try {
-      const res = await fetch(`/api/admin/sales-script/questions/${id}`, {
+      const res = await fetch(`/api/admin/sales-questions/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Error al eliminar")
@@ -363,7 +375,7 @@ export function SalesScriptAdmin() {
     )
 
     try {
-      await fetch("/api/admin/sales-script/reorder-questions", {
+      await fetch("/api/admin/sales-questions/reorder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -400,8 +412,8 @@ export function SalesScriptAdmin() {
     setSaving(true)
     try {
       const url = editingScoringRule
-        ? `/api/admin/sales-script/scoring/${editingScoringRule.id}`
-        : "/api/admin/sales-script/scoring"
+        ? `/api/admin/sales-scoring-rules/${editingScoringRule.id}`
+        : "/api/admin/sales-scoring-rules"
       const res = await fetch(url, {
         method: editingScoringRule ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -424,7 +436,7 @@ export function SalesScriptAdmin() {
   async function deleteScoringRule(id: string) {
     if (!confirm("Eliminar esta regla de scoring?")) return
     try {
-      const res = await fetch(`/api/admin/sales-script/scoring/${id}`, {
+      const res = await fetch(`/api/admin/sales-scoring-rules/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Error al eliminar")
@@ -460,8 +472,8 @@ export function SalesScriptAdmin() {
     setSaving(true)
     try {
       const url = editingPlanRule
-        ? `/api/admin/sales-script/plan-rules/${editingPlanRule.id}`
-        : "/api/admin/sales-script/plan-rules"
+        ? `/api/admin/sales-plan-rules/${editingPlanRule.id}`
+        : "/api/admin/sales-plan-rules"
       const res = await fetch(url, {
         method: editingPlanRule ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -484,7 +496,7 @@ export function SalesScriptAdmin() {
   async function deletePlanRule(id: string) {
     if (!confirm("Eliminar esta regla de recomendacion?")) return
     try {
-      const res = await fetch(`/api/admin/sales-script/plan-rules/${id}`, {
+      const res = await fetch(`/api/admin/sales-plan-rules/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Error al eliminar")
@@ -851,6 +863,57 @@ export function SalesScriptAdmin() {
                 placeholder="Ej: Users, Building2"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de seccion</Label>
+              <Select
+                value={sectionForm.tipo}
+                onValueChange={(v) =>
+                  setSectionForm((p) => ({ ...p, tipo: v ?? "questions" }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="questions">Preguntas</SelectItem>
+                  <SelectItem value="info">Informativa (guia vendedor)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Ruta (dejar vacio para todas)</Label>
+              <Select
+                value={sectionForm.route || "__all__"}
+                onValueChange={(v) =>
+                   setSectionForm((p) => ({ ...p, route: (v && v !== "__all__") ? v : "" }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas las rutas</SelectItem>
+                  <SelectItem value="emprendedor_presencial">Emprendedor Presencial</SelectItem>
+                  <SelectItem value="emprendedor_online">Emprendedor Online</SelectItem>
+                  <SelectItem value="agenda_salud">Agenda — Salud</SelectItem>
+                  <SelectItem value="agenda_belleza">Agenda — Belleza</SelectItem>
+                  <SelectItem value="empresarial_default">Empresarial (Proximamente)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {sectionForm.tipo === "info" && (
+              <div className="space-y-1.5">
+                <Label>Guia para el vendedor</Label>
+                <Textarea
+                  value={sectionForm.guiaVendedor}
+                  onChange={(e) =>
+                    setSectionForm((p) => ({ ...p, guiaVendedor: e.target.value }))
+                  }
+                  placeholder="Instrucciones, tips, frases sugeridas..."
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button

@@ -8,6 +8,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
     const { id } = await params
+    const { searchParams } = new URL(req.url)
+    const route = searchParams.get("route") || undefined
 
     const prospect = await prisma.potentialClient.findUnique({ where: { id } })
     if (!prospect) return NextResponse.json({ error: "Prospecto no encontrado" }, { status: 404 })
@@ -23,8 +25,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       orderBy: { createdAt: "desc" },
     })
 
+    const sessionRoute = route || activeSession?.routeSeleccionada || undefined
+
+    const sectionWhere: Record<string, unknown> = { activo: true }
+    if (sessionRoute) {
+      sectionWhere.route = sessionRoute
+    }
+
     const sections = await prisma.salesSection.findMany({
-      where: { activo: true },
+      where: sectionWhere,
       include: {
         questions: {
           where: { activo: true },
@@ -34,7 +43,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       orderBy: { orden: "asc" },
     })
 
-    return NextResponse.json({ session: activeSession, sections })
+    const completedSessions = await prisma.salesSession.findMany({
+      where: { prospectId: id, estado: "completada" },
+      select: {
+        id: true,
+        completadaAt: true,
+        puntuacion: true,
+        temperatura: true,
+        planRecomendado: true,
+        planSeleccionado: true,
+        routeSeleccionada: true,
+        resumen: true,
+        createdAt: true,
+      },
+      orderBy: { completadaAt: "desc" },
+    })
+
+    return NextResponse.json({ session: activeSession, sections, completedSessions })
   } catch (error) {
     console.error("[admin session GET]", error)
     return NextResponse.json({ error: "Error al cargar sesion" }, { status: 500 })
@@ -58,8 +83,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Ya existe una sesion activa para este prospecto" }, { status: 400 })
     }
 
+    const body = await req.json().catch(() => ({}))
+    const routeSeleccionada = body.routeSeleccionada || null
+
+    const sectionWhere: Record<string, unknown> = { activo: true }
+    if (routeSeleccionada) {
+      sectionWhere.route = routeSeleccionada
+    }
+
     const firstSection = await prisma.salesSection.findFirst({
-      where: { activo: true },
+      where: sectionWhere,
       orderBy: { orden: "asc" },
     })
 
@@ -68,6 +101,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         prospectId: id,
         adminId: admin.id,
         sectionId: firstSection?.id || null,
+        planSeleccionado: body.planSeleccionado || null,
+        routeSeleccionada,
       },
       include: {
         answers: {
@@ -77,7 +112,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
 
     const sections = await prisma.salesSection.findMany({
-      where: { activo: true },
+      where: sectionWhere,
       include: {
         questions: {
           where: { activo: true },

@@ -1,3 +1,5 @@
+import { DEMO_STEPS } from "./constants"
+
 export function calculateTemperature(score: number): string {
   if (score >= 76) return "muy_caliente"
   if (score >= 51) return "caliente"
@@ -50,9 +52,23 @@ export function recommendPlan(
   return "agenda"
 }
 
+export function getRouteLabel(route: string | null | undefined): string {
+  if (!route) return "No especificada"
+  switch (route) {
+    case "emprendedor_presencial": return "Venta presencial + POS"
+    case "emprendedor_online": return "Venta fisica + Online"
+    case "agenda_salud": return "Salud y profesionales medicos"
+    case "agenda_belleza": return "Barberias, belleza y estetica"
+    case "empresarial_default": return "Plan Empresarial"
+    default: return route
+  }
+}
+
 export function generateSummary(
-  answers: Array<{ valor: string; question: { texto: string } }>,
-  planRecomendado: string
+  answers: Array<{ valor: string; question: { texto: string; tipo?: string } }>,
+  planRecomendado: string,
+  prospect?: { nombreNegocio?: string; categoria?: string } | null,
+  route?: string | null
 ): string {
   const problemas: string[] = []
   const positivos: string[] = []
@@ -62,17 +78,34 @@ export function generateSummary(
     if (
       answer.valor === "No" ||
       answer.valor === "No registra" ||
-      answer.valor === "Mentalmente" ||
-      answer.valor === "Cuaderno"
+      answer.valor === "No llevan control" ||
+      answer.valor === "Memoria" ||
+      answer.valor === "No venden online" ||
+      answer.valor === "No tienen catalogo" ||
+      answer.valor === "Cuaderno" ||
+      answer.valor === "Frecuentemente" ||
+      answer.valor === "Algunas veces" ||
+      answer.valor === "Llegan directamente" ||
+      answer.valor === "Esperar respuesta" ||
+      answer.valor === "Agenda fisica" ||
+      answer.valor === "Poco"
     ) {
       problemas.push(`${texto.replace("?", "").trim()}: ${answer.valor}`)
     }
     if (
       answer.valor === "Si" ||
       answer.valor === "Mucho" ||
-      answer.valor === "Muchas veces"
+      answer.valor === "Muchas veces" ||
+      answer.valor === "Siempre" ||
+      answer.valor === "Sí siempre"
     ) {
       positivos.push(`${texto.replace("?", "").trim()}: ${answer.valor}`)
+    }
+    if (answer.question.tipo === "checklist" && answer.valor) {
+      const items = answer.valor.split(",").map((s) => s.trim()).filter(Boolean)
+      for (const item of items) {
+        problemas.push(item)
+      }
     }
   }
 
@@ -83,26 +116,71 @@ export function generateSummary(
         ? "Plan Emprendedor ($25/mes)"
         : "Plan Agenda ($15/mes)"
 
+  const routeLabel = getRouteLabel(route)
+
   let summary = ""
+
+  if (prospect?.nombreNegocio) {
+    summary += `Cliente: ${prospect.nombreNegocio}\n`
+  }
+  if (prospect?.categoria) {
+    summary += `Tipo de negocio: ${prospect.categoria}\n`
+  }
+  summary += `Ruta de venta: ${routeLabel}\n`
+  summary += `Plan recomendado: ${planLabel}\n\n`
+
   if (problemas.length > 0) {
     summary += "Problemas detectados:\n" + problemas.map((p) => "  - " + p).join("\n") + "\n\n"
   }
   if (positivos.length > 0) {
-    summary += "Positivos:\n" + positivos.map((p) => "  - " + p).join("\n") + "\n\n"
-  }
-  summary += `Plan recomendado: ${planLabel}`
-
-  const quiereDemo = answers.find((a) => a.question.texto.toLowerCase().includes("demostracion"))
-  if (quiereDemo?.valor === "Si") {
-    summary += "\nProxima accion: Programar demostracion"
+    summary += "Puntos positivos:\n" + positivos.map((p) => "  - " + p).join("\n") + "\n\n"
   }
 
-  const CuandoImpl = answers.find((a) => a.question.texto.toLowerCase().includes("implementarla"))
-  if (CuandoImpl) {
-    summary += `\nPlazo: ${CuandoImpl.valor}`
+  const cierreAnswer = answers.find(
+    (a) => a.question.texto.includes("resolveria un problema importante") ||
+           a.question.texto.includes("ayudaria a vender mas") ||
+           a.question.texto.includes("mejoraria su proceso") ||
+           a.question.texto.includes("mas comodo para ellos")
+  )
+  if (cierreAnswer) {
+    if (cierreAnswer.valor === "Si") {
+      summary += "Nivel de interes: Alto\n"
+      summary += "Proxima accion: Programar demostracion\n"
+    } else if (cierreAnswer.valor === "Quiero verlo" || cierreAnswer.valor === "Necesito pensarlo") {
+      summary += "Nivel de interes: Medio\n"
+      summary += "Proxima accion: Enviar informacion y hacer seguimiento\n"
+    } else {
+      summary += "Nivel de interes: Bajo\n"
+      summary += "Proxima accion: Hacer seguimiento en 1 semana\n"
+    }
+  } else {
+    const quiereDemo = answers.find((a) => a.question.texto.toLowerCase().includes("demostracion"))
+    if (quiereDemo?.valor === "Si") {
+      summary += "Proxima accion: Programar demostracion\n"
+    }
   }
+
+  const cuandoImpl = answers.find((a) => a.question.texto.toLowerCase().includes("implementarla"))
+  if (cuandoImpl) {
+    summary += `Plazo: ${cuandoImpl.valor}\n`
+  }
+
+  const ahora = new Date()
+  summary += `Fecha de seguimiento: ${ahora.toLocaleDateString("es-VE")}`
 
   return summary
+}
+
+export function getDemoSteps(route: string | null | undefined): string[] {
+  if (!route) return []
+  const demo = DEMO_STEPS[route]
+  return demo ? demo.pasos : []
+}
+
+export function getDemoTitle(route: string | null | undefined): string {
+  if (!route) return "Demostracion"
+  const demo = DEMO_STEPS[route]
+  return demo ? demo.titulo : "Demostracion"
 }
 
 export function mapTemperatureToStatus(temperatura: string): string {

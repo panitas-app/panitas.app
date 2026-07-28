@@ -403,8 +403,19 @@ export default function ProspectDetailPage() {
                 prospectId={id}
                 prospect={{
                   nombreNegocio: prospect.nombreNegocio,
+                  propietario: prospect.propietario,
                   categoria: prospect.categoria,
                   estadoProspecto: prospect.estadoProspecto,
+                  telefono: prospect.telefono,
+                  whatsapp: prospect.whatsapp,
+                  email: prospect.email,
+                  instagram: prospect.instagram,
+                  facebook: prospect.facebook,
+                  paginaWeb: prospect.paginaWeb,
+                  ciudad: prospect.ciudad,
+                  estado: prospect.estado,
+                  direccion: prospect.direccion,
+                  notas: prospect.notas,
                 }}
               />
             </CardContent>

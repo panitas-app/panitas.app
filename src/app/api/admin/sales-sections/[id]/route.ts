@@ -18,6 +18,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (body.nombre !== undefined) data.nombre = body.nombre
   if (body.descripcion !== undefined) data.descripcion = body.descripcion
   if (body.icono !== undefined) data.icono = body.icono
+  if (body.tipo !== undefined) data.tipo = body.tipo
+  if (body.route !== undefined) data.route = body.route
+  if (body.guiaVendedor !== undefined) data.guiaVendedor = body.guiaVendedor
   if (body.orden !== undefined) data.orden = body.orden
   if (body.activo !== undefined) data.activo = body.activo
 

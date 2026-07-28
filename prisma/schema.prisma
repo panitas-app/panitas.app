@@ -1379,19 +1379,23 @@ model PotentialClientReminder {
 // ═══════════════════════════════════════════════════════════════════════
 
 model SalesSection {
-  id          String   @id @default(cuid())
-  nombre      String
-  descripcion String?
-  icono       String?
-  orden       Int      @default(0)
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  nombre        String
+  descripcion   String?
+  icono         String?
+  route         String?
+  guiaVendedor  String?
+  tipo          String   @default("questions")
+  orden         Int      @default(0)
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   questions SalesQuestion[]
   sessions  SalesSession[]
 
   @@index([orden])
+  @@index([route])
 }
 
 model SalesQuestion {
@@ -1408,6 +1412,7 @@ model SalesQuestion {
   categoria       String?
   placeholder     String?
   maxChars        Int?
+  metadata        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   sectionId       String
@@ -1420,22 +1425,24 @@ model SalesQuestion {
 }
 
 model SalesSession {
-  id              String   @id @default(cuid())
-  estado          String   @default("en_curso")
-  puntuacion      Int      @default(0)
-  temperatura     String   @default("frio")
-  planRecomendado String?
-  resumen         String?
-  objeciones      String?
+  id               String   @id @default(cuid())
+  estado           String   @default("en_curso")
+  puntuacion       Int      @default(0)
+  temperatura      String   @default("frio")
+  planSeleccionado String?
+  routeSeleccionada String?
+  planRecomendado  String?
+  resumen          String?
+  objeciones       String?
   notasAdicionales String?
-  completadaAt    DateTime?
-  adminId         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  prospectId      String
-  prospect        PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  sectionId       String?
-  section         SalesSection?   @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  completadaAt     DateTime?
+  adminId          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  prospectId       String
+  prospect         PotentialClient @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  sectionId        String?
+  section          SalesSection?   @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
   answers SalesAnswer[]
 
@@ -1467,6 +1474,7 @@ model SalesScoringRule {
   valor       String
   puntos      Int      @default(0)
   operador    String   @default("equals")
+  route       String?
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1477,6 +1485,7 @@ model SalesScoringRule {
 model SalesPlanRecommendation {
   id            String   @id @default(cuid())
   plan          String
+  route         String?
   minPuntuacion Int      @default(0)
   maxPuntuacion Int?
   condiciones   String?
