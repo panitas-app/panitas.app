@@ -104,11 +104,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         planSeleccionado: body.planSeleccionado || null,
         routeSeleccionada,
       },
-      include: {
-        answers: {
-          include: { question: true },
-        },
-      },
     })
 
     const sections = await prisma.salesSection.findMany({
@@ -122,9 +117,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       orderBy: { orden: "asc" },
     })
 
-    return NextResponse.json({ session, sections }, { status: 201 })
+    return NextResponse.json({ session: { ...session, answers: [] }, sections }, { status: 201 })
   } catch (error) {
     console.error("[admin session POST]", error)
-    return NextResponse.json({ error: "Error al crear sesion" }, { status: 500 })
+    const msg = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: `Error al crear sesion: ${msg}` }, { status: 500 })
   }
 }

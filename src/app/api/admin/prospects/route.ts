@@ -101,10 +101,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(prospect, { status: 201 })
   } catch (error) {
     console.error("[admin prospects POST]", error)
-    const msg =
-      process.env.NODE_ENV === "development"
-        ? `Error al crear prospecto: ${error instanceof Error ? error.message : String(error)}`
-        : "Error al crear prospecto"
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const msg = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: `Error al crear prospecto: ${msg}` }, { status: 500 })
   }
 }
