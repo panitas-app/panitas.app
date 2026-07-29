@@ -361,25 +361,39 @@ export function ProductForm({
         setScannerToken(data.token)
 
         setScannerStatus("connected")
-        try {
-          scannerRef.current = new Html5Qrcode("scanner-viewport")
-          await scannerRef.current.start(
-            { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 280, height: 150 } },
-            (decodedText) => {
-              const code = decodedText.trim()
-              const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-              if (barcodeInput) {
-                setNativeInputValue(barcodeInput, code)
-                toast.success(`Código escaneado: ${code}`)
-              }
-            },
-            () => {}
-          )
-        } catch {
-          setScannerStatus("error")
-          setScannerErrorMsg("Error al iniciar la cámara. Reinicia la página e intenta de nuevo.")
+        const startMobileCamera = async (attempts = 0) => {
+          const el = document.getElementById("scanner-viewport")
+          if (!el && attempts < 10) {
+            setTimeout(() => startMobileCamera(attempts + 1), 100)
+            return
+          }
+          if (!el) {
+            setScannerStatus("error")
+            setScannerErrorMsg("No se encontró el visor de la cámara.")
+            return
+          }
+          try {
+            const scanner = new Html5Qrcode("scanner-viewport")
+            scannerRef.current = scanner
+            await scanner.start(
+              { facingMode: "environment" },
+              { fps: 15, qrbox: { width: 280, height: 150 } },
+              (decodedText) => {
+                const code = decodedText.trim()
+                const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+                if (barcodeInput) {
+                  setNativeInputValue(barcodeInput, code)
+                  toast.success(`Código escaneado: ${code}`)
+                }
+              },
+              () => {}
+            )
+          } catch {
+            setScannerStatus("error")
+            setScannerErrorMsg("No se pudo iniciar la cámara en vivo. Intenta subir una foto clara del código.")
+          }
         }
+        startMobileCamera()
       } catch {
         setScannerStatus("error")
         setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
@@ -440,6 +454,44 @@ export function ProductForm({
     }
   }
 
+  async function resizeImageForScanning(file: File): Promise<File | Blob> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const maxDim = 1200
+        let { width, height } = img
+        if (width <= maxDim && height <= maxDim) {
+          resolve(file)
+          return
+        }
+        if (width > height) {
+          height = Math.round((height * maxDim) / width)
+          width = maxDim
+        } else {
+          width = Math.round((width * maxDim) / height)
+          height = maxDim
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) { resolve(file); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: "image/jpeg" }))
+          } else {
+            resolve(file)
+          }
+        }, "image/jpeg", 0.9)
+      }
+      img.onerror = () => resolve(file)
+      img.src = url
+    })
+  }
+
   function scanBarcodeFromFile() {
     const input = document.createElement("input")
     input.type = "file"
@@ -451,7 +503,8 @@ export function ProductForm({
       if (!file) return
 
       try {
-        const code = await (Html5Qrcode as any).scanFile(file, false)
+        const resized = await resizeImageForScanning(file)
+        const code = await (Html5Qrcode as any).scanFile(resized, false)
         const trimmed = code.trim()
         const barcodeInput = document.getElementById("barcode") as HTMLInputElement
         if (barcodeInput) {
@@ -459,7 +512,17 @@ export function ProductForm({
           toast.success(`Código escaneado: ${trimmed}`)
         }
       } catch {
-        toast.error("No se pudo leer el código de barras. Asegúrate de que la imagen sea clara.")
+        try {
+          const code = await (Html5Qrcode as any).scanFile(file, false)
+          const trimmed = code.trim()
+          const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+          if (barcodeInput) {
+            setNativeInputValue(barcodeInput, trimmed)
+            toast.success(`Código escaneado: ${trimmed}`)
+          }
+        } catch {
+          toast.error("No se pudo leer el código de barras. Asegúrate de que la imagen sea clara y bien enfocada.")
+        }
       }
     }
 
