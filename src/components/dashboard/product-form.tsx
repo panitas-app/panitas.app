@@ -326,42 +326,33 @@ export function ProductForm({
     const mobile = isTouchMobile()
     setIsMobileMode(mobile)
 
-    // On mobile, check if camera is available (HTTPS required for getUserMedia)
-    let cameraAvailable = false
     if (mobile) {
-      if (!window.isSecureContext) {
-        // HTTP — getUserMedia blocked. Show QR so user can scan with another device.
-        // We skip the QR-generating path below, but still need to create the session.
-      } else {
-        // Request camera permission while still in user-gesture context
-        try {
-          const tempStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-          })
-          tempStream.getTracks().forEach(t => t.stop())
-          cameraAvailable = true
-        } catch {
-          // Camera denied or unavailable — fall back to QR flow
-        }
-      }
-    }
-
-    try {
-      const res = await fetch("/api/scanner/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      })
-      if (!res.ok) {
-        setScannerStatus("error")
-        setScannerErrorMsg("Error al crear la sesión. Verifica tu conexión.")
+      // On mobile, try real-time camera first (works on HTTPS/localhost)
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        })
+        tempStream.getTracks().forEach(t => t.stop())
+      } catch {
+        // Camera unavailable (HTTP or denied) — use file-based one-shot scan
+        setScannerOpen(false)
+        setScannerStatus("idle")
+        scanBarcodeFromFile()
         return
       }
-      const data = await res.json()
-      setScannerSessionId(data.sessionId)
-      setScannerToken(data.token)
 
-      if (mobile && cameraAvailable) {
+      // Camera available — create session and start real-time scanner
+      try {
+        const res = await fetch("/api/scanner/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        })
+        if (!res.ok) { setScannerStatus("error"); setScannerErrorMsg("Error al crear la sesión."); return }
+        const data = await res.json()
+        setScannerSessionId(data.sessionId)
+        setScannerToken(data.token)
+
         setScannerStatus("connected")
         try {
           scannerRef.current = new Html5Qrcode("scanner-viewport")
@@ -383,47 +374,91 @@ export function ProductForm({
           setScannerStatus("error")
           setScannerErrorMsg("Error al iniciar la cámara. Reinicia la página e intenta de nuevo.")
         }
-      } else {
-        setScannerStatus("idle")
-        setScannerQrUrl(`${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`)
+      } catch {
+        setScannerStatus("error")
+        setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
+      }
+      return
+    }
 
-        const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
-        if (pusherKey) {
-          try {
-            const pusher = new Pusher(pusherKey, {
-              cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
-            })
-            pusherRef.current = pusher
-            const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+    // Desktop path: create session + show QR
+    try {
+      const res = await fetch("/api/scanner/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) { setScannerStatus("error"); setScannerErrorMsg("Error al crear la sesión."); return }
+      const data = await res.json()
+      setScannerSessionId(data.sessionId)
+      setScannerToken(data.token)
 
-            channel.bind("barcode_scanned", (d: any) => {
-              const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-              if (barcodeInput) {
-                barcodeInput.value = d.barcode
-                barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
-                toast.success(`Código escaneado: ${d.barcode}`)
-              }
-            })
+      setScannerStatus("idle")
+      setScannerQrUrl(`${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`)
 
-            channel.bind("phone_connected", () => {
-              setScannerStatus("connected")
-            })
+      const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
+      if (pusherKey) {
+        try {
+          const pusher = new Pusher(pusherKey, {
+            cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
+          })
+          pusherRef.current = pusher
+          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
 
-            channel.bind("phone_disconnected", () => {
-              if (!isMobileMode) {
-                cleanupProductScanner()
-                setScannerOpen(false)
-              }
-            })
-          } catch {
-            console.warn("[scanner] Error al conectar con Pusher")
-          }
+          channel.bind("barcode_scanned", (d: any) => {
+            const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+            if (barcodeInput) {
+              barcodeInput.value = d.barcode
+              barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+              toast.success(`Código escaneado: ${d.barcode}`)
+            }
+          })
+
+          channel.bind("phone_connected", () => {
+            setScannerStatus("connected")
+          })
+
+          channel.bind("phone_disconnected", () => {
+            if (!isMobileMode) {
+              cleanupProductScanner()
+              setScannerOpen(false)
+            }
+          })
+        } catch {
+          console.warn("[scanner] Error al conectar con Pusher")
         }
       }
     } catch {
       setScannerStatus("error")
       setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
     }
+  }
+
+  function scanBarcodeFromFile() {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/*"
+    ;(input as any).capture = "environment"
+
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+
+      try {
+        const code = await Html5Qrcode.scanFile(file, false)
+        const trimmed = code.trim()
+        const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+        if (barcodeInput) {
+          barcodeInput.value = trimmed
+          barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+          toast.success(`Código escaneado: ${trimmed}`)
+        }
+      } catch {
+        toast.error("No se pudo leer el código de barras. Asegúrate de que la imagen sea clara.")
+      }
+    }
+
+    input.click()
   }
 
   function stopScannerCamera() {
@@ -1374,9 +1409,7 @@ export function ProductForm({
           ) : (
             <div className="py-4 space-y-4 text-center">
               <p className="text-sm text-muted-foreground">
-                {isMobileMode
-                  ? "La cámara no está disponible (requiere HTTPS). Escanea este QR con otro teléfono o usa tu computadora."
-                  : "Escanea este código QR con la cámara de tu teléfono para usarlo como lector."}
+                Escanea este código QR con la cámara de tu teléfono para usarlo como lector.
               </p>
               <div className="flex justify-center">
                 <canvas ref={qrCanvasRef} className="rounded-lg border border-border" />
