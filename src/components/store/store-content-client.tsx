@@ -15,6 +15,7 @@ interface ProductData {
   price: number
   images: string[]
   stock: number | null
+  productType?: string
   category?: { id: string; name: string; slug: string } | null
 }
 
@@ -107,8 +108,9 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
   const templateId = store.template || "modern"
 
   function handleAddToCart(product: ProductData) {
+    const isDigital = product.productType === "digital"
     const existing = cart.find((i) => i.productId === product.id)
-    if (product.stock !== null) {
+    if (!isDigital && product.stock !== null) {
       if (existing && existing.quantity >= product.stock) {
         import("sonner").then(({ toast }) =>
           toast.error(`Solo quedan ${product.stock} unidades disponibles.`)
@@ -133,7 +135,8 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
   function handleUpdateQty(productId: string, qty: number) {
     if (qty <= 0) { handleRemove(productId); return }
     const product = products.find((p) => p.id === productId)
-    if (product && product.stock !== null && qty > product.stock) {
+    const isDigital = product?.productType === "digital"
+    if (product && !isDigital && product.stock !== null && qty > product.stock) {
       import("sonner").then(({ toast }) =>
         toast.error(`Solo quedan ${product.stock} unidades disponibles.`)
       )

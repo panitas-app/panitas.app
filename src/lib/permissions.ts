@@ -89,12 +89,12 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
 
       // Asegurar que existan los planes por defecto (sin transacciones para Neon HTTP)
       for (const p of [
-        { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-        { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
-        { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
-        { id: "basico", nombre: "basico", label: "Agenda", precioUsd: 15, precioUsdAnual: 150, sortOrder: 1 },
-        { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 25, precioUsdAnual: 250, sortOrder: 2 },
-        { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 45, precioUsdAnual: 450, sortOrder: 3 },
+        { id: "agenda", nombre: "agenda", label: "Agenda", precioUsd: 14.99, precioUsdAnual: 149.90, sortOrder: 1 },
+        { id: "comercio", nombre: "comercio", label: "Emprendedor", precioUsd: 19.99, precioUsdAnual: 199.90, sortOrder: 2 },
+        { id: "mayorista", nombre: "mayorista", label: "Mayorista", precioUsd: 49.99, precioUsdAnual: 499.90, sortOrder: 3 },
+        { id: "basico", nombre: "basico", label: "Agenda", precioUsd: 14.99, precioUsdAnual: 149.90, sortOrder: 1 },
+        { id: "negocio", nombre: "negocio", label: "Emprendedor", precioUsd: 19.99, precioUsdAnual: 199.90, sortOrder: 2 },
+        { id: "empresarial", nombre: "empresarial", label: "Mayorista", precioUsd: 49.99, precioUsdAnual: 499.90, sortOrder: 3 },
       ]) {
         await planFindOrCreate(p)
       }

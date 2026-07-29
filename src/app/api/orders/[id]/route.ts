@@ -51,7 +51,7 @@ export async function GET(
     const [items, payments, store] = await Promise.all([
       prisma.orderItem.findMany({
         where: { orderId: id },
-        include: { product: { select: { name: true, price: true, images: true } } },
+        include: { product: { select: { name: true, price: true, images: true, productType: true } } },
       }),
       prisma.orderPayment.findMany({
         where: { orderId: id },
@@ -63,7 +63,12 @@ export async function GET(
       }),
     ])
 
-    return NextResponse.json({ ...order, items, payments, store })
+    const digitalDeliveries = await prisma.digitalDelivery.findMany({
+      where: { orderItem: { orderId: id } },
+      include: { orderItem: { select: { id: true, productName: true } } },
+    })
+
+    return NextResponse.json({ ...order, items, payments, store, digitalDeliveries })
   } catch (error) {
     console.error("Error fetching order:", error)
     return NextResponse.json({ error: "Error al cargar el pedido" }, { status: 500 })

@@ -4,6 +4,7 @@ export interface ProductData {
   price: number
   images: string[]
   stock: number | null
+  productType?: string
   category?: { id: string; name: string; slug: string } | null
 }
 

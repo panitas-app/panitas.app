@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
 
   let itemsData: Array<{ productId: string; quantity: number; price: number; subtotal: number; productName: string }> = []
   let couponId: string | null = null
+  let productMap = new Map<string, { id: string; stock: number; name: string; price: number; isActive: boolean; productType: string }>()
 
   try {
     let body: any
@@ -54,9 +55,9 @@ export async function POST(request: NextRequest) {
     if (productIds.length !== body.items.length) return jsonError("Productos inválidos", 400)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, storeId },
-      select: { id: true, stock: true, name: true, price: true, isActive: true },
+      select: { id: true, stock: true, name: true, price: true, isActive: true, productType: true },
     })
-    const productMap = new Map(products.map((p) => [p.id, p]))
+    productMap = new Map(products.map((p) => [p.id, p]))
 
     // Check missing / inactive
     const missingIds = productIds.filter((id: string) => !productMap.has(id))
@@ -64,12 +65,19 @@ export async function POST(request: NextRequest) {
 
     // Validate quantities and build item items
     itemsData = []
+    let hasDigital = false
+    let hasPhysical = false
     for (const item of body.items) {
       const product = productMap.get(item.productId)!
       if (!product.isActive) return jsonError(`El producto "${product.name}" ya no está disponible.`, 400)
       const qty = parseInt(String(item.quantity), 10)
       if (!Number.isInteger(qty) || qty <= 0 || qty > MAX_QTY_PER_ITEM) return jsonError("Cantidad no válida", 400)
-      if (product.stock < qty) return jsonError(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado: ${qty}`, 400)
+      if (product.productType !== "digital") {
+        if (product.stock < qty) return jsonError(`Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado: ${qty}`, 400)
+        hasPhysical = true
+      } else {
+        hasDigital = true
+      }
       itemsData.push({
         productId: product.id,
         quantity: qty,
@@ -82,9 +90,12 @@ export async function POST(request: NextRequest) {
     // ─── Calculate totals server-side ───
     const subtotal = itemsData.reduce((sum, i) => sum + i.subtotal, 0)
 
+    // Digital-only orders skip shipping
+    const isDigitalOnly = hasDigital && !hasPhysical
+
     // Server-side Shipping Validation (protects against client modifications)
     const allowedShippingMethods = ["pickup_agency", "pickup_store", "delivery"]
-    const shippingMethod = allowedShippingMethods.includes(body.shippingMethod) ? body.shippingMethod : "pickup_agency"
+    const shippingMethod = isDigitalOnly ? "pickup_store" : (allowedShippingMethods.includes(body.shippingMethod) ? body.shippingMethod : "pickup_agency")
     const storeObj = storeExists as any
     let shippingCost = 0
 
@@ -162,8 +173,10 @@ export async function POST(request: NextRequest) {
       customerId = newCustomer.id
     }
 
-    // 2. Validate and decrement stock sequentially
+    // 2. Validate and decrement stock sequentially (skip digital)
     for (const item of itemsData) {
+      const product = productMap.get(item.productId)
+      if (product?.productType === "digital") continue
       const prod = await prisma.product.findUnique({
         where: { id: item.productId },
         select: { name: true, stock: true },
@@ -305,8 +318,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(finalOrder, { status: 201 })
   } catch (error: any) {
-    // Restore stock and coupon on failure to prevent orphaned data
+    // Restore stock and coupon on failure to prevent orphaned data (skip digital)
     for (const item of itemsData) {
+      const product = productMap.get(item.productId)
+      if (product?.productType === "digital") continue
       await prisma.product.update({
         where: { id: item.productId },
         data: { stock: { increment: item.quantity } },

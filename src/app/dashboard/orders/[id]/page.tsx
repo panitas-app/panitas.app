@@ -54,7 +54,18 @@ interface OrderItem {
   quantity: number
   price: number
   subtotal: number
-  product: { name: string } | null
+  product: { name: string; productType?: string } | null
+}
+
+interface DigitalDelivery {
+  id: string
+  token: string
+  expiresAt: string | null
+  downloadCount: number
+  maxDownloads: number
+  firstDownloadedAt: string | null
+  lastDownloadedAt: string | null
+  orderItem: { id: string; productName: string }
 }
 
 interface Order {
@@ -82,6 +93,7 @@ interface Order {
   createdAt: string
   items: OrderItem[]
   payments: Payment[]
+  digitalDeliveries?: DigitalDelivery[]
   store: { name: string; whatsapp: string | null; email: string | null; phone: string | null }
 }
 
@@ -648,18 +660,63 @@ export default function OrderDetailPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
-            {order.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-6 py-3 text-sm">
-                <div>
-                  <span className="font-medium">{item.product?.name || "Producto eliminado"}</span>
-                  <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+            {order.items.map((item) => {
+              const isDigital = item.product?.productType === "digital"
+              return (
+                <div key={item.id} className="flex items-center justify-between px-6 py-3 text-sm">
+                  <div>
+                    <span className="font-medium">{item.product?.name || "Producto eliminado"}</span>
+                    <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                    {isDigital && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Digital</span>
+                    )}
+                  </div>
+                  <span className="font-semibold">${item.subtotal.toFixed(2)}</span>
                 </div>
-                <span className="font-semibold">${item.subtotal.toFixed(2)}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {/* Digital Deliveries */}
+      {order.digitalDeliveries && order.digitalDeliveries.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Package className="size-4" />
+              Entregas digitales
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {order.digitalDeliveries.map((dd) => (
+                <div key={dd.id} className="px-6 py-3 text-sm space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{dd.orderItem.productName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Descargas: {dd.downloadCount}/{dd.maxDownloads || "∞"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {dd.firstDownloadedAt && <span>1er descarga: {formatDate(dd.firstDownloadedAt)}</span>}
+                    {dd.lastDownloadedAt && <span>Última: {formatDate(dd.lastDownloadedAt)}</span>}
+                    {dd.expiresAt && new Date(dd.expiresAt) > new Date() && (
+                      <span className="text-amber-600">Expira: {formatDate(dd.expiresAt)}</span>
+                    )}
+                    {dd.expiresAt && new Date(dd.expiresAt) <= new Date() && (
+                      <span className="text-destructive">Expirado</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground font-mono break-all">
+                    Token: {dd.token}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

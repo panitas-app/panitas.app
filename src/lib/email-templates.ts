@@ -530,6 +530,25 @@ export function templateAppointmentRescheduled({
   `
 }
 
+// ─── DIGITAL DOWNLOAD READY ──────────────────────────────────────────
+
+export function templateDigitalDownloadReady(
+  clienteNombre: string,
+  storeName: string,
+  items: string, // HTML de tabla con productos + links
+  message?: string
+) {
+  return `
+    <h2>¡Tu compra digital está lista!</h2>
+    <p>Hola <strong>${clienteNombre}</strong>,</p>
+    <p>Gracias por tu compra en <strong>${storeName}</strong>.</p>
+    <p>Tus productos digitales ya están disponibles para descargar:</p>
+    ${items}
+    ${message ? `<p style="margin-top:16px;padding:12px;background:#f0f4ff;border-radius:8px;font-size:13px;color:#102A43">${message}</p>` : ""}
+    <p style="color:#6b7280;font-size:12px;margin-top:16px">Los enlaces de descarga expirarán después del tiempo configurado por el vendedor.</p>
+  `
+}
+
 // ─── PASSWORD RESET ──────────────────────────────────────────────────
 
 export function templatePasswordReset(nombre: string, codigo: string, link: string) {

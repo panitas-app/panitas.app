@@ -107,6 +107,43 @@ export async function PUT(
     data.categoryId = typeof body.categoryId === "string" ? body.categoryId.slice(0, 64) : null
   }
 
+  if (body.productType !== undefined) {
+    data.productType = body.productType === "digital" ? "digital" : "physical"
+    if (data.productType === "digital") {
+      data.stock = 999999
+      data.isWholesale = false
+      data.hasSizes = false
+      data.sizes = null
+      data.wholesaleLabel = null
+      data.wholesalePrice = null
+      data.wholesaleScales = null
+    }
+  }
+
+  if (body.digitalProduct !== undefined && data.productType === "digital") {
+    const dp = body.digitalProduct
+    if (dp === null) {
+      await prisma.digitalProduct.deleteMany({ where: { productId: id } })
+    } else if (dp && typeof dp === "object") {
+      if (typeof dp.fileUrl !== "string" || !dp.fileUrl.trim()) {
+        return NextResponse.json({ error: "La URL del archivo digital es requerida" }, { status: 400 })
+      }
+      const upsertData: any = {
+        fileUrl: dp.fileUrl.slice(0, 2048),
+        fileType: typeof dp.fileType === "string" ? dp.fileType.slice(0, 20) : null,
+        downloadLimit: typeof dp.downloadLimit === "number" ? Math.max(0, dp.downloadLimit) : 5,
+        expirationDays: typeof dp.expirationDays === "number" ? Math.max(0, dp.expirationDays) : 30,
+        instructions: typeof dp.instructions === "string" ? dp.instructions.slice(0, 2000) : null,
+        purchaseMessage: typeof dp.purchaseMessage === "string" ? dp.purchaseMessage.slice(0, 2000) : null,
+      }
+      await prisma.digitalProduct.upsert({
+        where: { productId: id },
+        create: { ...upsertData, productId: id },
+        update: upsertData,
+      })
+    }
+  }
+
   if (body.isWholesale !== undefined) data.isWholesale = safeBool(body.isWholesale)
   if (body.wholesaleLabel !== undefined) {
     data.wholesaleLabel = typeof body.wholesaleLabel === "string" ? body.wholesaleLabel.slice(0, 100) : null

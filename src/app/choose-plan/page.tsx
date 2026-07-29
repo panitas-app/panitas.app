@@ -21,7 +21,7 @@ const plans = [
   {
     id: "agenda",
     name: "Plan Agenda",
-    price: 15,
+    price: 14.99,
     installmentAmount: 9,
     tagline: "Reserva y organiza con inteligencia",
     description:
@@ -39,8 +39,8 @@ const plans = [
   {
     id: "comercio",
     name: "Plan Emprendedor",
-    price: 25,
-    installmentAmount: 14,
+    price: 19.99,
+    installmentAmount: 12,
     tagline: "Tu negocio todo-en-uno",
     description:
       "La solución completa para emprendedores que quieren vender online, agendar citas y gestionar clientes desde un solo lugar. Tienda web + agenda + CRM.",
@@ -63,8 +63,8 @@ const plans = [
   {
     id: "mayorista",
     name: "Plan Mayorista",
-    price: 45,
-    installmentAmount: 25,
+    price: 49.99,
+    installmentAmount: 27.50,
     tagline: "Escala sin límites",
     description:
       "Solución enterprise para distribuidoras y mayoristas que necesitan control B2B, automatizaciones y gestión de comisiones. Todo lo que necesitas para escalar.",

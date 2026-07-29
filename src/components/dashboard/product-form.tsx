@@ -67,6 +67,15 @@ export function ProductForm({
   const [charCount, setCharCount] = useState(0)
   const lastValidHtmlRef = useRef(product?.description || "")
 
+  // Digital product states
+  const [productType, setProductType] = useState<string>((product as any)?.productType || "physical")
+  const [digitalFileUrl, setDigitalFileUrl] = useState((product as any)?.digitalProduct?.fileUrl || "")
+  const [digitalFileType, setDigitalFileType] = useState((product as any)?.digitalProduct?.fileType || "pdf")
+  const [digitalDownloadLimit, setDigitalDownloadLimit] = useState((product as any)?.digitalProduct?.downloadLimit ?? 5)
+  const [digitalExpirationDays, setDigitalExpirationDays] = useState((product as any)?.digitalProduct?.expirationDays ?? 30)
+  const [digitalInstructions, setDigitalInstructions] = useState((product as any)?.digitalProduct?.instructions || "")
+  const [digitalPurchaseMessage, setDigitalPurchaseMessage] = useState((product as any)?.digitalProduct?.purchaseMessage || "")
+
   // Wholesale states
   const [isWholesale, setIsWholesale] = useState(product?.isWholesale || false)
   const [wholesaleLabel, setWholesaleLabel] = useState(product?.wholesaleLabel || "")
@@ -298,15 +307,24 @@ export function ProductForm({
       categoryId: selectedCategory === "empty" || !selectedCategory ? null : selectedCategory,
       isActive: form.get("isActive") === "on",
       images: images,
-      isWholesale,
-      wholesaleLabel: isWholesale ? wholesaleLabel : null,
-      wholesalePrice: isWholesale ? wholesalePrice : null,
-      wholesaleScales: isWholesale ? priceScales.map((scale) => ({
+      productType,
+      digitalProduct: productType === "digital" ? {
+        fileUrl: digitalFileUrl,
+        fileType: digitalFileType,
+        downloadLimit: digitalDownloadLimit,
+        expirationDays: digitalExpirationDays,
+        instructions: digitalInstructions || null,
+        purchaseMessage: digitalPurchaseMessage || null,
+      } : null,
+      isWholesale: productType === "physical" ? isWholesale : false,
+      wholesaleLabel: productType === "physical" && isWholesale ? wholesaleLabel : null,
+      wholesalePrice: productType === "physical" && isWholesale ? wholesalePrice : null,
+      wholesaleScales: productType === "physical" && isWholesale ? priceScales.map((scale) => ({
         quantity: parseInt(scale.quantity) || 0,
         price: parseFloat(scale.price) || 0,
       })) : [],
-      hasSizes,
-      sizes: hasSizes ? sizes : [],
+      hasSizes: productType === "physical" ? hasSizes : false,
+      sizes: productType === "physical" && hasSizes ? sizes : [],
     }
 
     try {
@@ -648,6 +666,135 @@ export function ProductForm({
           </div>
 
           <div className="h-px bg-border my-1 w-full" />
+
+          {/* Product Type Toggle */}
+          <div className="rounded-2xl bg-muted p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-extrabold text-accent">Tipo de producto</span>
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Físico o Digital</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setProductType("physical")}
+                className={`flex-1 rounded-xl py-3 text-sm font-bold transition-all ${
+                  productType === "physical"
+                    ? "bg-primary text-accent shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                Físico
+              </button>
+              <button
+                type="button"
+                onClick={() => setProductType("digital")}
+                className={`flex-1 rounded-xl py-3 text-sm font-bold transition-all ${
+                  productType === "digital"
+                    ? "bg-primary text-accent shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                Digital
+              </button>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {productType === "digital" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="rounded-2xl bg-muted p-4 space-y-4 overflow-hidden"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="fileUrl" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    URL del archivo *
+                  </Label>
+                  <Input
+                    id="fileUrl"
+                    value={digitalFileUrl}
+                    onChange={(e) => setDigitalFileUrl(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                    className="rounded-xl bg-muted focus-visible:ring-primary h-11 text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Google Drive, S3, R2 o cualquier URL externa</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tipo de archivo</Label>
+                    <select
+                      value={digitalFileType}
+                      onChange={(e) => setDigitalFileType(e.target.value)}
+                      className="w-full rounded-xl bg-muted h-11 text-sm px-3.5 focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none cursor-pointer font-medium"
+                    >
+                      <option value="pdf">PDF</option>
+                      <option value="zip">ZIP</option>
+                      <option value="mp4">Video (MP4)</option>
+                      <option value="mp3">Audio (MP3)</option>
+                      <option value="jpg">Imagen (JPG)</option>
+                      <option value="png">Imagen (PNG)</option>
+                      <option value="xlsx">Excel (XLSX)</option>
+                      <option value="docx">Word (DOCX)</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Límite de descargas
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={digitalDownloadLimit}
+                      onChange={(e) => setDigitalDownloadLimit(parseInt(e.target.value) || 0)}
+                      placeholder="5"
+                      className="rounded-xl bg-muted focus-visible:ring-primary h-11 text-sm"
+                    />
+                    <p className="text-[10px] text-muted-foreground">0 = ilimitado</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Expiración (días)
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={digitalExpirationDays}
+                      onChange={(e) => setDigitalExpirationDays(parseInt(e.target.value) || 0)}
+                      placeholder="30"
+                      className="rounded-xl bg-muted focus-visible:ring-primary h-11 text-sm"
+                    />
+                    <p className="text-[10px] text-muted-foreground">0 = nunca expira</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Instrucciones para el comprador
+                  </Label>
+                  <textarea
+                    value={digitalInstructions}
+                    onChange={(e) => setDigitalInstructions(e.target.value)}
+                    placeholder="Ej: Abre el archivo con Adobe Acrobat Reader..."
+                    className="w-full rounded-xl bg-muted p-3.5 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-y"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Mensaje post-compra
+                  </Label>
+                  <textarea
+                    value={digitalPurchaseMessage}
+                    onChange={(e) => setDigitalPurchaseMessage(e.target.value)}
+                    placeholder="Ej: Gracias por tu compra. Esperamos que disfrutes el contenido."
+                    className="w-full rounded-xl bg-muted p-3.5 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-y"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Wholesale Toggle Section */}
           <div className="rounded-2xl  bg-muted p-4 space-y-4">

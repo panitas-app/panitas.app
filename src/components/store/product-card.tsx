@@ -10,6 +10,7 @@ interface ProductCardProduct {
   price: number
   images: string[]
   stock: number | null
+  productType?: string
   category?: { id: string; name: string; slug: string } | null
 }
 
@@ -22,7 +23,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onAddToCart, bcvRate, accentColor, showBolivares = true }: ProductCardProps) {
-  const outOfStock = product.stock !== null && product.stock <= 0
+  const isDigital = product.productType === "digital"
+  const outOfStock = !isDigital && product.stock !== null && product.stock <= 0
   const imageUrl = product.images?.[0] || null
   const priceVes = product.price * bcvRate
 
@@ -42,7 +44,11 @@ export function ProductCard({ product, onAddToCart, bcvRate, accentColor, showBo
             <ImageOffIcon className="size-8" />
           </div>
         )}
-        {outOfStock ? (
+        {isDigital ? (
+          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-md border-0">
+            Digital
+          </Badge>
+        ) : outOfStock ? (
           <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-md border-0">
             Agotado
           </Badge>
@@ -83,7 +89,7 @@ export function ProductCard({ product, onAddToCart, bcvRate, accentColor, showBo
           style={!outOfStock ? { backgroundColor: accentColor } : {}}
         >
           <Plus className="size-3.5" />
-          {outOfStock ? "Agotado" : "Agregar"}
+          {outOfStock ? "Agotado" : isDigital ? "Agregar" : "Agregar"}
         </button>
       </div>
     </div>

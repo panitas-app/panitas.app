@@ -145,6 +145,24 @@ export async function POST(request: NextRequest) {
 
     const unidadBase = safeStr(body.unidadBase, 50) || "Unidad"
 
+    // Digital product fields
+    const productType = body.productType === "digital" ? "digital" : "physical"
+    let digitalProductData: any = undefined
+    if (productType === "digital" && body.digitalProduct) {
+      const dp = body.digitalProduct
+      if (typeof dp.fileUrl !== "string" || !dp.fileUrl.trim()) {
+        return NextResponse.json({ error: "La URL del archivo digital es requerida" }, { status: 400 })
+      }
+      digitalProductData = {
+        fileUrl: dp.fileUrl.slice(0, 2048),
+        fileType: typeof dp.fileType === "string" ? dp.fileType.slice(0, 20) : null,
+        downloadLimit: typeof dp.downloadLimit === "number" ? Math.max(0, dp.downloadLimit) : 5,
+        expirationDays: typeof dp.expirationDays === "number" ? Math.max(0, dp.expirationDays) : 30,
+        instructions: typeof dp.instructions === "string" ? dp.instructions.slice(0, 2000) : null,
+        purchaseMessage: typeof dp.purchaseMessage === "string" ? dp.purchaseMessage.slice(0, 2000) : null,
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -152,18 +170,20 @@ export async function POST(request: NextRequest) {
         price: price!,
         costPrice,
         sku: finalSku,
-        stock: stock ?? 0,
+        stock: productType === "digital" ? 999999 : (stock ?? 0),
         unidadBase,
+        productType,
         images: JSON.stringify(images || []),
         isActive: body.isActive !== false,
         categoryId: typeof body.categoryId === "string" ? body.categoryId.slice(0, 64) : null,
-        isWholesale,
-        wholesaleLabel,
-        wholesalePrice,
-        wholesaleScales: wholesaleScales ? JSON.stringify(wholesaleScales) : null,
-        hasSizes,
-        sizes: sizes ? JSON.stringify(sizes) : null,
+        isWholesale: productType === "physical" ? isWholesale : false,
+        wholesaleLabel: productType === "physical" ? wholesaleLabel : null,
+        wholesalePrice: productType === "physical" ? wholesalePrice : null,
+        wholesaleScales: productType === "physical" && wholesaleScales ? JSON.stringify(wholesaleScales) : null,
+        hasSizes: productType === "physical" ? hasSizes : false,
+        sizes: productType === "physical" && sizes ? JSON.stringify(sizes) : null,
         storeId: current.store.id,
+        ...(digitalProductData ? { digitalProduct: { create: digitalProductData } } : {}),
       },
     })
 

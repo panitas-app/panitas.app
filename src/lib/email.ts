@@ -26,6 +26,7 @@ import {
   templatePostPurchaseFollowUp,
   templateInactiveClientReactivation,
   templatePasswordReset,
+  templateDigitalDownloadReady,
 } from "@/lib/email-templates"
 
 const resend = new Resend(process.env.RESEND_API_KEY || "")
@@ -194,6 +195,17 @@ export async function enviarRecuperarContrasena(email: string, nombre: string, c
   return sendEmail(email, "Recupera tu contraseña — Panitas",
     templatePasswordReset(nombre, codigo, link),
     "password_reset")
+}
+
+export async function enviarLinkDescargaDigital(email: string, params: {
+  clienteNombre: string
+  storeName: string
+  itemsHtml: string
+  purchaseMessage?: string
+}) {
+  return sendEmail(email, `¡Tu compra digital está lista! — ${params.storeName}`,
+    templateDigitalDownloadReady(params.clienteNombre, params.storeName, params.itemsHtml, params.purchaseMessage),
+    "digital_download_ready")
 }
 
 // ─── CORE SEND ─────────────────────────────────────────────────────

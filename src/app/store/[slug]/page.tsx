@@ -179,6 +179,7 @@ export default async function StorePage({
       price: p.price,
       images: p.images,
       stock: p.stock,
+      productType: (p as any).productType || "physical",
       category: p.category ? {
         id: p.category.id,
         name: p.category.name,

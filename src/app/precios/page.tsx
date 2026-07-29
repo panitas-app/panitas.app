@@ -216,7 +216,7 @@ export default function PreciosPage() {
               <span className="text-3xl mb-3 block">✂️</span>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Eres profesional de servicios</h3>
               <p className="text-gray-600 mb-4">Barbería, peluquería, clínica, consultorio, spa. Necesitas agenda de citas online, recordatorios y gestión de profesionales.</p>
-              <p className="text-2xl font-bold text-gray-900 mb-4">$15/mes</p>
+              <p className="text-2xl font-bold text-gray-900 mb-4">$14.99/mes</p>
               <Link
                 href="/register?plan=agenda&utm_source=landing&utm_medium=organic&utm_campaign=precios"
                 className="block text-center px-6 py-3 bg-amber-400 text-gray-900 font-semibold rounded-lg hover:bg-amber-500 transition-colors"
@@ -229,7 +229,7 @@ export default function PreciosPage() {
               <span className="text-3xl mb-3 block">🏪</span>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Eres dueño de tienda o comercio</h3>
               <p className="text-gray-600 mb-4">Tienda online, POS, inventario, CRM y reportes. Todo lo que necesitas para vender online y en local.</p>
-              <p className="text-2xl font-bold text-gray-900 mb-4">$25/mes</p>
+              <p className="text-2xl font-bold text-gray-900 mb-4">$19.99/mes</p>
               <Link
                 href="/register?plan=emprendedor&utm_source=landing&utm_medium=organic&utm_campaign=precios"
                 className="block text-center px-6 py-3 bg-amber-400 text-gray-900 font-semibold rounded-lg hover:bg-amber-500 transition-colors"
@@ -241,7 +241,7 @@ export default function PreciosPage() {
               <span className="text-3xl mb-3 block">📦</span>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Eres distribuidor o mayorista</h3>
               <p className="text-gray-600 mb-4">Gestión B2B, precios por volumen, comisiones de vendedores, notas de entrega e inventario ilimitado.</p>
-              <p className="text-2xl font-bold text-gray-900 mb-4">$45/mes</p>
+              <p className="text-2xl font-bold text-gray-900 mb-4">$49.99/mes</p>
               <Link
                 href="/register?plan=mayorista&utm_source=landing&utm_medium=organic&utm_campaign=precios"
                 className="block text-center px-6 py-3 bg-amber-400 text-gray-900 font-semibold rounded-lg hover:bg-amber-500 transition-colors"
