@@ -473,11 +473,6 @@ async function processSale() {
               p.sku?.toLowerCase() === code.toLowerCase())
             if (found) {
               addToCart(found)
-              await fetch("/api/scanner/scan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ sessionId: data.sessionId, barcode: code }),
-              })
             } else {
               try {
                 const res = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)

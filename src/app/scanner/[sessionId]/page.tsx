@@ -80,6 +80,7 @@ function ScannerPage() {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const pusherRef = useRef<Pusher | null>(null)
   const scanningRef = useRef(false)
+  const lastScanTimeRef = useRef<{ code: string; time: number }>({ code: "", time: 0 })
 
   const connectToSession = useCallback(async () => {
     if (!sessionId || !token) {
@@ -138,17 +139,30 @@ function ScannerPage() {
         },
         async (decodedText) => {
           const code = decodedText.trim()
+          const now = Date.now()
+          if (lastScanTimeRef.current.code === code && now - lastScanTimeRef.current.time < 1500) {
+            return
+          }
+          lastScanTimeRef.current = { code, time: now }
+
           if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
           playBeep("scan")
           setLastScan({ barcode: code, status: "scanning" })
 
           try {
-            await fetch("/api/scanner/scan", {
+            const res = await fetch("/api/scanner/scan", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ sessionId, barcode: code }),
             })
-            setScanCount((c) => c + 1)
+            if (res.status === 410) {
+              stopCamera()
+              setStatus("expired")
+              return
+            }
+            if (res.ok) {
+              setScanCount((c) => c + 1)
+            }
           } catch {
             // silent — POS handles it
           }
