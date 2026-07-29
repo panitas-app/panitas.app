@@ -244,6 +244,21 @@ function ScannerPage() {
   const requestPermissionAndStart = useCallback(async () => {
     setErrorMsg("")
     setStatus("connecting")
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        stream.getTracks().forEach((t) => t.stop())
+        await new Promise((r) => setTimeout(r, 300))
+      }
+    } catch (err: any) {
+      const name = err?.name || ""
+      const msg = String(err?.message || err || "")
+      if (name === "NotAllowedError" || msg.includes("Permission denied")) {
+        setStatus("error")
+        setErrorMsg("Permiso de cámara denegado en tu navegador. Toca el candado 🔒 junto a la URL arriba, entra en Permisos -> Cámara y selecciona 'Permitir'. Luego presiona este botón.")
+        return
+      }
+    }
     await connectToSession()
   }, [connectToSession])
 
