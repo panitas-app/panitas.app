@@ -87,23 +87,12 @@ export function Navbar() {
       <header className="sticky top-0 z-50 w-full py-4 px-4 md:px-8" style={{ "--accent": "#102A43" } as React.CSSProperties}>
         <div className="absolute inset-0 bg-[#FFB92E]/85 backdrop-blur-2xl border-b border-white/20 shadow-lg shadow-black/5" />
 
-        <motion.div
-          animate={{
-            maxWidth: scrolled ? 1024 : 1280,
-            borderRadius: 0,
-            background: "transparent",
-            boxShadow: scrolled
-              ? "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)"
-              : "0 0 0 0 rgba(0,0,0,0)",
-            paddingLeft: scrolled ? 24 : 0,
-            paddingRight: scrolled ? 24 : 0,
-            paddingTop: scrolled ? 8 : 0,
-            paddingBottom: scrolled ? 8 : 0,
-            borderWidth: scrolled ? 1 : 0,
-            borderColor: scrolled ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0)",
-          }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mx-auto flex items-center justify-between h-14"
+        <div
+          className={`relative mx-auto flex items-center justify-between h-14 transition-all duration-300 ${
+            scrolled
+              ? "max-w-5xl px-6 py-2 border border-white/30 shadow-md rounded-2xl"
+              : "max-w-7xl px-0 py-0 border-transparent shadow-none"
+          }`}
         >
           {/* Logo */}
           <Link href="/" className="group flex items-center">
@@ -163,7 +152,7 @@ export function Navbar() {
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
-        </motion.div>
+        </div>
 
         {/* Mobile menu */}
         <AnimatePresence>

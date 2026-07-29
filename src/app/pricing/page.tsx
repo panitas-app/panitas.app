@@ -162,7 +162,7 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 * idx }}
-                className={`relative flex flex-col rounded-3xl glass-dark p-6 shadow-sm transition-all hover:shadow-md ${card.popular ? "border-2 border-primary shadow-xl shadow-primary/5 scale-[1.03]" : ""}`}
+                className={`relative flex flex-col rounded-3xl glass-dark p-6 shadow-sm transition-all hover:shadow-md gpu ${card.popular ? "border-2 border-primary shadow-xl shadow-primary/5 md:scale-[1.03]" : ""}`}
               >
                 {card.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">

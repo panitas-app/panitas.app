@@ -330,6 +330,8 @@
   backdrop-filter: var(--glass-blur, blur(16px));
   -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border: 1px solid var(--glass-border, rgba(0,0,0,0.05));
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @utility glass-dark {
@@ -337,6 +339,8 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: var(--glass-shadow, 0 8px 32px rgba(0,0,0,0.04));
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 @utility glass-card {
@@ -344,6 +348,37 @@
   backdrop-filter: var(--glass-blur, blur(14px));
   -webkit-backdrop-filter: var(--glass-blur, blur(14px));
   box-shadow: var(--glass-shadow, 0 8px 32px rgba(0,0,0,0.04));
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ── Mobile Performance Mode — High-efficiency glassmorphism ── */
+@media (max-width: 768px) {
+  @utility glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  @utility glass-dark {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  @utility glass-card {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  /* Reduce heavy backdrop blurs on mobile Tailwind classes */
+  .backdrop-blur-3xl {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+  .backdrop-blur-2xl {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+  .backdrop-blur-xl {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
 }
 
 @utility glass-glow-accent {
@@ -366,11 +401,22 @@
   }
 }
 
+/* ── GPU & Layout Performance Utilities ── */
+@utility gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@utility cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 400px;
+}
+
 /* ── Animations ── */
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(35px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 35px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes fade-in {
@@ -379,25 +425,29 @@
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 20px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @utility animate-fade-up {
   animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
 @utility animate-fade-in {
   animation: fade-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity;
 }
 
-/* ── Icon hover animations ── */
-
+/* ── Icon hover animations — Mouse only ── */
 button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
   transition: transform 0.2s ease;
 }
-button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, label:hover svg.lucide {
-  animation: icon-wobble 0.4s ease;
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, label:hover svg.lucide {
+    animation: icon-wobble 0.4s ease;
+  }
 }
 
 @keyframes icon-spin {
@@ -406,9 +456,9 @@ button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, l
 }
 
 @keyframes icon-bounce {
-  0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-6px); }
-  60% { transform: translateY(-3px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  40% { transform: translate3d(0, -6px, 0); }
+  60% { transform: translate3d(0, -3px, 0); }
 }
 
 @keyframes icon-wobble {
@@ -428,14 +478,16 @@ button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, l
   display: inline-block !important;
 }
 
-button:hover svg.icon-hover-spin, a:hover svg.icon-hover-spin, [role="button"]:hover svg.icon-hover-spin {
-  animation: icon-spin 1s linear infinite !important;
-}
+@media (hover: hover) and (pointer: fine) {
+  button:hover svg.icon-hover-spin, a:hover svg.icon-hover-spin, [role="button"]:hover svg.icon-hover-spin {
+    animation: icon-spin 1s linear infinite !important;
+  }
 
-button:hover svg.icon-hover-bounce, a:hover svg.icon-hover-bounce, [role="button"]:hover svg.icon-hover-bounce {
-  animation: icon-bounce 0.5s ease !important;
-}
+  button:hover svg.icon-hover-bounce, a:hover svg.icon-hover-bounce, [role="button"]:hover svg.icon-hover-bounce {
+    animation: icon-bounce 0.5s ease !important;
+  }
 
-button:hover svg.icon-hover-pulse, a:hover svg.icon-hover-pulse, [role="button"]:hover svg.icon-hover-pulse {
-  animation: icon-pulse 0.8s ease infinite !important;
+  button:hover svg.icon-hover-pulse, a:hover svg.icon-hover-pulse, [role="button"]:hover svg.icon-hover-pulse {
+    animation: icon-pulse 0.8s ease infinite !important;
+  }
 }

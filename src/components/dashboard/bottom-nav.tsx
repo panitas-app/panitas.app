@@ -43,7 +43,7 @@ export function BottomNav({ planType }: { planType: string }) {
   const items = getBottomNavItems(planType)
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 lg:hidden safe-bottom bg-background/95 backdrop-blur-xl border-t border-border/50 px-2 pb-1 pt-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 lg:hidden safe-bottom bg-background/95 backdrop-blur-xl border-t border-border/50 px-2 pb-1 pt-1 gpu">
       <div className="flex items-center justify-around">
         {items.map((item) => {
           const Icon = item.icon

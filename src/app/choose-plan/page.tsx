@@ -384,11 +384,9 @@ export default function ChoosePlanPage() {
                       onHoverStart={() => setHoveredId(plan.id)}
                       onHoverEnd={() => setHoveredId(null)}
                       onClick={() => setExpandedId(plan.id)}
-                      className="relative cursor-pointer overflow-hidden transition-all duration-500 select-none w-full"
+                      className="relative cursor-pointer overflow-hidden transition-all duration-500 select-none w-full gpu"
                       style={{
                         background: "rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(14px)",
-                        WebkitBackdropFilter: "blur(14px)",
                         border: isHovered ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(255,255,255,0.06)",
                         boxShadow: isHovered
                           ? "0 20px 60px rgba(0,0,0,0.3)"
