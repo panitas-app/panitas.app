@@ -128,18 +128,6 @@ function ScannerPage() {
     }
 
     try {
-      // 1. Explicitly prompt user for camera permission on Android/mobile if not yet granted
-      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        try {
-          const tempStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" } },
-          })
-          tempStream.getTracks().forEach((t) => t.stop())
-        } catch {
-          // Continue to scanner start attempt
-        }
-      }
-
       const scanner = new Html5Qrcode("scanner-viewport")
       scannerRef.current = scanner
 
@@ -177,7 +165,7 @@ function ScannerPage() {
 
       try {
         await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
-      } catch {
+      } catch (err1: any) {
         // Fallback for Android devices where facingMode constraint fails: use getCameras
         try {
           const cameras = await Html5Qrcode.getCameras()
@@ -190,12 +178,30 @@ function ScannerPage() {
           } else {
             await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
           }
-        } catch {
-          await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+        } catch (err2: any) {
+          const finalErr = err2 || err1
+          const errName = finalErr?.name || ""
+          const errText = String(finalErr?.message || finalErr || "")
+
+          if (errName === "NotAllowedError" || errText.includes("Permission denied")) {
+            setErrorMsg("Permiso de cámara denegado. Habilita el acceso a la cámara en el navegador y recarga la página.")
+          } else if (errName === "NotReadableError" || errText.includes("Could not start video source")) {
+            setErrorMsg("La cámara está siendo usada por otra app (ej: WhatsApp, Cámara). Ciérrala e intenta de nuevo.")
+          } else if (errName === "NotFoundError" || errText.includes("Requested device not found")) {
+            setErrorMsg("No se encontró una cámara compatible en tu dispositivo.")
+          } else {
+            setErrorMsg(`No se pudo iniciar la cámara: ${errText || "Error de hardware o permisos."}`)
+          }
+          setStatus("error")
+          scanningRef.current = false
+          if (scannerRef.current) {
+            try { scannerRef.current.clear() } catch {}
+            scannerRef.current = null
+          }
         }
       }
-    } catch (err) {
-      setErrorMsg("No se pudo acceder a la cámara. Revisa los permisos de la cámara en la configuración de tu navegador o teléfono.")
+    } catch (err: any) {
+      setErrorMsg(`No se pudo iniciar la cámara: ${err?.message || String(err)}`)
       setStatus("error")
       scanningRef.current = false
       if (scannerRef.current) {

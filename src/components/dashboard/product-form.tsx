@@ -341,14 +341,7 @@ export function ProductForm({
     setIsMobileMode(mobile)
 
     if (mobile) {
-      // On mobile, try real-time camera first (works on HTTPS/localhost)
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        })
-        tempStream.getTracks().forEach(t => t.stop())
-      } catch {
-        // Camera unavailable (HTTP or denied) — use file-based one-shot scan
+      if (typeof window !== "undefined" && !window.isSecureContext) {
         setScannerOpen(false)
         setScannerStatus("idle")
         scanBarcodeFromFile()
