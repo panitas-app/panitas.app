@@ -319,6 +319,20 @@ export function ProductForm({
     return window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
   }
 
+  function setNativeInputValue(inputEl: HTMLInputElement, value: string) {
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value"
+    )?.set
+    if (nativeSetter) {
+      nativeSetter.call(inputEl, value)
+    } else {
+      inputEl.value = value
+    }
+    inputEl.dispatchEvent(new Event("input", { bubbles: true }))
+    inputEl.dispatchEvent(new Event("change", { bubbles: true }))
+  }
+
   async function startProductScanner() {
     setScannerStatus("connecting")
     setScannerOpen(true)
@@ -363,8 +377,7 @@ export function ProductForm({
               const code = decodedText.trim()
               const barcodeInput = document.getElementById("barcode") as HTMLInputElement
               if (barcodeInput) {
-                barcodeInput.value = code
-                barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+                setNativeInputValue(barcodeInput, code)
                 toast.success(`Código escaneado: ${code}`)
               }
             },
@@ -409,8 +422,7 @@ export function ProductForm({
           channel.bind("barcode_scanned", (d: any) => {
             const barcodeInput = document.getElementById("barcode") as HTMLInputElement
             if (barcodeInput) {
-              barcodeInput.value = d.barcode
-              barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+              setNativeInputValue(barcodeInput, d.barcode)
               toast.success(`Código escaneado: ${d.barcode}`)
             }
           })
@@ -450,8 +462,7 @@ export function ProductForm({
         const trimmed = code.trim()
         const barcodeInput = document.getElementById("barcode") as HTMLInputElement
         if (barcodeInput) {
-          barcodeInput.value = trimmed
-          barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+          setNativeInputValue(barcodeInput, trimmed)
           toast.success(`Código escaneado: ${trimmed}`)
         }
       } catch {

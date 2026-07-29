@@ -128,49 +128,74 @@ function ScannerPage() {
     }
 
     try {
+      // 1. Explicitly prompt user for camera permission on Android/mobile if not yet granted
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        try {
+          const tempStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+          })
+          tempStream.getTracks().forEach((t) => t.stop())
+        } catch {
+          // Continue to scanner start attempt
+        }
+      }
+
       const scanner = new Html5Qrcode("scanner-viewport")
       scannerRef.current = scanner
 
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 15,
-          qrbox: { width: 280, height: 150 },
-        },
-        async (decodedText) => {
-          const code = decodedText.trim()
-          const now = Date.now()
-          if (lastScanTimeRef.current.code === code && now - lastScanTimeRef.current.time < 1500) {
+      const config = { fps: 15, qrbox: { width: 280, height: 150 } }
+      const onScanSuccess = async (decodedText: string) => {
+        const code = decodedText.trim()
+        const now = Date.now()
+        if (lastScanTimeRef.current.code === code && now - lastScanTimeRef.current.time < 1500) {
+          return
+        }
+        lastScanTimeRef.current = { code, time: now }
+
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
+        playBeep("scan")
+        setLastScan({ barcode: code, status: "scanning" })
+
+        try {
+          const res = await fetch("/api/scanner/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, barcode: code }),
+          })
+          if (res.status === 410) {
+            stopCamera()
+            setStatus("expired")
             return
           }
-          lastScanTimeRef.current = { code, time: now }
-
-          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
-          playBeep("scan")
-          setLastScan({ barcode: code, status: "scanning" })
-
-          try {
-            const res = await fetch("/api/scanner/scan", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ sessionId, barcode: code }),
-            })
-            if (res.status === 410) {
-              stopCamera()
-              setStatus("expired")
-              return
-            }
-            if (res.ok) {
-              setScanCount((c) => c + 1)
-            }
-          } catch {
-            // silent — POS handles it
+          if (res.ok) {
+            setScanCount((c) => c + 1)
           }
-        },
-        () => {}
-      )
+        } catch {
+          // silent — POS handles it
+        }
+      }
+
+      try {
+        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+      } catch {
+        // Fallback for Android devices where facingMode constraint fails: use getCameras
+        try {
+          const cameras = await Html5Qrcode.getCameras()
+          if (cameras && cameras.length > 0) {
+            const backCam = cameras.find((c) =>
+              /back|rear|trasera|environment/i.test(c.label)
+            )
+            const chosenId = backCam ? backCam.id : cameras[cameras.length - 1].id
+            await scanner.start(chosenId, config, onScanSuccess, () => {})
+          } else {
+            await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+          }
+        } catch {
+          await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+        }
+      }
     } catch (err) {
-      setErrorMsg("No se pudo acceder a la cámara. Verifica los permisos.")
+      setErrorMsg("No se pudo acceder a la cámara. Revisa los permisos de la cámara en la configuración de tu navegador o teléfono.")
       setStatus("error")
       scanningRef.current = false
       if (scannerRef.current) {
