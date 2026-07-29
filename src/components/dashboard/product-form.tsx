@@ -97,6 +97,7 @@ export function ProductForm({
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
   const [isMobileMode, setIsMobileMode] = useState(false)
+  const [scannerQrUrl, setScannerQrUrl] = useState<string | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const pusherRef = useRef<Pusher | null>(null)
   const scannerRef = useRef<Html5Qrcode | null>(null)
@@ -356,14 +357,7 @@ export function ProductForm({
         }
       } else {
         setScannerStatus("idle")
-        const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
-        if (qrCanvasRef.current) {
-          await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
-            width: 280,
-            margin: 2,
-            color: { dark: "#000000", light: "#ffffff" },
-          })
-        }
+        setScannerQrUrl(`${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`)
 
         const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
         if (pusherKey) {
@@ -425,8 +419,19 @@ export function ProductForm({
     }
     setScannerSessionId(null)
     setScannerToken(null)
+    setScannerQrUrl(null)
     setScannerStatus("idle")
   }
+
+  useEffect(() => {
+    if (scannerStatus === "idle" && scannerQrUrl && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, scannerQrUrl, {
+        width: 280,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+      }).catch(console.error)
+    }
+  }, [scannerStatus, scannerQrUrl])
 
   async function disconnectProductScanner() {
     if (scannerSessionId) {
