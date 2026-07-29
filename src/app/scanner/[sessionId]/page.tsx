@@ -239,6 +239,21 @@ function ScannerPage() {
     }
   }, [])
 
+  const requestPermissionAndStart = useCallback(async () => {
+    setErrorMsg("")
+    setStatus("connecting")
+    try {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })
+        stream.getTracks().forEach((t) => t.stop())
+      }
+    } catch (e) {
+      console.warn("[scanner] Permiso de cámara interactivo:", e)
+    }
+    await connectToSession()
+    startCamera()
+  }, [connectToSession, startCamera])
+
   useEffect(() => {
     connectToSession()
     return () => { stopCamera() }
@@ -340,11 +355,29 @@ function ScannerPage() {
                 <p className="text-sm">La sesión fue cerrada desde el POS</p>
               </>
             ) : status === "error" ? (
-              <>
-                <div className="text-4xl mb-3">⚠️</div>
-                <p className="text-lg font-semibold text-white mb-1">Error</p>
-                <p className="text-sm text-zinc-400">{errorMsg}</p>
-              </>
+              <div className="p-4 max-w-sm mx-auto flex flex-col items-center gap-3">
+                <div className="text-4xl mb-1">📷</div>
+                <p className="text-lg font-semibold text-white">Permiso de Cámara Requerido</p>
+                <p className="text-xs text-zinc-400 text-center leading-relaxed">{errorMsg}</p>
+
+                <button
+                  onClick={requestPermissionAndStart}
+                  className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-2 text-sm"
+                >
+                  <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                  </svg>
+                  Activar Cámara
+                </button>
+
+                <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 text-left w-full mt-2 text-xs text-zinc-400 space-y-1.5">
+                  <p className="font-semibold text-zinc-300">💡 Si no ves la ventana emergente:</p>
+                  <p>1. Toca el icono de <strong>candado 🔒 / permisos</strong> junto a la dirección URL.</p>
+                  <p>2. Selecciona <strong>"Cámara"</strong> y cámbialo a <strong>"Permitir"</strong>.</p>
+                  <p>3. Toca el botón <strong>Activar Cámara</strong> de arriba.</p>
+                </div>
+              </div>
             ) : (
               <>
                 <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
