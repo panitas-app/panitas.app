@@ -369,6 +369,7 @@ export function ProductForm({
               Html5QrcodeSupportedFormats.CODE_39,
               Html5QrcodeSupportedFormats.UPC_A,
               Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.ITF,
               Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
               Html5QrcodeSupportedFormats.QR_CODE,
               Html5QrcodeSupportedFormats.DATA_MATRIX,

@@ -6,6 +6,7 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import Pusher from "pusher-js"
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "expired" | "error"
+type PermissionState = "granted" | "denied" | "prompt" | "unknown"
 
 interface ScanFeedback {
   barcode: string
@@ -48,9 +49,11 @@ function playBeep(type: "scan" | "found" | "not_found") {
 
 export default function ScannerPageWrapper() {
   return (
-    <Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-    </div>}>
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
       <ScannerPage />
     </Suspense>
   )
@@ -63,32 +66,68 @@ function ScannerPage() {
   const token = searchParams?.get("token") || ""
 
   const [status, setStatus] = useState<ConnectionStatus>("connecting")
+  const [permissionState, setPermissionState] = useState<PermissionState>("unknown")
   const [lastScan, setLastScan] = useState<ScanFeedback | null>(null)
   const [scanCount, setScanCount] = useState(0)
   const [deviceName, setDeviceName] = useState("Teléfono")
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && navigator?.userAgent) {
-      const ua = navigator.userAgent
-      if (ua.includes("Android")) setDeviceName("Android")
-      else if (ua.includes("iPhone") || ua.includes("iPad")) setDeviceName("iOS")
-      else if (ua.includes("Samsung")) setDeviceName("Samsung")
-    }
-  }, [])
   const [errorMsg, setErrorMsg] = useState("")
+  const [showDiag, setShowDiag] = useState(false)
+  const [diagLogs, setDiagLogs] = useState<string[]>([])
+  const [activeCamLabel, setActiveCamLabel] = useState<string>("")
 
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const pusherRef = useRef<Pusher | null>(null)
   const scanningRef = useRef(false)
   const lastScanTimeRef = useRef<{ code: string; time: number }>({ code: "", time: 0 })
 
+  const logDiag = useCallback((msg: string) => {
+    const time = new Date().toLocaleTimeString("es-VE", { hour12: false })
+    const entry = `[${time}] ${msg}`
+    console.log(`[Scanner] ${entry}`)
+    setDiagLogs((prev) => [entry, ...prev.slice(0, 49)])
+  }, [])
+
+  // 1. Monitor user agent and camera permissions
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const isSecure = window.isSecureContext
+    logDiag(`Contexto Seguro (HTTPS): ${isSecure ? "SÍ" : "NO"}`)
+
+    if (navigator?.userAgent) {
+      const ua = navigator.userAgent
+      if (ua.includes("Android")) setDeviceName("Android")
+      else if (ua.includes("iPhone") || ua.includes("iPad")) setDeviceName("iOS Safari")
+      else if (ua.includes("Samsung")) setDeviceName("Samsung Browser")
+      logDiag(`User Agent: ${ua.slice(0, 60)}...`)
+    }
+
+    if (navigator?.permissions?.query) {
+      navigator.permissions.query({ name: "camera" as PermissionName })
+        .then((perm) => {
+          setPermissionState(perm.state as PermissionState)
+          logDiag(`Estado de Permiso Inicial: ${perm.state}`)
+          perm.onchange = () => {
+            setPermissionState(perm.state as PermissionState)
+            logDiag(`Estado de Permiso Cambió A: ${perm.state}`)
+          }
+        })
+        .catch(() => {
+          logDiag("API Permissions.query no disponible en este navegador")
+        })
+    }
+  }, [logDiag])
+
+  // 2. Connect to scanner session API
   const connectToSession = useCallback(async () => {
     if (!sessionId || !token) {
       setStatus("error")
       setErrorMsg("Enlace inválido. Escanea el código QR nuevamente.")
+      logDiag("Error: sessionId o token faltante en URL")
       return
     }
 
+    logDiag(`Conectando a la sesión ${sessionId.slice(0, 8)}...`)
     try {
       const res = await fetch("/api/scanner/connect", {
         method: "POST",
@@ -97,37 +136,71 @@ function ScannerPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Error al conectar" }))
-        if (res.status === 410) setStatus("expired")
-        else setStatus("error")
+        if (res.status === 410) {
+          setStatus("expired")
+          logDiag("Sesión de escáner expirada (HTTP 410)")
+        } else {
+          setStatus("error")
+          logDiag(`Error de conexión HTTP ${res.status}: ${err.error}`)
+        }
         setErrorMsg(err.error || "Error al conectar con el POS")
         return
       }
       setStatus("connected")
-    } catch {
+      logDiag("Sesión conectada exitosamente con el POS")
+    } catch (e: any) {
       setStatus("error")
       setErrorMsg("Error de conexión. Verifica tu internet.")
+      logDiag(`Excepción de red al conectar: ${e?.message || e}`)
     }
-  }, [sessionId, token, deviceName])
+  }, [sessionId, token, deviceName, logDiag])
 
+  // 3. Stop camera clean
+  const stopCamera = useCallback(async () => {
+    scanningRef.current = false
+    const instance = scannerRef.current
+    scannerRef.current = null
+
+    if (instance) {
+      logDiag("Deteniendo cámara y liberando visor...")
+      try {
+        await instance.stop()
+      } catch {
+        // scanner wasn't active
+      }
+      try {
+        instance.clear()
+      } catch {
+        // element already cleared
+      }
+      setActiveCamLabel("")
+    }
+  }, [logDiag])
+
+  // 4. Start camera stream with multi-constraint fallbacks
   const startCamera = useCallback(async () => {
     if (scannerRef.current || scanningRef.current) return
     scanningRef.current = true
 
     if (typeof window !== "undefined" && !window.isSecureContext) {
-      setErrorMsg("La cámara requiere HTTPS. Conéctate desde un dispositivo con HTTPS o usa el modo QR desde el POS.")
+      const errStr = "La cámara requiere conexión HTTPS. Conéctate desde un dominio seguro."
+      setErrorMsg(errStr)
       setStatus("error")
+      logDiag(`BLOQUEO: ${errStr}`)
       scanningRef.current = false
       return
     }
 
     const el = document.getElementById("scanner-viewport")
     if (!el) {
+      logDiag("Contenedor #scanner-viewport no encontrado en DOM, reintentando en 100ms...")
       scanningRef.current = false
       setTimeout(() => { startCamera() }, 100)
       return
     }
 
     try {
+      logDiag("Instanciando Html5Qrcode con soporte 1D (EAN-13, CODE-128, UPC, ITF)...")
       const scanner = new Html5Qrcode("scanner-viewport", {
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -136,6 +209,7 @@ function ScannerPage() {
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.UPC_A,
           Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.ITF,
           Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.DATA_MATRIX,
@@ -145,13 +219,14 @@ function ScannerPage() {
       scannerRef.current = scanner
 
       const config = {
-        fps: 20,
+        fps: 25,
         qrbox: (w: number, h: number) => ({
-          width: Math.floor(Math.min(w * 0.88, 340)),
+          width: Math.floor(Math.min(w * 0.88, 360)),
           height: Math.floor(Math.min(h * 0.45, 180)),
         }),
         aspectRatio: 1.0,
       }
+
       const onScanSuccess = async (decodedText: string) => {
         const code = decodedText.trim()
         const now = Date.now()
@@ -160,6 +235,7 @@ function ScannerPage() {
         }
         lastScanTimeRef.current = { code, time: now }
 
+        logDiag(`CÓDIGO DETECTADO: ${code}`)
         if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
         playBeep("scan")
         setLastScan({ barcode: code, status: "scanning" })
@@ -173,63 +249,98 @@ function ScannerPage() {
           if (res.status === 410) {
             stopCamera()
             setStatus("expired")
+            logDiag("Sesión expirada tras escaneo (HTTP 410)")
             return
           }
           if (res.ok) {
             setScanCount((c) => c + 1)
+            logDiag(`Código ${code} enviado exitosamente al POS`)
           }
-        } catch {
-          // silent — POS handles it
+        } catch (e: any) {
+          logDiag(`Error de red al enviar código escaneado: ${e?.message}`)
         }
       }
 
       let startErr: any = null
 
+      // Attempt 1: HD Rear camera with ideal constraints
       try {
-        await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
+        logDiag("Intento 1: Cámara Trasera HD (facingMode ideal environment, 1080p)...")
+        await scanner.start(
+          {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+          },
+          config,
+          onScanSuccess,
+          () => {}
+        )
+        setActiveCamLabel("Trasera HD")
+        logDiag("ÉXITO: Cámara Trasera HD iniciada a 25 FPS")
         return
       } catch (e1: any) {
         startErr = e1
-        await new Promise((r) => setTimeout(r, 200))
+        logDiag(`Intento 1 falló: ${e1?.name || e1}`)
+        await new Promise((r) => setTimeout(r, 250))
       }
 
+      // Attempt 2: Standard Rear camera string
       try {
+        logDiag("Intento 2: Cámara Trasera Estándar (facingMode environment)...")
         await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+        setActiveCamLabel("Trasera Estándar")
+        logDiag("ÉXITO: Cámara Trasera Estándar iniciada")
         return
       } catch (e2: any) {
         if (!startErr) startErr = e2
-        await new Promise((r) => setTimeout(r, 200))
+        logDiag(`Intento 2 falló: ${e2?.name || e2}`)
+        await new Promise((r) => setTimeout(r, 250))
       }
 
+      // Attempt 3: Front camera fallback
       try {
+        logDiag("Intento 3: Cámara Frontal (facingMode user)...")
         await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+        setActiveCamLabel("Frontal")
+        logDiag("ÉXITO: Cámara Frontal iniciada")
         return
       } catch (e3: any) {
         if (!startErr) startErr = e3
-        await new Promise((r) => setTimeout(r, 200))
+        logDiag(`Intento 3 falló: ${e3?.name || e3}`)
+        await new Promise((r) => setTimeout(r, 250))
       }
 
+      // Attempt 4: Explicit Camera ID resolution via getCameras
       try {
+        logDiag("Intento 4: Obteniendo lista de dispositivos con getCameras()...")
         const cameras = await Html5Qrcode.getCameras()
+        logDiag(`Cámaras encontradas: ${cameras ? cameras.length : 0}`)
         if (cameras && cameras.length > 0) {
           const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
           const chosenId = backCam ? backCam.id : cameras[0].id
+          logDiag(`Iniciando cámara seleccionada: ${backCam?.label || cameras[0].id}`)
           await scanner.start(chosenId, config, onScanSuccess, () => {})
+          setActiveCamLabel(backCam?.label || "Cámara por ID")
+          logDiag("ÉXITO: Cámara iniciada por ID de dispositivo")
           return
         }
-      } catch {
-        // ignore getCameras error string
+      } catch (camErr: any) {
+        logDiag(`getCameras rechazado o falló: ${camErr?.message || camErr}`)
       }
 
+      // If all attempts fail, format diagnostic message
       const errName = startErr?.name || ""
       const errText = String(startErr?.message || startErr || "")
+      logDiag(`TODOS LOS INTENTOS FALLARON. Error final: ${errName} - ${errText}`)
 
-      if (errName === "NotAllowedError") {
-        setErrorMsg("Permiso de cámara denegado. Presiona el icono de candado/permisos junto a la URL en tu navegador y selecciona 'Permitir cámara'.")
+      if (errName === "NotAllowedError" || errText.includes("Permission denied")) {
+        setPermissionState("denied")
+        setErrorMsg("Permiso de cámara denegado en tu navegador. Habilita la cámara en la configuración de la página y recarga.")
       } else if (errName === "NotReadableError" || errText.includes("Could not start video source")) {
-        setErrorMsg("La cámara está ocupada por otra app (ej: WhatsApp). Ciérrala e intenta de nuevo.")
+        setErrorMsg("La cámara física está ocupada por otra app (ej: WhatsApp, Cámara nativa). Ciérrala e intenta de nuevo.")
       } else if (errName === "NotFoundError" || errText.includes("Requested device not found")) {
-        setErrorMsg("No se encontró una cámara en tu dispositivo.")
+        setErrorMsg("No se encontró una cámara compatible en este dispositivo.")
       } else {
         setErrorMsg(`No se pudo iniciar la cámara: ${errText || "Error de hardware o navegador."}`)
       }
@@ -240,7 +351,8 @@ function ScannerPage() {
         scannerRef.current = null
       }
     } catch (err: any) {
-      setErrorMsg(`No se pudo iniciar la cámara: ${err?.message || String(err)}`)
+      logDiag(`Excepción no capturada en startCamera: ${err?.message || String(err)}`)
+      setErrorMsg(`Error al iniciar la cámara: ${err?.message || String(err)}`)
       setStatus("error")
       scanningRef.current = false
       if (scannerRef.current) {
@@ -248,61 +360,53 @@ function ScannerPage() {
         scannerRef.current = null
       }
     }
-  }, [sessionId])
+  }, [sessionId, stopCamera, logDiag])
 
-  const stopCamera = useCallback(async () => {
-    scanningRef.current = false
-    const instance = scannerRef.current
-    scannerRef.current = null
-
-    if (instance) {
-      try {
-        await instance.stop()
-      } catch {
-        // ignore if scanner was not actively scanning
-      }
-      try {
-        instance.clear()
-      } catch {
-        // ignore if element was already cleared
-      }
-    }
-  }, [])
-
+  // 5. Synchronous User Gesture Click Handler to trigger permission prompt & camera
   const requestPermissionAndStart = useCallback(async () => {
+    logDiag("Botón 'Activar Cámara' presionado por el usuario (User Gesture Token activo)...")
     setErrorMsg("")
     setStatus("connecting")
 
-    // Force prompt on click
     try {
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })
+        logDiag("Invocando getUserMedia sincrónicamente para activar diálogo nativo...")
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+        })
+        setPermissionState("granted")
+        logDiag("Permiso otorgado por el usuario en ventana emergente nativa")
         stream.getTracks().forEach((t) => t.stop())
         await new Promise((r) => setTimeout(r, 250))
       }
     } catch (err: any) {
       const name = err?.name || ""
       const msg = String(err?.message || err || "")
+      logDiag(`Resultado de solicitud interactiva: ${name} - ${msg}`)
       if (name === "NotAllowedError" || msg.includes("Permission denied")) {
+        setPermissionState("denied")
         setStatus("error")
-        setErrorMsg("Permiso de cámara denegado en tu navegador. Toca el candado 🔒 junto a la URL arriba, entra en Permisos -> Cámara y selecciona 'Permitir'. Luego presiona este botón.")
+        setErrorMsg("Permiso de cámara bloqueado en tu navegador. Toca el candado 🔒 al lado de la URL arriba, entra a Permisos -> Cámara -> Permitir y presiona este botón.")
         return
       }
     }
 
     await connectToSession()
-  }, [connectToSession])
+  }, [connectToSession, logDiag])
 
+  // Initial mount: connect to session
   useEffect(() => {
     connectToSession()
     return () => { stopCamera() }
   }, [connectToSession, stopCamera])
 
+  // Pusher subscriptions and auto-start camera when connected
   useEffect(() => {
     if (status !== "connected") return
 
     if (PUSHER_KEY) {
       try {
+        logDiag(`Suscribiendo a canal Pusher: scanner-${sessionId}`)
         const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER })
         pusherRef.current = pusher
         const channel = pusher.subscribe(`scanner-${sessionId}`)
@@ -311,22 +415,25 @@ function ScannerPage() {
           if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(200)
           playBeep("found")
           setLastScan({ barcode: data.barcode, productName: data.product?.name, status: "found" })
-          setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+          logDiag(`POS notificó: Producto Encontrado (${data.product?.name || data.barcode})`)
+          setTimeout(() => setLastScan((prev) => (prev?.barcode === data.barcode ? null : prev)), 3000)
         })
 
         channel.bind("product_not_found", (data: any) => {
           if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([100, 100, 100])
           playBeep("not_found")
           setLastScan({ barcode: data.barcode, status: "not_found" })
-          setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+          logDiag(`POS notificó: Producto No Encontrado (${data.barcode})`)
+          setTimeout(() => setLastScan((prev) => (prev?.barcode === data.barcode ? null : prev)), 3000)
         })
 
         channel.bind("scanner_disconnect", () => {
+          logDiag("POS envió señal de desconexión")
           stopCamera()
           setStatus("disconnected")
         })
-      } catch {
-        // Silent — scanner camera continues scanning even if Pusher is offline
+      } catch (e: any) {
+        logDiag(`Pusher offline/error: ${e?.message}`)
       }
     }
 
@@ -343,110 +450,144 @@ function ScannerPage() {
       }
       stopCamera()
     }
-  }, [status, sessionId, startCamera, stopCamera])
+  }, [status, sessionId, startCamera, stopCamera, logDiag])
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
+    <div className="fixed inset-0 bg-black flex flex-col font-sans select-none overflow-hidden">
       {/* Header */}
-      <div className="bg-zinc-900/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${
-            status === "connected" ? "bg-green-500 animate-pulse" :
-            status === "connecting" ? "bg-yellow-500 animate-pulse" :
-            "bg-red-500"
+      <div className="bg-zinc-900/90 backdrop-blur-md px-4 py-3 flex items-center justify-between z-10 border-b border-zinc-800">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-3 h-3 rounded-full ${
+            status === "connected" ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" :
+            status === "connecting" ? "bg-amber-500 animate-pulse" :
+            "bg-rose-500"
           }`} />
-          <span className="text-white text-sm font-semibold">
-            {status === "connected" ? "Conectado" :
-             status === "connecting" ? "Conectando..." :
-             status === "disconnected" ? "Desconectado" :
-             status === "expired" ? "Expirado" : "Error"}
-          </span>
+          <div>
+            <div className="text-white text-xs font-bold leading-none">
+              {status === "connected" ? `Escáner POS en Vivo (${deviceName})` :
+               status === "connecting" ? "Conectando al POS..." :
+               status === "disconnected" ? "Desconectado" :
+               status === "expired" ? "Sesión Expirada" : "Error de Cámara"}
+            </div>
+            {activeCamLabel && status === "connected" && (
+              <div className="text-[10px] text-zinc-400 mt-0.5">{activeCamLabel}</div>
+            )}
+          </div>
         </div>
-        <span className="text-zinc-400 text-xs">{scanCount} escaneos</span>
+        <div className="flex items-center gap-2">
+          <span className="text-amber-400 font-mono font-bold text-xs bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+            {scanCount} lecturas
+          </span>
+          <button
+            onClick={() => setShowDiag(!showDiag)}
+            className="text-xs px-2 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700 hover:text-white"
+          >
+            🛠️
+          </button>
+        </div>
       </div>
 
       {/* Camera Viewport */}
-      <div className="flex-1 relative flex items-center justify-center bg-black">
+      <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
         {status === "connected" ? (
           <>
-            <div id="scanner-viewport" className="w-full h-full" />
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-64 h-36 border-2 border-white/30 rounded-lg">
-                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-amber-400" />
-                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-amber-400" />
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-amber-400" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-amber-400" />
+            <div id="scanner-viewport" className="w-full h-full object-cover" />
+            
+            {/* Professional 1D Barcode Viewfinder Box */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+              <div className="w-[88%] max-w-[360px] h-36 border-2 border-amber-400/50 rounded-xl relative shadow-[0_0_30px_rgba(251,191,36,0.15)] bg-black/10">
+                {/* Laser scan line animation */}
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ef4444] animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] top-1/2 -translate-y-1/2" />
+                
+                {/* Reticle Corner Highlights */}
+                <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-amber-400 rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-amber-400 rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-amber-400 rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-amber-400 rounded-br-lg" />
               </div>
             </div>
           </>
         ) : (
-          <div className="text-center text-zinc-500">
+          <div className="text-center text-zinc-400 px-6 max-w-sm">
             {status === "expired" ? (
               <>
-                <div className="text-4xl mb-3">⏰</div>
-                <p className="text-lg font-semibold text-white mb-1">Sesión expirada</p>
-                <p className="text-sm">Vuelve a generar el QR desde el POS</p>
+                <div className="text-5xl mb-3">⏰</div>
+                <p className="text-lg font-bold text-white mb-1">Sesión Expirada</p>
+                <p className="text-xs text-zinc-400">Vuelve a generar el código QR desde el punto de venta en tu computadora.</p>
               </>
             ) : status === "disconnected" ? (
               <>
-                <div className="text-4xl mb-3">📱</div>
-                <p className="text-lg font-semibold text-white mb-1">Desconectado</p>
-                <p className="text-sm">La sesión fue cerrada desde el POS</p>
+                <div className="text-5xl mb-3">📱</div>
+                <p className="text-lg font-bold text-white mb-1">Desconectado del POS</p>
+                <p className="text-xs text-zinc-400 mb-4">La sesión de escáner fue finalizada o cerrada.</p>
+                <button
+                  onClick={() => { stopCamera(); connectToSession() }}
+                  className="px-4 py-2 bg-amber-500 text-black font-bold rounded-xl text-xs"
+                >
+                  Reconectar
+                </button>
               </>
             ) : status === "error" ? (
-              <div className="p-4 max-w-sm mx-auto flex flex-col items-center gap-3">
-                <div className="text-4xl mb-1">📷</div>
-                <p className="text-lg font-semibold text-white">Permiso de Cámara Requerido</p>
-                <p className="text-xs text-zinc-400 text-center leading-relaxed">{errorMsg}</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl">
+                  📷
+                </div>
+                <p className="text-base font-bold text-white">Permiso de Cámara Requerido</p>
+                <p className="text-xs text-zinc-400 leading-relaxed text-center">{errorMsg}</p>
 
-                <button
-                  onClick={requestPermissionAndStart}
-                  className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-2 text-sm"
-                >
-                  <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                  </svg>
-                  Activar Cámara
-                </button>
+                {permissionState !== "denied" ? (
+                  <button
+                    onClick={requestPermissionAndStart}
+                    className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-1 text-xs"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                    </svg>
+                    Activar Cámara
+                  </button>
+                ) : (
+                  <div className="w-full py-2.5 px-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-semibold text-center">
+                    Acceso a cámara bloqueado en el navegador
+                  </div>
+                )}
 
-                <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 text-left w-full mt-2 text-xs text-zinc-400 space-y-1.5">
-                  <p className="font-semibold text-zinc-300">💡 Si no ves la ventana emergente:</p>
-                  <p>1. Toca el icono de <strong>candado 🔒 / permisos</strong> junto a la dirección URL.</p>
-                  <p>2. Selecciona <strong>"Cámara"</strong> y cámbialo a <strong>"Permitir"</strong>.</p>
-                  <p>3. Toca el botón <strong>Activar Cámara</strong> de arriba.</p>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-left w-full mt-1 text-xs text-zinc-400 space-y-1">
+                  <p className="font-semibold text-zinc-200 text-[11px]">💡 Pasos para desbloquear:</p>
+                  <p>1. Toca el candado 🔒 / permisos al lado de la URL arriba.</p>
+                  <p>2. Cambia <strong>"Cámara"</strong> a <strong>"Permitir"</strong>.</p>
+                  <p>3. Vuelve a tocar <strong>Activar Cámara</strong> o recarga la página.</p>
                 </div>
               </div>
             ) : (
-              <>
-                <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-sm">Conectando al POS...</p>
-              </>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs">Conectando con el Punto de Venta...</p>
+              </div>
             )}
           </div>
         )}
 
-        {/* Last scan feedback */}
+        {/* Last Scan Feedback Toast */}
         {lastScan && status === "connected" && (
-          <div className={`absolute bottom-6 left-4 right-4 p-3 rounded-xl backdrop-blur-sm transition-all ${
-            lastScan.status === "found" ? "bg-green-900/80" :
-            lastScan.status === "not_found" ? "bg-red-900/80" :
-            "bg-zinc-900/80"
+          <div className={`absolute bottom-6 left-4 right-4 p-3 rounded-2xl backdrop-blur-md transition-all border shadow-2xl ${
+            lastScan.status === "found" ? "bg-emerald-950/90 border-emerald-500/40 text-emerald-100" :
+            lastScan.status === "not_found" ? "bg-rose-950/90 border-rose-500/40 text-rose-100" :
+            "bg-zinc-900/90 border-zinc-700 text-zinc-100"
           }`}>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">
                 {lastScan.status === "found" ? "✅" :
                  lastScan.status === "not_found" ? "❌" : "📷"}
-              </span>
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-medium truncate">
+                <p className="text-xs font-bold truncate">
                   {lastScan.productName || lastScan.barcode}
                 </p>
                 {lastScan.productName && (
-                  <p className="text-green-300 text-xs">{lastScan.barcode}</p>
+                  <p className="text-[10px] opacity-80 font-mono">{lastScan.barcode}</p>
                 )}
                 {lastScan.status === "not_found" && (
-                  <p className="text-red-300 text-xs">Producto no encontrado</p>
+                  <p className="text-[10px] text-rose-300">Producto no registrado en inventario</p>
                 )}
               </div>
             </div>
@@ -454,41 +595,33 @@ function ScannerPage() {
         )}
       </div>
 
-      {/* Footer */}
-      {status === "connected" && (
-        <div className="bg-zinc-900/80 backdrop-blur-sm px-4 py-3 flex flex-col gap-3">
-          <div className="flex items-center justify-center gap-4 text-zinc-500 text-xs">
-            <span>Acerca el código de barras a la cámara</span>
-            <button
-              className="text-zinc-400 hover:text-white transition-colors underline"
-              onClick={() => {
-                stopCamera()
-                setStatus("disconnected")
-                connectToSession()
-              }}
-            >
-              Reconectar
+      {/* Collapsible Live Diagnostics Drawer */}
+      {showDiag && (
+        <div className="bg-zinc-955 border-t border-zinc-800 p-3 max-h-48 overflow-y-auto text-[10px] font-mono text-zinc-300 z-30">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-zinc-800">
+            <span className="font-bold text-amber-400">Consola de Diagnóstico Escáner</span>
+            <button onClick={() => setDiagLogs([])} className="text-zinc-500 hover:text-white">
+              Limpiar
             </button>
           </div>
-          <button
-            onClick={() => { stopCamera(); setStatus("disconnected") }}
-            className="w-full py-2.5 bg-amber-500 text-black font-bold text-sm rounded-xl hover:bg-amber-400 transition-colors active:scale-[0.98]"
-          >
-            Terminar de escanear
-          </button>
+          <div className="space-y-1">
+            {diagLogs.length === 0 && <p className="text-zinc-600">Sin eventos registrados</p>}
+            {diagLogs.map((log, index) => (
+              <div key={index} className="leading-tight">{log}</div>
+            ))}
+          </div>
         </div>
       )}
-      {status === "disconnected" && (
-        <div className="bg-zinc-900/80 backdrop-blur-sm px-4 py-3 flex items-center justify-center gap-3 text-xs">
-          <span className="text-red-400">Conexión perdida</span>
+
+      {/* Footer Controls */}
+      {status === "connected" && (
+        <div className="bg-zinc-900/90 backdrop-blur-md px-4 py-3 flex items-center justify-between border-t border-zinc-800 z-10">
+          <span className="text-zinc-400 text-xs">Enfoca el código de barras en el marco</span>
           <button
-            className="px-3 py-1 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors"
-            onClick={() => {
-              stopCamera()
-              connectToSession()
-            }}
+            onClick={() => { stopCamera(); setStatus("disconnected") }}
+            className="px-3 py-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold rounded-lg hover:bg-rose-500/30 transition-colors"
           >
-            Reintentar
+            Finalizar
           </button>
         </div>
       )}
