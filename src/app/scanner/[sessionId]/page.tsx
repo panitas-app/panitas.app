@@ -119,6 +119,13 @@ function ScannerPage() {
       return
     }
 
+    const el = document.getElementById("scanner-viewport")
+    if (!el) {
+      scanningRef.current = false
+      setTimeout(() => { startCamera() }, 100)
+      return
+    }
+
     try {
       const scanner = new Html5Qrcode("scanner-viewport")
       scannerRef.current = scanner
@@ -131,7 +138,7 @@ function ScannerPage() {
         },
         async (decodedText) => {
           const code = decodedText.trim()
-          if (navigator.vibrate) navigator.vibrate(100)
+          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
           playBeep("scan")
           setLastScan({ barcode: code, status: "scanning" })
 
@@ -152,16 +159,30 @@ function ScannerPage() {
       setErrorMsg("No se pudo acceder a la cámara. Verifica los permisos.")
       setStatus("error")
       scanningRef.current = false
+      if (scannerRef.current) {
+        try { scannerRef.current.clear() } catch {}
+        scannerRef.current = null
+      }
     }
   }, [sessionId])
 
-  const stopCamera = useCallback(() => {
-    if (scannerRef.current) {
-      scannerRef.current.stop().catch(() => {})
-      scannerRef.current.clear()
-      scannerRef.current = null
-    }
+  const stopCamera = useCallback(async () => {
     scanningRef.current = false
+    const instance = scannerRef.current
+    scannerRef.current = null
+
+    if (instance) {
+      try {
+        await instance.stop()
+      } catch {
+        // ignore if scanner was not actively scanning
+      }
+      try {
+        instance.clear()
+      } catch {
+        // ignore if element was already cleared
+      }
+    }
   }, [])
 
   useEffect(() => {
