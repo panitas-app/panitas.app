@@ -5,20 +5,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Upload } from "lucide-react"
-import { DeleteProductButton } from "@/components/dashboard/products-table"
+import { ProductsAccordion } from "@/components/dashboard/products-accordion"
 import { PaginationLinks } from "@/components/ui/pagination-links"
 import { resolvePlanType } from "@/lib/plans"
 
@@ -120,7 +111,7 @@ export default async function ProductsPage({
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-4">
           {products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-muted-foreground">No hay productos aún</p>
@@ -132,66 +123,7 @@ export default async function ProductsPage({
               </Link>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Imagen</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                  {products.map((product) => {
-                    const productImages: string[] = (() => {
-                      try { return JSON.parse(product.images) } catch { return [] }
-                    })()
-                    return (
-                    <TableRow key={product.id}>
-                    <TableCell data-label="Imagen">
-                      {productImages[0] ? (
-                        <img
-                          src={productImages[0]}
-                          alt={product.name}
-                          className="size-10 rounded-md object-cover"
-                        />
-                      ) : (
-                        <div className="size-10 rounded-md bg-muted" />
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium" data-label="Nombre">{product.name}</TableCell>
-                    <TableCell data-label="Precio">${product.price.toFixed(2)}</TableCell>
-                    <TableCell data-label="Stock">
-                      {product.stock !== null && product.stock <= 0 ? (
-                        <span className="text-destructive font-semibold">Agotado</span>
-                      ) : product.stock !== null && product.stock <= 5 ? (
-                        <span className="text-amber-600 font-semibold">{product.stock}</span>
-                      ) : (
-                        product.stock?.toString() || "—"
-                      )}
-                    </TableCell>
-                    <TableCell data-label="Estado">
-                      <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell data-label="Acciones">
-                      <div className="flex items-center gap-1">
-                        <Link href={`/dashboard/products/${product.id}/edit`}>
-                          <Button variant="ghost" size="xs">
-                            Editar
-                          </Button>
-                        </Link>
-                        <DeleteProductButton productId={product.id} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                    )
-                  })}
-              </TableBody>
-            </Table>
+            <ProductsAccordion products={products} categories={categories} />
           )}
           <PaginationLinks
             page={page}

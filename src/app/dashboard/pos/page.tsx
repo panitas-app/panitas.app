@@ -195,6 +195,7 @@ export default function POSPage() {
   }
 
   function addToCart(product: Product) {
+    if (product.stock <= 0) { toast.error("Producto agotado"); return }
     setCart((prev) => {
       const existing = prev.find((item) => item.productId === product.id)
       if (existing) {

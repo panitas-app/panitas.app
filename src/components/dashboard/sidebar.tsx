@@ -188,6 +188,10 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
 
   const fetchPendingCount = useCallback(async () => {
     try {
+      try {
+        const stored = localStorage.getItem(lastViewedKey)
+        if (stored) lastViewedRef.current = stored
+      } catch {}
       const params = new URLSearchParams({ status: "pending", excludePos: "true" })
       if (lastViewedRef.current) params.set("after", lastViewedRef.current)
       const res = await fetch(`/api/orders/count?${params}`)
@@ -203,7 +207,7 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
         setPendingCount(newCount)
       }
     } catch (e) { console.error("[unhandled error]", e) }
-  }, [])
+  }, [lastViewedKey])
 
   useEffect(() => {
     fetchPendingCount()
@@ -212,11 +216,11 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
   }, [fetchPendingCount])
 
   useEffect(() => {
-    if (isOnOrders && pendingCount > 0) {
+    if (isOnOrders) {
       markOrdersViewed()
       setPendingCount(0)
     }
-  }, [isOnOrders, pendingCount, markOrdersViewed])
+  }, [isOnOrders, markOrdersViewed])
 
   const planLabel = sidebarPlanLabel(planId || legacyPlanType, modalidad)
   const navItems = getNavItems(legacyPlanType)
@@ -227,7 +231,7 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
   })
 
   return (
-    <div className="flex h-full flex-col glass-dark text-foreground">
+    <div className="flex h-full flex-col glass-dark sidebar-solid text-foreground">
       <div className="px-4 pt-4 pb-0 shrink-0">
         <div data-tour="store-info" className="flex items-center gap-3 px-2 py-1.5 mt-2">
           <div className="relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/10 overflow-hidden">
@@ -316,7 +320,7 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
   return (
     <>
       <aside data-tour="sidebar" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
-        <div className="flex flex-1 flex-col glass-dark min-h-0">
+        <div className="flex flex-1 flex-col glass-dark sidebar-solid min-h-0">
           <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
         </div>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10" />
@@ -339,6 +343,7 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
               onClick={() => setMobileOpen(false)}
+              onTouchMove={(e) => e.preventDefault()}
               className="fixed inset-0 z-40 bg-black/55 lg:hidden"
             />
             <motion.div
