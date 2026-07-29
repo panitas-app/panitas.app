@@ -65,7 +65,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
 
   useEffect(() => {
     if (session) {
-      router.push("/choose-plan")
+      router.push("/dashboard")
     }
   }, [session, router])
 
@@ -276,7 +276,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
                   setIsGoogleLoading(true)
                   try {
                     posthog.capture("user_registered", { plan: selectedPlan || "none", method: "google" })
-                    await loginWithGoogle("/choose-plan")
+                    await loginWithGoogle("/dashboard")
                   } catch (error) {
                     console.error("[Google signin error]", error)
                     setIsGoogleLoading(false)

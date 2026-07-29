@@ -2,6 +2,6 @@
 
 import { signIn } from "@/lib/auth"
 
-export async function loginWithGoogle(redirectTo: string = "/choose-plan") {
+export async function loginWithGoogle(redirectTo: string = "/dashboard") {
   await signIn("google", { redirectTo })
 }
