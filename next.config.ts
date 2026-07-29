@@ -23,6 +23,17 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
+  async redirects() {
+    if (!isProd) return []
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.panitas.app" }],
+        destination: "https://panitas.app/:path*",
+        permanent: true,
+      },
+    ]
+  },
   async rewrites() {
     return [
       {
