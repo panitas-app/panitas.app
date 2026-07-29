@@ -282,17 +282,25 @@ export default function ScannerPage() {
 
       {/* Footer */}
       {status === "connected" && (
-        <div className="bg-zinc-900/80 backdrop-blur-sm px-4 py-3 flex items-center justify-center gap-4 text-zinc-500 text-xs">
-          <span>Acerca el código de barras a la cámara</span>
+        <div className="bg-zinc-900/80 backdrop-blur-sm px-4 py-3 flex flex-col gap-3">
+          <div className="flex items-center justify-center gap-4 text-zinc-500 text-xs">
+            <span>Acerca el código de barras a la cámara</span>
+            <button
+              className="text-zinc-400 hover:text-white transition-colors underline"
+              onClick={() => {
+                stopCamera()
+                setStatus("disconnected")
+                connectToSession()
+              }}
+            >
+              Reconectar
+            </button>
+          </div>
           <button
-            className="text-zinc-400 hover:text-white transition-colors underline"
-            onClick={() => {
-              stopCamera()
-              setStatus("disconnected")
-              connectToSession()
-            }}
+            onClick={() => { stopCamera(); setStatus("disconnected") }}
+            className="w-full py-2.5 bg-amber-500 text-black font-bold text-sm rounded-xl hover:bg-amber-400 transition-colors active:scale-[0.98]"
           >
-            Reconectar
+            Terminar de escanear
           </button>
         </div>
       )}

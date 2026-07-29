@@ -35,6 +35,7 @@ import {
 import type { Product, Category } from "@prisma/client"
 import Pusher from "pusher-js"
 import QRCode from "qrcode"
+import { Html5Qrcode } from "html5-qrcode"
 import {
   Dialog,
   DialogContent,
@@ -95,8 +96,10 @@ export function ProductForm({
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
+  const [isMobileMode, setIsMobileMode] = useState(false)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const pusherRef = useRef<Pusher | null>(null)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
   
   // Parse wholesale scales from JSON
   const initialScales: PriceScale[] = (() => {
@@ -308,9 +311,17 @@ export function ProductForm({
   }
 
   // ─── Scanner functions ───
+  function isTouchMobile() {
+    if (typeof window === "undefined") return false
+    return window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  }
+
   async function startProductScanner() {
     setScannerStatus("connecting")
     setScannerOpen(true)
+    const mobile = isTouchMobile()
+    setIsMobileMode(mobile)
+
     try {
       const res = await fetch("/api/scanner/session", {
         method: "POST",
@@ -321,46 +332,70 @@ export function ProductForm({
       const data = await res.json()
       setScannerSessionId(data.sessionId)
       setScannerToken(data.token)
-      setScannerStatus("idle")
 
-      const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
-      if (qrCanvasRef.current) {
-        await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
-          width: 280,
-          margin: 2,
-          color: { dark: "#000000", light: "#ffffff" },
-        })
-      }
-
-      const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
-      if (pusherKey) {
+      if (mobile) {
+        setScannerStatus("connected")
         try {
-          const pusher = new Pusher(pusherKey, {
-            cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
-          })
-          pusherRef.current = pusher
-          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
-
-          channel.bind("barcode_scanned", (d: any) => {
-            const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-            if (barcodeInput) {
-              barcodeInput.value = d.barcode
-              barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
-              toast.success(`Código escaneado: ${d.barcode}`)
-            }
-            cleanupProductScanner()
-            setScannerOpen(false)
-          })
-
-          channel.bind("phone_connected", () => {
-            setScannerStatus("connected")
-          })
-
-          channel.bind("phone_disconnected", () => {
-            cleanupProductScanner()
-          })
+          scannerRef.current = new Html5Qrcode("scanner-viewport")
+          await scannerRef.current.start(
+            { facingMode: "environment" },
+            { fps: 15, qrbox: { width: 280, height: 150 } },
+            (decodedText) => {
+              const code = decodedText.trim()
+              const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+              if (barcodeInput) {
+                barcodeInput.value = code
+                barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+                toast.success(`Código escaneado: ${code}`)
+              }
+            },
+            () => {}
+          )
         } catch {
-          console.warn("[scanner] Error al conectar con Pusher — escaneo funcionará sin eventos en tiempo real")
+          setScannerStatus("error")
+        }
+      } else {
+        setScannerStatus("idle")
+        const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
+        if (qrCanvasRef.current) {
+          await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
+            width: 280,
+            margin: 2,
+            color: { dark: "#000000", light: "#ffffff" },
+          })
+        }
+
+        const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
+        if (pusherKey) {
+          try {
+            const pusher = new Pusher(pusherKey, {
+              cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
+            })
+            pusherRef.current = pusher
+            const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+
+            channel.bind("barcode_scanned", (d: any) => {
+              const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+              if (barcodeInput) {
+                barcodeInput.value = d.barcode
+                barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+                toast.success(`Código escaneado: ${d.barcode}`)
+              }
+            })
+
+            channel.bind("phone_connected", () => {
+              setScannerStatus("connected")
+            })
+
+            channel.bind("phone_disconnected", () => {
+              if (!isMobileMode) {
+                cleanupProductScanner()
+                setScannerOpen(false)
+              }
+            })
+          } catch {
+            console.warn("[scanner] Error al conectar con Pusher")
+          }
         }
       }
     } catch {
@@ -368,7 +403,18 @@ export function ProductForm({
     }
   }
 
+  function stopScannerCamera() {
+    if (scannerRef.current) {
+      try {
+        scannerRef.current.stop()
+        scannerRef.current.clear()
+      } catch {}
+      scannerRef.current = null
+    }
+  }
+
   function cleanupProductScanner() {
+    stopScannerCamera()
     if (pusherRef.current) {
       if (scannerSessionId) {
         const ch = pusherRef.current.channel(`private-scanner-${scannerSessionId}`)
@@ -1245,17 +1291,31 @@ export function ProductForm({
         </form>
       </div>
 
-      {/* Scanner QR Modal */}
+      {/* Scanner Modal */}
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) disconnectProductScanner() }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="size-5" />
-              {scannerStatus === "connected" ? "Teléfono conectado" : "Escanear código de barras"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {scannerStatus === "connecting" ? (
+        <DialogContent className={isMobileMode && scannerStatus === "connected" ? "sm:max-w-sm p-0 gap-0" : "sm:max-w-sm"}>
+          {isMobileMode && scannerStatus === "connected" ? (
+            <>
+              <div className="relative">
+                <div id="scanner-viewport" className="w-full h-64 bg-black rounded-t-lg" />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-56 h-32 border-2 border-white/30 rounded-lg">
+                    <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-amber-400" />
+                    <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-amber-400" />
+                    <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-amber-400" />
+                    <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-amber-400" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">Escanea el código de barras con la cámara</p>
+                <p className="text-xs text-muted-foreground">Los códigos se añadirán automáticamente al campo</p>
+                <Button size="sm" className="w-full" onClick={disconnectProductScanner}>
+                  Terminar de escanear
+                </Button>
+              </div>
+            </>
+          ) : scannerStatus === "connecting" ? (
             <div className="flex flex-col items-center py-8 text-center">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-sm font-medium">Creando sesión...</p>
@@ -1272,8 +1332,8 @@ export function ProductForm({
                 <Smartphone className="size-8 text-green-600" />
               </div>
               <p className="text-sm text-muted-foreground">Escanea el código de barras desde tu teléfono</p>
-              <Button variant="destructive" size="sm" onClick={disconnectProductScanner}>
-                Desconectar
+              <Button size="sm" className="w-full" onClick={disconnectProductScanner}>
+                Terminar de escanear
               </Button>
             </div>
           ) : (

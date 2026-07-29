@@ -1423,8 +1423,8 @@ async function processSale() {
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 Escaneando...
               </div>
-              <Button variant="destructive" size="sm" onClick={disconnectScanner}>
-                Desconectar teléfono
+              <Button size="sm" className="w-full" onClick={disconnectScanner}>
+                Terminar de escanear
               </Button>
             </div>
           ) : (
