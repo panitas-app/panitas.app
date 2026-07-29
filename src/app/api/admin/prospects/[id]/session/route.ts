@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
+import { seedSalesData } from "@/lib/crm/seed-data"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       sectionWhere.route = sessionRoute
     }
 
-    const sections = await prisma.salesSection.findMany({
+    let sections = await prisma.salesSection.findMany({
       where: sectionWhere,
       include: {
         questions: {
@@ -42,6 +43,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       },
       orderBy: { orden: "asc" },
     })
+
+    if (sections.length === 0) {
+      await seedSalesData(prisma)
+      sections = await prisma.salesSection.findMany({
+        where: sectionWhere,
+        include: {
+          questions: {
+            where: { activo: true },
+            orderBy: { orden: "asc" },
+          },
+        },
+        orderBy: { orden: "asc" },
+      })
+    }
 
     const completedSessions = await prisma.salesSession.findMany({
       where: { prospectId: id, estado: "completada" },
@@ -91,10 +106,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       sectionWhere.route = routeSeleccionada
     }
 
-    const firstSection = await prisma.salesSection.findFirst({
+    let firstSection = await prisma.salesSection.findFirst({
       where: sectionWhere,
       orderBy: { orden: "asc" },
     })
+
+    if (!firstSection) {
+      await seedSalesData(prisma)
+      firstSection = await prisma.salesSection.findFirst({
+        where: sectionWhere,
+        orderBy: { orden: "asc" },
+      })
+    }
 
     const session = await prisma.salesSession.create({
       data: {
@@ -106,7 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     })
 
-    const sections = await prisma.salesSection.findMany({
+    let sections = await prisma.salesSection.findMany({
       where: sectionWhere,
       include: {
         questions: {
@@ -116,6 +139,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
       orderBy: { orden: "asc" },
     })
+
+    if (sections.length === 0) {
+      await seedSalesData(prisma)
+      sections = await prisma.salesSection.findMany({
+        where: sectionWhere,
+        include: {
+          questions: {
+            where: { activo: true },
+            orderBy: { orden: "asc" },
+          },
+        },
+        orderBy: { orden: "asc" },
+      })
+    }
 
     return NextResponse.json({ session: { ...session, answers: [] }, sections }, { status: 201 })
   } catch (error) {

@@ -1408,6 +1408,8 @@ model SalesQuestion {
   orden           Int      @default(0)
   activo          Boolean  @default(true)
   puntaje         String?
+  painDetected    String?
+  salesArgument   String?
   condicionLogica String?
   categoria       String?
   placeholder     String?

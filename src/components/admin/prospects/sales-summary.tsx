@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { SalesScoringBar } from "./sales-scoring-bar"
-import { getPlanInfo, SALES_ROUTES } from "@/lib/crm/constants"
-import { getDemoSteps, getDemoTitle } from "@/lib/crm/scoring"
+import { getPlanInfo, SALES_ROUTES, getTemperatureInfo } from "@/lib/crm/constants"
+import { getDemoSteps, getDemoTitle, getOpportunityDescription } from "@/lib/crm/scoring"
 import {
   ArrowLeft,
   CheckCircle2,
@@ -78,6 +78,8 @@ export function SalesSummary({ session, prospect, finalized, onComplete, onBack,
   const planInfo = getPlanInfo(session.planRecomendado)
   const sections = parseResumenSections(session.resumen)
   const route = session.routeSeleccionada ? SALES_ROUTES.find((r) => r.value === session.routeSeleccionada) : null
+  const tempInfo = getTemperatureInfo(session.temperatura)
+  const opportunityText = getOpportunityDescription(session.puntuacion)
 
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -140,17 +142,24 @@ export function SalesSummary({ session, prospect, finalized, onComplete, onBack,
         <CardContent className="space-y-5">
           <SalesScoringBar score={session.puntuacion} temperatura={session.temperatura} />
 
-          <div className="flex flex-wrap gap-2">
-            {route && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Route className="size-3" />
-                {route.label}
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {route && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Route className="size-3" />
+                  {route.label}
+                </Badge>
+              )}
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Package className="size-3" />
+                {planInfo.label} — {planInfo.precio}
               </Badge>
-            )}
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Package className="size-3" />
-              {planInfo.label} — {planInfo.precio}
-            </Badge>
+              <Badge className={tempInfo.color}>{tempInfo.label}</Badge>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold">{session.puntuacion} pts</span>
+              <span className="text-muted-foreground">— {opportunityText}</span>
+            </div>
           </div>
 
           {clienteSection && clienteSection.items.length > 0 && (

@@ -1,12 +1,13 @@
 import { PrismaClient } from "@prisma/client"
-import { neonConfig } from "@neondatabase/serverless"
-import { PrismaNeon } from "@prisma/adapter-neon"
-import ws from "ws"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { seedSalesData } from "../src/lib/crm/seed-data"
 
-neonConfig.webSocketConstructor = ws
-
-const dbUrl = process.env.DATABASE_URL ?? "postgresql://panitas_user:changeme@localhost:5432/panitas_db?schema=public"
-const adapter = new PrismaNeon({ connectionString: dbUrl })
+const dbUrl = process.env.DATABASE_URL
+if (!dbUrl) {
+  console.error("DATABASE_URL not set")
+  process.exit(1)
+}
+const adapter = new PrismaPg({ connectionString: dbUrl })
 
 const prisma = new PrismaClient({
   adapter,
@@ -102,6 +103,10 @@ async function main() {
   }
 
   console.log("✅ Plans seeded successfully!")
+
+  console.log("🌱 Seeding sales data...")
+  await seedSalesData(prisma)
+  console.log("✅ Sales data seeded successfully!")
 }
 
 main()

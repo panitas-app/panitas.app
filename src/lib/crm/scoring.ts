@@ -1,9 +1,9 @@
 import { DEMO_STEPS } from "./constants"
 
 export function calculateTemperature(score: number): string {
-  if (score >= 76) return "muy_caliente"
-  if (score >= 51) return "caliente"
-  if (score >= 26) return "tibio"
+  if (score >= 121) return "muy_caliente"
+  if (score >= 71) return "caliente"
+  if (score >= 31) return "tibio"
   return "frio"
 }
 
@@ -24,7 +24,7 @@ export function calculateScoreFromAnswers(
       continue
     }
   }
-  return Math.min(100, total)
+  return total
 }
 
 export function recommendPlan(
@@ -55,13 +55,20 @@ export function recommendPlan(
 export function getRouteLabel(route: string | null | undefined): string {
   if (!route) return "No especificada"
   switch (route) {
-    case "emprendedor_presencial": return "Venta presencial + POS"
-    case "emprendedor_online": return "Venta fisica + Online"
+    case "emprendedor_presencial": return "Venta presencial + POS + Inventario"
+    case "emprendedor_online": return "Tienda fisica + Venta online + Inventario"
     case "agenda_salud": return "Salud y profesionales medicos"
     case "agenda_belleza": return "Barberias, belleza y estetica"
     case "empresarial_default": return "Plan Empresarial"
     default: return route
   }
+}
+
+function getOpportunityLevel(score: number): string {
+  if (score >= 121) return "Prioritaria"
+  if (score >= 71) return "Alta"
+  if (score >= 31) return "Media"
+  return "Baja"
 }
 
 export function generateSummary(
@@ -71,40 +78,39 @@ export function generateSummary(
   route?: string | null
 ): string {
   const problemas: string[] = []
-  const positivos: string[] = []
+  const dolores: string[] = []
+  const motivaciones: string[] = []
 
   for (const answer of answers) {
-    const texto = answer.question.texto
+    const texto = answer.question.texto.replace("?", "").trim()
     if (
       answer.valor === "No" ||
-      answer.valor === "No registra" ||
-      answer.valor === "No llevan control" ||
+      answer.valor === "No registramos" ||
+      answer.valor === "No tenemos control" ||
       answer.valor === "Memoria" ||
-      answer.valor === "No venden online" ||
-      answer.valor === "No tienen catalogo" ||
+      answer.valor === "No vendo online" ||
+      answer.valor === "No tengo catalogo" ||
+      answer.valor === "No actualizo" ||
       answer.valor === "Cuaderno" ||
-      answer.valor === "Frecuentemente" ||
-      answer.valor === "Algunas veces" ||
-      answer.valor === "Llegan directamente" ||
-      answer.valor === "Esperar respuesta" ||
-      answer.valor === "Agenda fisica" ||
-      answer.valor === "Poco"
+      answer.valor === "No puedo saberlo"
     ) {
-      problemas.push(`${texto.replace("?", "").trim()}: ${answer.valor}`)
-    }
-    if (
-      answer.valor === "Si" ||
-      answer.valor === "Mucho" ||
-      answer.valor === "Muchas veces" ||
-      answer.valor === "Siempre" ||
-      answer.valor === "Sí siempre"
-    ) {
-      positivos.push(`${texto.replace("?", "").trim()}: ${answer.valor}`)
+      problemas.push(`${texto}: ${answer.valor}`)
     }
     if (answer.question.tipo === "checklist" && answer.valor) {
       const items = answer.valor.split(",").map((s) => s.trim()).filter(Boolean)
       for (const item of items) {
-        problemas.push(item)
+        if (item !== "Ninguno" && item !== "Otro") {
+          problemas.push(item)
+        }
+      }
+    }
+    if (texto.toLowerCase().includes("mejorar") || texto.toLowerCase().includes("gustaria mejorar")) {
+      motivaciones.push(answer.valor)
+    }
+    if (texto.toLowerCase().includes("problemas")) {
+      const items = answer.valor.split(",").map((s) => s.trim()).filter(Boolean)
+      for (const item of items) {
+        if (item !== "Ninguno") dolores.push(item)
       }
     }
   }
@@ -132,8 +138,11 @@ export function generateSummary(
   if (problemas.length > 0) {
     summary += "Problemas detectados:\n" + problemas.map((p) => "  - " + p).join("\n") + "\n\n"
   }
-  if (positivos.length > 0) {
-    summary += "Puntos positivos:\n" + positivos.map((p) => "  - " + p).join("\n") + "\n\n"
+  if (dolores.length > 0) {
+    summary += "Dolores principales:\n" + dolores.map((d) => "  - " + d).join("\n") + "\n\n"
+  }
+  if (motivaciones.length > 0) {
+    summary += "Motivacion:\n" + motivaciones.map((m) => "  - " + m).join("\n") + "\n\n"
   }
 
   const cierreAnswer = answers.find(
@@ -153,22 +162,20 @@ export function generateSummary(
       summary += "Nivel de interes: Bajo\n"
       summary += "Proxima accion: Hacer seguimiento en 1 semana\n"
     }
-  } else {
-    const quiereDemo = answers.find((a) => a.question.texto.toLowerCase().includes("demostracion"))
-    if (quiereDemo?.valor === "Si") {
-      summary += "Proxima accion: Programar demostracion\n"
-    }
   }
 
-  const cuandoImpl = answers.find((a) => a.question.texto.toLowerCase().includes("implementarla"))
-  if (cuandoImpl) {
-    summary += `Plazo: ${cuandoImpl.valor}\n`
-  }
-
-  const ahora = new Date()
-  summary += `Fecha de seguimiento: ${ahora.toLocaleDateString("es-VE")}`
+  const fechaSeg = new Date()
+  fechaSeg.setDate(fechaSeg.getDate() + 7)
+  summary += `Fecha de seguimiento: ${fechaSeg.toLocaleDateString("es-VE")}`
 
   return summary
+}
+
+export function getOpportunityDescription(score: number): string {
+  if (score >= 121) return "Cliente prioritario — Necesidad urgente de solucion"
+  if (score >= 71) return "Alta oportunidad — Multiples necesidades detectadas"
+  if (score >= 31) return "Oportunidad media — Necesidades basicas de organizacion"
+  return "Baja oportunidad — Poco potencial de venta"
 }
 
 export function getDemoSteps(route: string | null | undefined): string[] {

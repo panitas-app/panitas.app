@@ -15,6 +15,8 @@ interface Question {
   condicionLogica?: string | null
   subtexto?: string | null
   maxChars?: number | null
+  painDetected?: string | null
+  salesArgument?: string | null
 }
 
 interface Section {
@@ -82,13 +84,47 @@ export function SalesPhase({
           </div>
         )}
         {visibleQuestions.map((question) => (
-          <SalesQuestionRenderer
-            key={question.id}
-            question={question}
-            value={answers[question.id] || ""}
-            onChange={(value) => onAnswer(question.id, value)}
-            allAnswers={answers}
-          />
+          <div key={question.id} className="space-y-2">
+            <SalesQuestionRenderer
+              question={question}
+              value={answers[question.id] || ""}
+              onChange={(value) => onAnswer(question.id, value)}
+              allAnswers={answers}
+            />
+            {(() => {
+              const answer = answers[question.id]
+              if (!answer || !question.painDetected && !question.salesArgument) return null
+              let painText: string | null = null
+              let argumentText: string | null = null
+              if (question.painDetected) {
+                try {
+                  const parsed = JSON.parse(question.painDetected)
+                  painText = parsed[answer] || null
+                } catch { /* ignore */ }
+              }
+              if (question.salesArgument) {
+                try {
+                  const parsed = JSON.parse(question.salesArgument)
+                  argumentText = parsed[answer] || null
+                } catch { /* ignore */ }
+              }
+              if (!painText && !argumentText) return null
+              return (
+                <div className="space-y-1.5">
+                  {painText && (
+                    <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      Dolor detectado: {painText}
+                    </div>
+                  )}
+                  {argumentText && (
+                    <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                      Argumento: {argumentText}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
         ))}
       </div>
     </div>

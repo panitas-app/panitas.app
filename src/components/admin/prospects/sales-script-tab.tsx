@@ -11,7 +11,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { PLAN_RECOMMENDATIONS, getRoutesForPlan, SALES_ROUTES, BUSINESS_TYPES_SALUD, BUSINESS_TYPES_BELLEZA } from "@/lib/crm/constants"
+import { PLAN_RECOMMENDATIONS, getRoutesForPlan, SALES_ROUTES, BUSINESS_TYPES_SALUD, BUSINESS_TYPES_BELLEZA, BUSINESS_TYPES_EMPRENDEDOR, SELLING_METHODS } from "@/lib/crm/constants"
 import type { SalesRoute } from "@/lib/crm/constants"
 import {
   Play,
@@ -87,7 +87,7 @@ interface SalesScriptTabProps {
   }
 }
 
-type ViewMode = "idle" | "plan_selection" | "business_type_selection" | "route_selection" | "in_progress" | "completed" | "history"
+type ViewMode = "idle" | "plan_selection" | "business_type_selection" | "selling_method_selection" | "route_selection" | "in_progress" | "completed" | "history"
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
   agenda: <Calendar className="size-8" />,
@@ -109,6 +109,7 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null)
   const [availableRoutes, setAvailableRoutes] = useState<SalesRoute[]>([])
+  const [selectedBusinessType, setSelectedBusinessType] = useState<string | null>(null)
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const answersRef = useRef(answers)
   answersRef.current = answers
@@ -157,7 +158,8 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
 
   function handlePlanSelect(plan: string) {
     setSelectedPlan(plan)
-    if (plan === "agenda") {
+    setSelectedBusinessType(null)
+    if (plan === "agenda" || plan === "emprendedor") {
       setMode("business_type_selection")
       return
     }
@@ -174,12 +176,24 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
     }
   }
 
+  function handleSellingMethodSelect(methodValue: string) {
+    const method = SELLING_METHODS.find((m) => m.value === methodValue)
+    const route = method?.route || "emprendedor_presencial"
+    setSelectedRoute(route)
+    startSession("emprendedor", route)
+  }
+
   function handleRouteSelect(route: string) {
     setSelectedRoute(route)
     startSession(selectedPlan!, route)
   }
 
   function handleBusinessTypeSelect(businessType: string) {
+    if (selectedPlan === "emprendedor") {
+      setSelectedBusinessType(businessType)
+      setMode("selling_method_selection")
+      return
+    }
     const isSalud = BUSINESS_TYPES_SALUD.some((t) => t.value === businessType)
     const route = isSalud ? "agenda_salud" : "agenda_belleza"
     setSelectedRoute(route)
@@ -375,7 +389,7 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
         </div>
       )}
 
-      {mode === "business_type_selection" && (
+      {mode === "business_type_selection" && selectedPlan === "agenda" && (
         <div className="space-y-4">
           <Button variant="ghost" size="sm" onClick={() => setMode("plan_selection")}>
             <ArrowLeft className="size-4" />
@@ -426,6 +440,52 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {mode === "business_type_selection" && selectedPlan === "emprendedor" && (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setMode("plan_selection")}>
+            <ArrowLeft className="size-4" />
+            Cambiar plan
+          </Button>
+          <p className="text-sm font-medium">Que tipo de negocio tiene este cliente?</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {BUSINESS_TYPES_EMPRENDEDOR.map((bt) => (
+              <button
+                key={bt.value}
+                type="button"
+                onClick={() => handleBusinessTypeSelect(bt.value)}
+                disabled={loading}
+                className="text-left text-sm px-3 py-2.5 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all"
+              >
+                {bt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mode === "selling_method_selection" && (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setMode("business_type_selection")}>
+            <ArrowLeft className="size-4" />
+            Volver
+          </Button>
+          <p className="text-sm font-medium">Como vende principalmente este negocio?</p>
+          <div className="space-y-2">
+            {SELLING_METHODS.map((method) => (
+              <button
+                key={method.value}
+                type="button"
+                onClick={() => handleSellingMethodSelect(method.value)}
+                disabled={loading}
+                className="w-full text-left text-sm px-4 py-3 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-all"
+              >
+                {method.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

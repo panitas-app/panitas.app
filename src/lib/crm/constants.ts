@@ -223,6 +223,30 @@ export function getPlanInfo(value: string) {
   return PLAN_RECOMMENDATIONS[value] || PLAN_RECOMMENDATIONS.agenda
 }
 
+export const BUSINESS_TYPES_EMPRENDEDOR = [
+  { value: "ferreteria", label: "Ferretería" },
+  { value: "bodegon", label: "Bodegón" },
+  { value: "supermercado", label: "Supermercado" },
+  { value: "repuestos", label: "Repuestos" },
+  { value: "farmacia", label: "Farmacia" },
+  { value: "minimarket", label: "Minimarket" },
+  { value: "panaderia", label: "Panadería" },
+  { value: "restaurante", label: "Restaurante" },
+  { value: "tienda_ropa", label: "Tienda de ropa" },
+  { value: "zapateria", label: "Zapatería" },
+  { value: "tecnologia", label: "Tecnología" },
+  { value: "accesorios", label: "Accesorios" },
+  { value: "cosmeticos", label: "Cosméticos" },
+  { value: "otro_emprendedor", label: "Otro" },
+] as const
+
+export const SELLING_METHODS = [
+  { value: "physical", label: "Principalmente en tienda física", route: "emprendedor_presencial" as const },
+  { value: "physical_social", label: "Tienda física y redes sociales", route: "emprendedor_online" as const },
+  { value: "online", label: "Solo venta online", route: "emprendedor_online" as const },
+  { value: "unsure", label: "No estoy seguro", route: "emprendedor_presencial" as const },
+] as const
+
 export const BUSINESS_TYPES_SALUD = [
   { value: "medico", label: "Medico" },
   { value: "odontologo", label: "Odontologo" },
