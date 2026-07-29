@@ -307,6 +307,89 @@ export function ProductForm({
     setPriceScales((prev) => prev.filter((_, idx) => idx !== indexToRemove))
   }
 
+  // ─── Scanner functions ───
+  async function startProductScanner() {
+    setScannerStatus("connecting")
+    setScannerOpen(true)
+    try {
+      const res = await fetch("/api/scanner/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) { setScannerStatus("error"); return }
+      const data = await res.json()
+      setScannerSessionId(data.sessionId)
+      setScannerToken(data.token)
+      setScannerStatus("idle")
+
+      const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
+      if (qrCanvasRef.current) {
+        await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
+          width: 280,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        })
+      }
+
+      const pusher = new Pusher(
+        process.env.NEXT_PUBLIC_PUSHER_KEY || "",
+        { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2" }
+      )
+      pusherRef.current = pusher
+      const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+
+      channel.bind("barcode_scanned", (d: any) => {
+        const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+        if (barcodeInput) {
+          barcodeInput.value = d.barcode
+          barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+          toast.success(`Código escaneado: ${d.barcode}`)
+        }
+        cleanupProductScanner()
+        setScannerOpen(false)
+      })
+
+      channel.bind("phone_connected", () => {
+        setScannerStatus("connected")
+      })
+
+      channel.bind("phone_disconnected", () => {
+        cleanupProductScanner()
+      })
+    } catch {
+      setScannerStatus("error")
+    }
+  }
+
+  function cleanupProductScanner() {
+    if (pusherRef.current) {
+      if (scannerSessionId) {
+        const ch = pusherRef.current.channel(`private-scanner-${scannerSessionId}`)
+        if (ch) { ch.unbind_all(); ch.unsubscribe() }
+      }
+      pusherRef.current.disconnect()
+      pusherRef.current = null
+    }
+    setScannerSessionId(null)
+    setScannerToken(null)
+    setScannerStatus("idle")
+  }
+
+  async function disconnectProductScanner() {
+    if (scannerSessionId) {
+      try {
+        await fetch("/api/scanner/disconnect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: scannerSessionId }),
+        })
+      } catch {}
+    }
+    cleanupProductScanner()
+    setScannerOpen(false)
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (loading) return
     e.preventDefault()
@@ -623,13 +706,25 @@ export function ProductForm({
                 <Label htmlFor="barcode" className="text-xs font-bold text-muted-foreground">
                   Código de barras <span className="text-[10px] text-muted-foreground font-normal">(Opcional)</span>
                 </Label>
-                <Input
-                  id="barcode"
-                  name="barcode"
-                  defaultValue={product?.barcode || ""}
-                  placeholder="Ej: 7891234567890"
-                  className="rounded-xl bg-muted focus-visible:ring-primary h-11 font-mono text-sm tracking-wider"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="barcode"
+                    name="barcode"
+                    defaultValue={product?.barcode || ""}
+                    placeholder="Ej: 7891234567890"
+                    className="rounded-xl bg-muted focus-visible:ring-primary h-11 font-mono text-sm tracking-wider flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl shrink-0"
+                    onClick={startProductScanner}
+                    title="Escanear código de barras con el teléfono"
+                  >
+                    <Smartphone className="size-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unidadBase" className="text-xs font-bold text-muted-foreground">
@@ -1143,6 +1238,54 @@ export function ProductForm({
 
         </form>
       </div>
+
+      {/* Scanner QR Modal */}
+      <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) disconnectProductScanner() }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="size-5" />
+              {scannerStatus === "connected" ? "Teléfono conectado" : "Escanear código de barras"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {scannerStatus === "connecting" ? (
+            <div className="flex flex-col items-center py-8 text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-sm font-medium">Creando sesión...</p>
+            </div>
+          ) : scannerStatus === "error" ? (
+            <div className="flex flex-col items-center py-8 text-center">
+              <p className="text-red-500 text-sm font-medium mb-1">Error al crear la sesión</p>
+              <p className="text-xs text-muted-foreground mb-4">Verifica tu conexión e intenta de nuevo</p>
+              <Button size="sm" onClick={startProductScanner}>Reintentar</Button>
+            </div>
+          ) : scannerStatus === "connected" ? (
+            <div className="py-4 space-y-3 text-center">
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                <Smartphone className="size-8 text-green-600" />
+              </div>
+              <p className="text-sm text-muted-foreground">Escanea el código de barras desde tu teléfono</p>
+              <Button variant="destructive" size="sm" onClick={disconnectProductScanner}>
+                Desconectar
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4 space-y-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Escanea este código QR con la cámara de tu teléfono para usarlo como lector.
+              </p>
+              <div className="flex justify-center">
+                <canvas ref={qrCanvasRef} className="rounded-lg border border-border" />
+              </div>
+              <p className="text-xs text-muted-foreground">La sesión expira en 5 minutos</p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={disconnectProductScanner}>Cancelar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -4,11 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { parseFile, mapRows, extractRawRows, type DetectedColumn } from "@/lib/import-engine"
 import { resolvePlanType } from "@/lib/plans"
 import { parseInventoryWithAI, getDailyUsage } from "@/lib/ai"
-
-const PLAN_LIMITS: Record<string, number> = {
-  comercio: 500,
-  mayorista: -1,
-}
+import { PLAN_LIMITS, resolvePlanLimitKey } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   try {
@@ -108,7 +104,8 @@ export async function POST(req: NextRequest) {
 
     // Check product limit
     const currentCount = await prisma.product.count({ where: { storeId: store.id } })
-    const planLimit = PLAN_LIMITS[resolvedPlan] ?? 200
+    const planLimitKey = resolvePlanLimitKey(resolvedPlan)
+    const planLimit = PLAN_LIMITS[planLimitKey]?.products ?? 200
     const remaining = planLimit === -1 ? Infinity : planLimit - currentCount
 
     if (remaining <= 0) {

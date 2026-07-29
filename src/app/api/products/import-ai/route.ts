@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolvePlanType } from "@/lib/plans"
-
-const PLAN_LIMITS: Record<string, number> = {
-  comercio: 500,
-  mayorista: -1,
-}
+import { PLAN_LIMITS, resolvePlanLimitKey } from "@/lib/constants"
 
 interface AIProduct {
   name: string
@@ -59,7 +55,8 @@ export async function POST(req: NextRequest) {
 
     // Check product limit
     const currentCount = await prisma.product.count({ where: { storeId: store.id } })
-    const planLimit = PLAN_LIMITS[resolvedPlan] ?? 200
+    const planLimitKey = resolvePlanLimitKey(resolvedPlan)
+    const planLimit = PLAN_LIMITS[planLimitKey]?.products ?? 200
     const remaining = planLimit === -1 ? Infinity : planLimit - currentCount
 
     if (remaining <= 0) {
