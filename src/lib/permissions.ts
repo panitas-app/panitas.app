@@ -66,6 +66,19 @@ async function planFindOrCreate(p: { id: string; nombre: string; label: string; 
   }
 }
 
+async function generateUniqueNegocioSlug(baseName: string, userId: string): Promise<string> {
+  const baseSlug = slugify(baseName) + "-" + userId.slice(0, 6)
+  const existing = await prisma.negocio.findUnique({ where: { slug: baseSlug } })
+  if (!existing) return baseSlug
+  return `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`
+}
+
+async function generateUniqueStoreSlug(baseSlug: string): Promise<string> {
+  const existing = await prisma.store.findUnique({ where: { slug: baseSlug } })
+  if (!existing) return baseSlug
+  return `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`
+}
+
 async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
   try {
     // 1. Buscar o crear Negocio
@@ -73,7 +86,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     if (!negocio) {
       const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
       const name = user?.name || "Mi Tienda"
-      const slug = slugify(name) + "-" + userId.slice(0, 6)
+      const slug = await generateUniqueNegocioSlug(name, userId)
 
       // Asegurar que existan los planes por defecto (sin transacciones para Neon HTTP)
       for (const p of [
@@ -99,11 +112,14 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         },
       }).catch(async (err: any) => {
         if (err?.code === "P2002") {
+          const existingUserNegocio = await prisma.negocio.findUnique({ where: { userId } })
+          if (existingUserNegocio) return existingUserNegocio
           console.error("[autoCreateStore] negocio.create P2002, retrying with entropy slug")
+          const fallbackSlug = `${slugify(name)}-${userId.slice(0, 6)}-${Date.now().toString(36)}`
           return prisma.negocio.create({
             data: {
               nombre: name,
-              slug: `${slug}-${userId.slice(0, 8)}`,
+              slug: fallbackSlug,
               planId: "comercio",
               modalidad: null,
               planEstado: "pendiente",
@@ -120,7 +136,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     let store = await prisma.store.findUnique({ where: { userId } })
     if (!store) {
       const name = negocio.nombre
-      const slug = negocio.slug
+      const slug = await generateUniqueStoreSlug(negocio.slug)
       const planType = negocio.modalidad === "tienda" ? "tienda"
         : negocio.modalidad === "agenda" ? "agenda"
         : negocio.planId === "agenda" ? "agenda"
@@ -142,10 +158,13 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
         },
       }).catch(async (err: any) => {
         if (err?.code === "P2002") {
+          const existingUserStore = await prisma.store.findUnique({ where: { userId } })
+          if (existingUserStore) return existingUserStore
+          const fallbackSlug = `${slug}-${Date.now().toString(36)}`
           return prisma.store.create({
             data: {
               name,
-              slug: `${slug}-${userId.slice(0, 8)}`,
+              slug: fallbackSlug,
               userId,
               negocioId: negocio.id,
               plan: "free",
