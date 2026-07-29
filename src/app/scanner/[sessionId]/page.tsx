@@ -218,31 +218,35 @@ function ScannerPage() {
     }
 
     try {
-      logDiag("Instanciando Html5Qrcode con soporte 1D (EAN-13, CODE-128, UPC, ITF)...")
+      logDiag("Instanciando Html5Qrcode con soporte 1D para iOS/Android...")
+      const formats = [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+      ].filter((f) => f !== undefined)
+
       const scanner = new Html5Qrcode("scanner-viewport", {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-        ],
+        formatsToSupport: formats,
         verbose: false,
       })
       scannerRef.current = scanner
 
       const config = {
-        fps: 25,
-        qrbox: (w: number, h: number) => ({
-          width: Math.floor(Math.min(w * 0.88, 360)),
-          height: Math.floor(Math.min(h * 0.45, 180)),
-        }),
-        aspectRatio: 1.0,
+        fps: 20,
+        qrbox: (w: number, h: number) => {
+          const vw = w || 300
+          const vh = h || 300
+          return {
+            width: Math.floor(Math.max(Math.min(vw * 0.85, 340), 220)),
+            height: Math.floor(Math.max(Math.min(vh * 0.45, 180), 120)),
+          }
+        },
       }
 
       const onScanSuccess = async (decodedText: string) => {
@@ -281,17 +285,12 @@ function ScannerPage() {
 
       let startErr: any = null
 
-      // Attempt 1: Rear camera with ideal environment constraint
+      // Attempt 1: Standard Rear camera (facingMode: environment for Safari iOS & Chrome Android)
       try {
-        logDiag("Intento 1: Cámara Trasera (facingMode ideal environment)...")
-        await scanner.start(
-          { facingMode: { ideal: "environment" } },
-          config,
-          onScanSuccess,
-          () => {}
-        )
-        setActiveCamLabel("Trasera")
-        logDiag("ÉXITO: Cámara Trasera iniciada a 25 FPS")
+        logDiag("Intento 1: Cámara Trasera (facingMode environment)...")
+        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+        setActiveCamLabel("Trasera Estándar")
+        logDiag("ÉXITO: Cámara Trasera iniciada")
         return
       } catch (e1: any) {
         startErr = e1
@@ -299,12 +298,12 @@ function ScannerPage() {
         await new Promise((r) => setTimeout(r, 200))
       }
 
-      // Attempt 2: Standard Rear camera string
+      // Attempt 2: Ideal Environment constraint
       try {
-        logDiag("Intento 2: Cámara Trasera Estándar (facingMode environment)...")
-        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
-        setActiveCamLabel("Trasera Estándar")
-        logDiag("ÉXITO: Cámara Trasera Estándar iniciada")
+        logDiag("Intento 2: Cámara Trasera (facingMode ideal environment)...")
+        await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
+        setActiveCamLabel("Trasera Ideal")
+        logDiag("ÉXITO: Cámara Trasera iniciada")
         return
       } catch (e2: any) {
         if (!startErr) startErr = e2
