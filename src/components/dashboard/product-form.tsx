@@ -302,6 +302,7 @@ export function ProductForm({
       price: form.get("price"),
       costPrice: form.get("costPrice"),
       sku: form.get("sku"),
+      barcode: form.get("barcode"),
       unidadBase: form.get("unidadBase"),
       stock: form.get("stock"),
       categoryId: selectedCategory === "empty" || !selectedCategory ? null : selectedCategory,
@@ -588,7 +589,7 @@ export function ProductForm({
               <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Código único de inventario</span>
             </div>
             
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="sku" className="text-xs font-bold text-muted-foreground">
                   SKU <span className="text-[10px] text-muted-foreground font-normal">(Opcional)</span>
@@ -599,6 +600,18 @@ export function ProductForm({
                   defaultValue={product?.sku || ""}
                   placeholder="Ej: CALZ-DEPO-42-01"
                   className="rounded-xl bg-muted focus-visible:ring-primary h-11 uppercase text-sm font-bold tracking-wider"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="barcode" className="text-xs font-bold text-muted-foreground">
+                  Código de barras <span className="text-[10px] text-muted-foreground font-normal">(Opcional)</span>
+                </Label>
+                <Input
+                  id="barcode"
+                  name="barcode"
+                  defaultValue={product?.barcode || ""}
+                  placeholder="Ej: 7891234567890"
+                  className="rounded-xl bg-muted focus-visible:ring-primary h-11 font-mono text-sm tracking-wider"
                 />
               </div>
               <div className="space-y-2">
@@ -615,7 +628,7 @@ export function ProductForm({
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground leading-relaxed">
-              Código único y unidad base para identificar el producto en inventario.
+              Código único de inventario, código de barras y unidad base para identificar el producto.
             </p>
           </div>
 

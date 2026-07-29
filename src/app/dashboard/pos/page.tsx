@@ -15,11 +15,13 @@ import { formatBCV } from "@/lib/bcv/format"
 import {
   Plus, Minus, Trash2, Search, Package, ShoppingCart, User, Phone, CreditCard,
   DollarSign, Printer, Download, X,   ChevronDown, ChevronUp, ChevronRight, Percent, Banknote,
-  BadgePercent, ScanLine, Receipt, CalendarCheck, SplitSquareVertical, UserPlus,
+  BadgePercent, ScanLine, Receipt, CalendarCheck, SplitSquareVertical, UserPlus, Smartphone,
 } from "lucide-react"
+import Pusher from "pusher-js"
+import QRCode from "qrcode"
 
 interface Product {
-  id: string; name: string; price: number; stock: number; images: string; sku?: string | null
+  id: string; name: string; price: number; stock: number; images: string; sku?: string | null; barcode?: string | null
   isWholesale: boolean; wholesalePrice?: number | null; wholesaleScales?: string | null
   costPrice?: number | null; hasSizes: boolean; sizes?: string | null
   categoryId: string | null; category: { id: string; name: string } | null
@@ -105,6 +107,15 @@ export default function POSPage() {
   // Loading
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  // Scanner
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
+  const [scannerToken, setScannerToken] = useState<string | null>(null)
+  const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
+  const [scannerDevice, setScannerDevice] = useState<string>("")
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const pusherRef = useRef<Pusher | null>(null)
 
   // Scan input ref
   const scanRef = useRef<HTMLInputElement>(null)
@@ -272,7 +283,7 @@ export default function POSPage() {
   const filteredProducts = products.filter((p) => {
     if (!search) return true
     const q = search.toLowerCase()
-    return p.name.toLowerCase().includes(q) || (p.sku?.toLowerCase() || "").includes(q)
+    return p.name.toLowerCase().includes(q) || (p.sku?.toLowerCase() || "").includes(q) || (p.barcode?.toLowerCase() || "").includes(q)
   }).filter((p) => selectedCategory === "all" || p.categoryId === selectedCategory)
 
   const groupedProducts = categories
@@ -410,6 +421,115 @@ async function processSale() {
     finally { setSubmitting(false) }
   }
 
+  // ─── Scanner functions ──────────────────────────────────────
+  async function startScanner() {
+    setScannerStatus("connecting")
+    setScannerOpen(true)
+    try {
+      const res = await fetch("/api/scanner/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) { setScannerStatus("error"); return }
+      const data = await res.json()
+      setScannerSessionId(data.sessionId)
+      setScannerToken(data.token)
+      setScannerStatus("idle")
+
+      const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
+      if (qrCanvasRef.current) {
+        await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
+          width: 280,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        })
+      }
+
+      const pusher = new Pusher(
+        process.env.NEXT_PUBLIC_PUSHER_KEY || "",
+        { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2" }
+      )
+      pusherRef.current = pusher
+      const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+
+      channel.bind("phone_connected", (d: any) => {
+        setScannerStatus("connected")
+        setScannerDevice(d.deviceName || "Teléfono")
+      })
+
+      channel.bind("phone_disconnected", () => {
+        setScannerStatus("idle")
+        setScannerDevice("")
+        cleanupScanner()
+      })
+
+      channel.bind("barcode_scanned", async (d: any) => {
+        const code = d.barcode
+        const found = products.find(p => p.barcode?.toLowerCase() === code.toLowerCase() ||
+          p.sku?.toLowerCase() === code.toLowerCase())
+        if (found) {
+          addToCart(found)
+          await fetch("/api/scanner/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: data.sessionId, barcode: code }),
+          })
+        } else {
+          try {
+            const res = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)
+            const resData = await res.json()
+            const list = resData.data || []
+            if (list.length > 0) {
+              addToCart(list[0])
+              setProducts(prev => {
+                if (!prev.find(p => p.id === list[0].id)) return [...prev, list[0]]
+                return prev
+              })
+            }
+          } catch {}
+        }
+      })
+
+      channel.bind("scanner_disconnect", () => {
+        setScannerStatus("idle")
+        setScannerDevice("")
+        cleanupScanner()
+      })
+    } catch {
+      setScannerStatus("error")
+    }
+  }
+
+  function cleanupScanner() {
+    if (pusherRef.current) {
+      if (scannerSessionId) {
+        const ch = pusherRef.current.channel(`private-scanner-${scannerSessionId}`)
+        if (ch) { ch.unbind_all(); ch.unsubscribe() }
+      }
+      pusherRef.current.disconnect()
+      pusherRef.current = null
+    }
+  }
+
+  async function disconnectScanner() {
+    if (scannerSessionId) {
+      try {
+        await fetch("/api/scanner/disconnect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: scannerSessionId }),
+        })
+      } catch {}
+    }
+    cleanupScanner()
+    setScannerOpen(false)
+    setScannerSessionId(null)
+    setScannerToken(null)
+    setScannerStatus("idle")
+    setScannerDevice("")
+  }
+
   function resetSaleState() {
     setCart([])
     setCartDiscount(0)
@@ -501,6 +621,21 @@ async function processSale() {
           </select>
           <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => { fetchProducts(); fetchTodaySales() }}>
             <Package className="size-3.5" /> Refrescar
+          </Button>
+          <Button
+            variant={scannerStatus === "connected" ? "default" : "secondary"}
+            size="sm"
+            className={`gap-1.5 text-xs ${scannerStatus === "connected" ? "bg-green-600 hover:bg-green-700" : ""}`}
+            onClick={() => {
+              if (scannerSessionId && scannerStatus === "connected") {
+                setScannerOpen(true)
+              } else {
+                startScanner()
+              }
+            }}
+          >
+            <Smartphone className="size-3.5" />
+            {scannerStatus === "connected" ? "Conectado" : "Lector"}
           </Button>
         </div>
 
@@ -1244,6 +1379,63 @@ async function processSale() {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground py-8 text-center">Error al cargar reporte</p>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Scanner Modal ─── */}
+      <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) disconnectScanner() }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="size-5" />
+              {scannerStatus === "connected" ? "Lector conectado" : "Usar teléfono como lector"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {scannerStatus === "connecting" ? (
+            <div className="flex flex-col items-center py-8 text-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-sm font-medium">Creando sesión...</p>
+            </div>
+          ) : scannerStatus === "error" ? (
+            <div className="flex flex-col items-center py-8 text-center">
+              <p className="text-red-500 text-sm font-medium mb-1">Error al crear la sesión</p>
+              <p className="text-xs text-muted-foreground mb-4">Verifica tu conexión e intenta de nuevo</p>
+              <Button size="sm" onClick={startScanner}>Reintentar</Button>
+            </div>
+          ) : scannerStatus === "connected" ? (
+            <div className="py-4 space-y-3 text-center">
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                <Smartphone className="size-8 text-green-600" />
+              </div>
+              <div>
+                <p className="font-semibold">Teléfono conectado</p>
+                <p className="text-sm text-muted-foreground">{scannerDevice}</p>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Escaneando...
+              </div>
+              <Button variant="destructive" size="sm" onClick={disconnectScanner}>
+                Desconectar teléfono
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4 space-y-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Escanea este código QR con la cámara de tu teléfono para usarlo como lector de códigos de barras.
+              </p>
+              <div className="flex justify-center">
+                <canvas ref={qrCanvasRef} className="rounded-lg border border-border" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                La sesión expira en 5 minutos
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={disconnectScanner}>Cancelar</Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

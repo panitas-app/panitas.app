@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -143,7 +143,10 @@ export function DashboardTopbar({
   useEffect(() => { setStoreUrl(`${window.location.origin}/${store.slug}`) }, [store.slug])
   const storeUrlQr = storeUrl ? `${storeUrl}?ref=qr` : ""
 
-  const planButton = computePlanStatus(store, planEstado, planId, planVencimiento, latestSubscription)
+  const planButton = useMemo(
+    () => computePlanStatus(store, planEstado, planId, planVencimiento, latestSubscription),
+    [store, planEstado, planId, planVencimiento, latestSubscription],
+  )
 
   async function handleCopyLink() {
     try {
@@ -156,7 +159,7 @@ export function DashboardTopbar({
 
   return (
     <>
-      <header data-tour="topbar" className="sticky top-0 z-20 flex h-14 lg:h-16 items-center justify-between glass-dark px-4 lg:px-6 safe-top">
+      <header data-tour="topbar" className="sticky top-0 z-20 flex h-14 lg:h-16 items-center justify-between bg-background/98 lg:glass-dark px-4 lg:px-6 safe-top contain-paint">
         <div className="flex items-center gap-4 min-w-0">
           {showBolivares && (
           <div className="hidden items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-500/5 px-3 py-1 text-[11px] font-bold text-emerald-300 sm:flex">
@@ -222,7 +225,7 @@ export function DashboardTopbar({
                 </button>
               }
             />
-            <DropdownMenuContent align="end" className="w-52 rounded-2xl border border-border/10 bg-white/98 backdrop-blur-2xl p-2.5 shadow-2xl">
+            <DropdownMenuContent align="end" className="w-52 rounded-2xl border border-border/10 bg-white p-2.5 shadow-2xl">
               <DropdownMenuLabel className="px-3.5 py-3">
                 <div className="flex flex-col">
                   <span className="text-sm font-extrabold text-accent truncate">{user?.name}</span>

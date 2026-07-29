@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react"
 
 interface BcvRateContextValue {
   rate: number
@@ -18,7 +18,12 @@ export function BcvRateProvider({ initialRate, initialShowBolivares = true, chil
   useEffect(() => { setRate(initialRate) }, [initialRate])
   useEffect(() => { setShowBolivares(initialShowBolivares) }, [initialShowBolivares])
 
-  return <BcvRateContext.Provider value={{ rate, setRate, showBolivares, setShowBolivares }}>{children}</BcvRateContext.Provider>
+  const value = useMemo(
+    () => ({ rate, setRate, showBolivares, setShowBolivares }),
+    [rate, showBolivares],
+  )
+
+  return <BcvRateContext.Provider value={value}>{children}</BcvRateContext.Provider>
 }
 
 export function useBcvRate() {

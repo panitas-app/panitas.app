@@ -159,6 +159,7 @@ export async function POST(req: NextRequest) {
             price: row.price,
             costPrice: row.costPrice,
             sku,
+            barcode: row.barcode,
             stock: row.stock,
             unidadBase: row.unidadBase,
             description: row.description,

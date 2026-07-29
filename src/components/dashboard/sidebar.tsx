@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -160,7 +160,7 @@ function sidebarPlanLabel(planId: string, modalidad: string | null | undefined):
   return PLAN_DEFINITIONS[planId as keyof typeof PLAN_DEFINITIONS]?.label || "Emprendedor"
 }
 
-function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarContentProps) {
+const SidebarContent = memo(function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarContentProps) {
   const pathname = usePathname()
   const [pendingCount, setPendingCount] = useState(0)
   const lastViewedRef = useRef<string | null>(null)
@@ -223,12 +223,13 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
   }, [isOnOrders, markOrdersViewed])
 
   const planLabel = sidebarPlanLabel(planId || legacyPlanType, modalidad)
-  const navItems = getNavItems(legacyPlanType)
 
-  const visibleItems = navItems.filter((item) => {
-    if (item.roles && !item.roles.includes(role)) return false
-    return true
-  })
+  const navItems = useMemo(() => getNavItems(legacyPlanType), [legacyPlanType])
+
+  const visibleItems = useMemo(
+    () => navItems.filter((item) => !item.roles || item.roles.includes(role)),
+    [navItems, role],
+  )
 
   return (
     <div className="flex h-full flex-col glass-dark sidebar-solid text-foreground">
@@ -266,22 +267,18 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
                 )}
               >
                 {isActive && (
-                  <motion.div
-                    layoutId="activeSidebarTab"
+                  <div
                     className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/10"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
                 <Icon className={cn("size-4.5 z-10 icon-hover-bounce shrink-0", isActive ? "text-accent" : "text-muted-foreground")} />
                 <span className="z-10 truncate">{item.label}</span>
                 {item.badge && pendingCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                  <span
                     className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm shrink-0"
                   >
                     {pendingCount > 99 ? "99+" : pendingCount}
-                  </motion.span>
+                  </span>
                 )}
               </Button>
             </Link>
@@ -305,7 +302,7 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
       </div>
     </div>
   )
-}
+})
 
 export function DashboardSidebar({ store, role, planId, modalidad }: { store: PrismaStore; role: Role; planId?: string; modalidad?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -317,6 +314,9 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
     return () => { document.body.style.overflow = "" }
   }, [mobileOpen])
 
+  const closeMobile = useCallback(() => setMobileOpen(false), [])
+  const openMobile = useCallback(() => setMobileOpen(true), [])
+
   return (
     <>
       <aside data-tour="sidebar" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
@@ -327,8 +327,8 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
       </aside>
 
       <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-3.5 left-3.5 z-40 lg:hidden touch-target rounded-xl bg-background/80 backdrop-blur-md border border-border shadow-xs text-foreground"
+        onClick={openMobile}
+        className="fixed top-3.5 left-3.5 z-40 lg:hidden touch-target rounded-xl bg-background/90 border border-border shadow-xs text-foreground"
         aria-label="Abrir menú"
       >
         <Menu className="size-5" />
@@ -342,9 +342,9 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobile}
               onTouchMove={(e) => e.preventDefault()}
-              className="fixed inset-0 z-40 bg-black/55 lg:hidden"
+              className="fixed inset-0 z-40 perf-overlay lg:hidden"
             />
             <motion.div
               ref={sheetRef}
@@ -355,10 +355,10 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
               className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-hidden shadow-2xl gpu will-change-transform"
             >
               <div className="relative h-full">
-                <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={() => setMobileOpen(false)} />
+                <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={closeMobile} />
                 <button
-                  onClick={() => setMobileOpen(false)}
-                  className="absolute top-4 right-4 touch-target rounded-full bg-muted/80 backdrop-blur-sm text-foreground"
+                  onClick={closeMobile}
+                  className="absolute top-4 right-4 touch-target rounded-full bg-muted/80 text-foreground"
                   aria-label="Cerrar menú"
                 >
                   <X className="size-4" />

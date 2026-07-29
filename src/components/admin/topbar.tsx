@@ -23,7 +23,7 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
     : user?.email?.slice(0, 2).toUpperCase() || "A"
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border/10 bg-background/80 backdrop-blur-xl px-4 lg:px-6 safe-top">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-border/10 bg-background/98 lg:bg-background/80 lg:backdrop-blur-xl px-4 lg:px-6 safe-top contain-paint">
       <Link href="/admin" className="flex items-center gap-2 font-heading text-sm lg:text-base font-bold min-w-0">
         <Shield className="size-5 text-primary shrink-0" />
         <span>PANITAS <span className="text-[11px] font-normal text-muted-foreground hidden sm:inline">Admin</span></span>
@@ -42,7 +42,7 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
               </button>
             }
           />
-          <DropdownMenuContent align="end" className="w-48 rounded-2xl border border-border/10 bg-white/98 backdrop-blur-2xl p-2 shadow-2xl">
+          <DropdownMenuContent align="end" className="w-48 rounded-2xl border border-border/10 bg-white p-2 shadow-2xl">
             <DropdownMenuLabel className="px-3 py-2.5">
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-foreground truncate">{user?.name}</span>

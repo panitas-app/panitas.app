@@ -46,6 +46,7 @@ model User {
   supportTickets SupportTicket[]
   supportMessages SupportMessage[]
   cashRegisterSessions CashRegisterSession[] // opened sessions
+  scannerSessions ScannerSession[]
 }
 
 model Plan {
@@ -116,6 +117,7 @@ model Negocio {
   appointments        Appointment[]
 
   planHistory NegocioPlanHistory[]
+  scannerSessions ScannerSession[]
 
   @@index([planEstado])
   @@index([planVencimiento])
@@ -310,6 +312,7 @@ model Store {
   sellers     Seller[]
   stockMovements StockMovement[]
   cashRegisterSessions CashRegisterSession[]
+  scannerSessions ScannerSession[]
 }
 
 model StoreVisit {
@@ -375,6 +378,7 @@ model Product {
   price       Float
   costPrice   Float?
   sku         String?
+  barcode     String?
   images      String
   stock       Int      @default(0)
   isActive    Boolean  @default(true)
@@ -1542,4 +1546,42 @@ model SalesPlanRecommendation {
   updatedAt     DateTime @updatedAt
 
   @@index([plan])
+}
+
+// ─── PANITAS SCANNER ────────────────────────────────────────────────
+
+model ScannerSession {
+  id           String   @id @default(cuid())
+  storeId      String
+  negocioId    String
+  userId       String
+  status       String   @default("pending") // pending | connected | disconnected | expired
+  deviceName   String?
+  token        String   @unique
+  expiresAt    DateTime
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  negocio Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  events ScannerEvent[]
+
+  @@index([storeId, status])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model ScannerEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  type      String   // barcode_scanned | product_found | product_not_found | connected | disconnected | camera_error | error
+  payload   String?  // JSON with extra data
+  createdAt DateTime @default(now())
+
+  session ScannerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }

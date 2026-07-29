@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext } from "react"
+import { createContext, useContext, useMemo } from "react"
 import { useNewOrders } from "@/hooks/use-new-orders"
 
 interface NewOrdersContextType {
@@ -20,8 +20,13 @@ export function useNewOrdersContext() {
 export function NewOrdersProvider({ children }: { children: React.ReactNode }) {
   const { newCount, resetCount } = useNewOrders()
 
+  const value = useMemo(
+    () => ({ newCount, resetCount }),
+    [newCount, resetCount],
+  )
+
   return (
-    <NewOrdersContext.Provider value={{ newCount, resetCount }}>
+    <NewOrdersContext.Provider value={value}>
       {children}
     </NewOrdersContext.Provider>
   )

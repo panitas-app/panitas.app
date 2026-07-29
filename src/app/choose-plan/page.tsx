@@ -22,7 +22,7 @@ const plans = [
     id: "agenda",
     name: "Plan Agenda",
     price: 14.99,
-    installmentAmount: 9,
+    installmentAmount: 8.99,
     tagline: "Reserva y organiza con inteligencia",
     description:
       "Un sistema de agendamiento inteligente para profesionales que gestionan citas, turnos y reservas. Ideal para barberías, clínicas, consultorios y servicios por cita.",
@@ -40,7 +40,7 @@ const plans = [
     id: "comercio",
     name: "Plan Emprendedor",
     price: 19.99,
-    installmentAmount: 12,
+    installmentAmount: 12.99,
     tagline: "Tu negocio todo-en-uno",
     description:
       "La solución completa para emprendedores que quieren vender online, agendar citas y gestionar clientes desde un solo lugar. Tienda web + agenda + CRM.",
@@ -64,7 +64,7 @@ const plans = [
     id: "mayorista",
     name: "Plan Mayorista",
     price: 49.99,
-    installmentAmount: 27.50,
+    installmentAmount: 27.99,
     tagline: "Escala sin límites",
     description:
       "Solución enterprise para distribuidoras y mayoristas que necesitan control B2B, automatizaciones y gestión de comisiones. Todo lo que necesitas para escalar.",

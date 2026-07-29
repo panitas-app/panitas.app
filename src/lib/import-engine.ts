@@ -8,7 +8,8 @@ export const FIELD_ALIASES: Record<string, string[]> = {
   name: ["nombre", "producto", "name", "product", "articulo", "artículo", "descripcion", "descripción", "description", "denominacion", "denominación", "item", "articulo name", "nombre del producto", "producto nombre", "producto name"],
   price: ["precio", "price", "venta", "pvp", "pvp usd", "precio venta", "precio de venta", "precio usd", "precio final", "precio venta usd", "pv", "pvps", "sell price", "retail price", "public price", "precio publico", "precio público"],
   costPrice: ["costo", "cost", "costo usd", "precio costo", "cost price", "costo unitario", "costo unitario usd", "precio de costo", "costo base", "cost base", "purchase price", "precio compra", "precio de compra", "costo de compra", "costo promedio"],
-  sku: ["sku", "codigo", "código", "code", "cod", "ref", "referencia", "cod. barras", "código de barras", "barcode", "codigo de barras", "referencia producto", "cod producto", "cod. producto"],
+  sku: ["sku", "codigo", "código", "code", "cod", "ref", "referencia", "referencia producto", "cod producto", "cod. producto"],
+  barcode: ["barcode", "cod. barras", "código de barras", "codigo de barras", "ean", "ean13", "ean8", "upc", "upca", "upce", "gtin", "código ean", "codigo ean"],
   stock: ["stock", "cantidad", "qty", "quantity", "inventario", "existencias", "disponible", "existencia", "stock actual", "cantidad disponible", "inventario actual", "disponibilidad", "stock disponible", "unidades"],
   unidadBase: ["unidad", "unit", "medida", "um", "unidad base", "unid", "unidades", "unit of measure", "uom", "medida base", "tipo unidad", "unidad de medida"],
   description: ["detalle", "detalles", "info", "informacion", "información", "obs", "observaciones", "notas", "note", "notes", "comments", "comentarios", "descripcion producto", "descripción del producto", "product description"],
@@ -55,6 +56,7 @@ export interface MappedRow {
   price: number
   costPrice: number | null
   sku: string | null
+  barcode: string | null
   stock: number
   unidadBase: string
   description: string | null
@@ -380,6 +382,7 @@ export function mapRows(rows: ParsedRow[], columns: DetectedColumn[]): { mapped:
       price,
       costPrice: extractCostPrice(row, fieldMap),
       sku: extractSku(row, fieldMap),
+      barcode: extractBarcode(row, fieldMap),
       stock: extractStock(row, fieldMap),
       unidadBase: extractUnidadBase(row, fieldMap),
       description: extractDescription(row, fieldMap),
@@ -423,6 +426,11 @@ function extractCostPrice(row: ParsedRow, fieldMap: Record<string, string>): num
 function extractSku(row: ParsedRow, fieldMap: Record<string, string>): string | null {
   const v = getFieldValue(row, fieldMap, "sku")
   return safeStr(v, 32, 1)
+}
+
+function extractBarcode(row: ParsedRow, fieldMap: Record<string, string>): string | null {
+  const v = getFieldValue(row, fieldMap, "barcode")
+  return safeStr(v, 32, 0) || null
 }
 
 function extractStock(row: ParsedRow, fieldMap: Record<string, string>): number {

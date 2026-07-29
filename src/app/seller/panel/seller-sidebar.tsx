@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -16,6 +16,16 @@ export function SellerSidebar({ seller }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (!mobileOpen) return
+    document.body.style.overflow = "hidden"
+    return () => { document.body.style.overflow = "" }
+  }, [mobileOpen])
+
+  const closeMobile = useCallback(() => setMobileOpen(false), [])
+  const openMobile = useCallback(() => setMobileOpen(true), [])
 
   const items = [
     { href: "/seller/panel", label: "Mis Ventas", icon: BarChart3 },
@@ -33,7 +43,7 @@ export function SellerSidebar({ seller }: Props) {
       {items.map((item) => {
         const isActive = pathname === item.href
         return (
-          <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+          <Link key={item.href} href={item.href} onClick={closeMobile}>
             <Button
               variant="ghost"
               className={cn(
@@ -72,7 +82,7 @@ export function SellerSidebar({ seller }: Props) {
       </aside>
 
       <button
-        onClick={() => setMobileOpen(true)}
+        onClick={openMobile}
         className="fixed top-3 left-3 z-50 lg:hidden touch-target rounded-xl bg-[#0A1628] text-white border border-white/10"
         aria-label="Abrir menú"
       >
@@ -86,16 +96,16 @@ export function SellerSidebar({ seller }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+              transition={{ duration: 0.15 }}
+              onClick={closeMobile}
+              className="fixed inset-0 z-40 perf-overlay"
             />
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] bg-[#0A1628] text-white p-4 shadow-2xl safe-bottom"
+              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] bg-[#0A1628] text-white p-4 shadow-2xl safe-bottom gpu will-change-transform"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2 min-w-0">
@@ -106,7 +116,7 @@ export function SellerSidebar({ seller }: Props) {
                   </div>
                 </div>
                 <button
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobile}
                   className="touch-target rounded-full bg-white/10 text-white"
                   aria-label="Cerrar"
                 >

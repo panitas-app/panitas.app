@@ -85,7 +85,7 @@ export function Navbar() {
       </AnimatePresence>
 
       <header className="sticky top-0 z-50 w-full py-4 px-4 md:px-8" style={{ "--accent": "#102A43" } as React.CSSProperties}>
-        <div className="absolute inset-0 bg-[#FFB92E]/85 backdrop-blur-2xl border-b border-white/20 shadow-lg shadow-black/5" />
+        <div className="absolute inset-0 bg-[#FFB92E]/85 backdrop-blur-md border-b border-white/20 shadow-lg shadow-black/5" />
 
         <div
           className={`relative mx-auto flex items-center justify-between h-14 transition-all duration-300 ${

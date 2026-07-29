@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, memo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -74,7 +74,7 @@ const groups: NavGroup[] = [
   },
 ]
 
-function AdminSidebarContent() {
+const AdminSidebarContent = memo(function AdminSidebarContent() {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
@@ -84,9 +84,9 @@ function AdminSidebarContent() {
     return initial
   })
 
-  function toggle(label: string) {
+  const toggle = useCallback((label: string) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
-  }
+  }, [])
 
   return (
     <nav className="flex-1 space-y-1 p-4">
@@ -153,10 +153,13 @@ function AdminSidebarContent() {
       </div>
     </nav>
   )
-}
+})
 
 export function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const closeMobile = useCallback(() => setMobileOpen(false), [])
+  const openMobile = useCallback(() => setMobileOpen(true), [])
 
   return (
     <>
@@ -165,8 +168,8 @@ export function AdminSidebar() {
       </aside>
 
       <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-16 left-3 z-40 lg:hidden touch-target rounded-xl bg-background/80 backdrop-blur-md border border-border shadow-xs text-foreground"
+        onClick={openMobile}
+        className="fixed top-16 left-3 z-40 lg:hidden touch-target rounded-xl bg-background/90 border border-border shadow-xs text-foreground"
         aria-label="Abrir menú admin"
       >
         <Menu className="size-5" />
@@ -179,21 +182,21 @@ export function AdminSidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+              transition={{ duration: 0.15 }}
+              onClick={closeMobile}
+              className="fixed inset-0 z-40 perf-overlay lg:hidden"
             />
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-y-auto bg-background shadow-2xl"
+              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-y-auto bg-background shadow-2xl gpu will-change-transform"
             >
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <span className="text-sm font-bold">Panel Admin</span>
                 <button
-                  onClick={() => setMobileOpen(false)}
+                  onClick={closeMobile}
                   className="touch-target rounded-full bg-muted text-foreground"
                   aria-label="Cerrar"
                 >

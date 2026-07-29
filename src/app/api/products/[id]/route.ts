@@ -93,6 +93,11 @@ export async function PUT(
     data.sku = sku || generateSku(data.name || product.name)
   }
 
+  if (body.barcode !== undefined) {
+    if (body.barcode !== null && typeof body.barcode !== "string") return NextResponse.json({ error: "Código de barras inválido" }, { status: 400 })
+    data.barcode = body.barcode ? body.barcode.trim().slice(0, 32) : null
+  }
+
   if (body.images !== undefined) {
     const imgs = safeImages(body.images)
     if (imgs === null) return NextResponse.json({ error: "Imágenes inválidas" }, { status: 400 })

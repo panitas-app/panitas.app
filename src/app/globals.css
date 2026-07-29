@@ -309,12 +309,12 @@
   }
   /* Reduce backdrop-filter blur on mobile — saves GPU */
   .glass-dark, .glass, .glass-card {
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
   }
   /* Reduce paint complexity */
   .sidebar, nav, header {
-    contain: layout style;
+    contain: layout style paint;
   }
 }
 
@@ -374,31 +374,51 @@
 }
 
 /* ── Mobile Performance Mode — High-efficiency glassmorphism ── */
-@media (max-width: 768px) {
+/* Touch devices (Android/iOS) get minimal blur for GPU savings */
+@media (hover: none) and (pointer: coarse) {
   .glass {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
   }
   .glass-dark {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+    background: var(--glass-dark-bg, rgba(240,244,255,0.92)) !important;
   }
   .glass-card {
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+    background: var(--glass-bg, rgba(255,255,255,0.88)) !important;
   }
-  /* Reduce heavy backdrop blurs on mobile Tailwind classes */
-  .backdrop-blur-3xl {
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+  /* Reduce heavy backdrop blurs on Tailwind classes */
+  .backdrop-blur-3xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-xl,
+  .backdrop-blur-lg,
+  .backdrop-blur-md {
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
   }
-  .backdrop-blur-2xl {
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+}
+/* Fallback for max-width (non-touch tablets, etc.) */
+@media (max-width: 768px) {
+  .glass {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
   }
+  .glass-dark {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+  }
+  .glass-card {
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+  }
+  .backdrop-blur-3xl,
+  .backdrop-blur-2xl,
   .backdrop-blur-xl {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
   }
 }
 
@@ -510,5 +530,26 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
 
   button:hover svg.icon-hover-pulse, a:hover svg.icon-hover-pulse, [role="button"]:hover svg.icon-hover-pulse {
     animation: icon-pulse 0.8s ease infinite !important;
+  }
+}
+
+/* ── Performance overlay — solid bg, no blur (for mobile sidebars) ── */
+@utility perf-overlay {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── Contain paint — isolates repaint to element ── */
+@utility contain-paint {
+  contain: layout style paint;
+}
+
+/* ── Respect prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

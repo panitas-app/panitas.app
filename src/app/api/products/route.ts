@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     where.OR = [
       { name: { contains: q, mode: "insensitive" } },
       { sku: { contains: q, mode: "insensitive" } },
+      { barcode: { contains: q, mode: "insensitive" } },
     ]
   }
   if (category) where.categoryId = category
@@ -106,6 +107,8 @@ export async function POST(request: NextRequest) {
     const skuInput = typeof body.sku === "string" ? body.sku.trim().toUpperCase().slice(0, 32) : ""
     const finalSku = skuInput || generateSku(name)
 
+    const barcode = typeof body.barcode === "string" ? body.barcode.trim().slice(0, 32) : null
+
   const isWholesale = safeBool(body.isWholesale)
   const wholesaleLabel = isWholesale && typeof body.wholesaleLabel === "string" ? body.wholesaleLabel.slice(0, 100) : null
   const wholesalePrice = isWholesale && body.wholesalePrice !== undefined ? safeFloat(body.wholesalePrice, LIMITS.MAX_PRICE) : null
@@ -170,6 +173,7 @@ export async function POST(request: NextRequest) {
         price: price!,
         costPrice,
         sku: finalSku,
+        barcode,
         stock: productType === "digital" ? 999999 : (stock ?? 0),
         unidadBase,
         productType,
