@@ -1736,15 +1736,18 @@
         const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
         if (!csrfRes.ok) { toast('Error de conexión', 'error'); googleBtn.classList.remove('is-loading'); return; }
         const { csrfToken } = await csrfRes.json();
-        const res = await fetch('/api/auth/signin/google', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json', 'X-Auth-Return-Redirect': 'true' },
-          body: new URLSearchParams({ csrfToken, callbackUrl: '/dashboard' })
-        });
-        const data = await res.json();
-        if (data.url) { window.location.href = data.url; }
-        else { toast('Error al iniciar sesión con Google', 'error'); googleBtn.classList.remove('is-loading'); }
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/api/auth/signin/google';
+        form.style.display = 'none';
+        var inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'csrfToken'; inp.value = csrfToken;
+        form.appendChild(inp);
+        inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'callbackUrl'; inp.value = '/dashboard';
+        form.appendChild(inp);
+        document.body.appendChild(form);
+        form.submit();
       } catch (err) {
         console.error('[google login error]', err);
         toast('Error al iniciar sesión con Google', 'error');

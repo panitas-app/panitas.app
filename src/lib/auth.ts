@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { authConfig } from "./auth.config"
 
-if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
+if (process.env.VERCEL) {
   process.env.NEXTAUTH_URL = 'https://panitas.app'
 }
 
