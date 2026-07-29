@@ -348,56 +348,60 @@ export function ProductForm({
         return
       }
 
-      // Camera available — create session and start real-time scanner
-      try {
-        const res = await fetch("/api/scanner/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        })
-        if (!res.ok) { setScannerStatus("error"); setScannerErrorMsg("Error al crear la sesión."); return }
-        const data = await res.json()
-        setScannerSessionId(data.sessionId)
-        setScannerToken(data.token)
-
-        setScannerStatus("connected")
-        const startMobileCamera = async (attempts = 0) => {
-          const el = document.getElementById("scanner-viewport")
-          if (!el && attempts < 10) {
-            setTimeout(() => startMobileCamera(attempts + 1), 100)
-            return
-          }
-          if (!el) {
-            setScannerStatus("error")
-            setScannerErrorMsg("No se encontró el visor de la cámara.")
-            return
-          }
-          try {
-            const scanner = new Html5Qrcode("scanner-viewport")
-            scannerRef.current = scanner
-            await scanner.start(
-              { facingMode: "environment" },
-              { fps: 15, qrbox: { width: 280, height: 150 } },
-              (decodedText) => {
-                const code = decodedText.trim()
-                const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-                if (barcodeInput) {
-                  setNativeInputValue(barcodeInput, code)
-                  toast.success(`Código escaneado: ${code}`)
-                }
-              },
-              () => {}
-            )
-          } catch {
-            setScannerStatus("error")
-            setScannerErrorMsg("No se pudo iniciar la cámara en vivo. Intenta subir una foto clara del código.")
-          }
+      setScannerStatus("connected")
+      const startMobileCamera = async (attempts = 0) => {
+        const el = document.getElementById("scanner-viewport")
+        if (!el && attempts < 10) {
+          setTimeout(() => startMobileCamera(attempts + 1), 100)
+          return
         }
-        startMobileCamera()
-      } catch {
-        setScannerStatus("error")
-        setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
+        if (!el) {
+          setScannerStatus("error")
+          setScannerErrorMsg("No se encontró el visor de la cámara en la pantalla.")
+          return
+        }
+        try {
+          const scanner = new Html5Qrcode("scanner-viewport")
+          scannerRef.current = scanner
+          const config = { fps: 15, qrbox: { width: 280, height: 150 } }
+          const onScanSuccess = (decodedText: string) => {
+            const code = decodedText.trim()
+            const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+            if (barcodeInput) {
+              setNativeInputValue(barcodeInput, code)
+              toast.success(`Código escaneado: ${code}`)
+            }
+            cleanupProductScanner()
+            setScannerOpen(false)
+          }
+
+          try {
+            await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+          } catch {
+            try {
+              await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+            } catch {
+              try {
+                const cameras = await Html5Qrcode.getCameras()
+                if (cameras && cameras.length > 0) {
+                  const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
+                  const chosenId = backCam ? backCam.id : cameras[0].id
+                  await scanner.start(chosenId, config, onScanSuccess, () => {})
+                } else {
+                  throw new Error("Sin cámaras disponibles")
+                }
+              } catch (err: any) {
+                setScannerStatus("error")
+                setScannerErrorMsg(`No se pudo iniciar la cámara: ${err?.message || "Verifica que otra app no la esté usando."}`)
+              }
+            }
+          }
+        } catch (err: any) {
+          setScannerStatus("error")
+          setScannerErrorMsg(`Error inesperado al iniciar la cámara: ${err?.message || "Intenta nuevamente."}`)
+        }
       }
+      startMobileCamera()
       return
     }
 
