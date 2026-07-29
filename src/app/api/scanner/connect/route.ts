@@ -24,10 +24,9 @@ export async function POST(request: NextRequest) {
   const session = await prisma.scannerSession.findUnique({ where: { id: sessionId } })
   if (!session) return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
   if (session.token !== token) return NextResponse.json({ error: "Token inválido" }, { status: 403 })
-  if (session.status !== "pending" && session.status !== "connected") return NextResponse.json({ error: "Sesión ya no está disponible" }, { status: 400 })
-  if (new Date() > session.expiresAt) {
+  if (new Date() > session.expiresAt || session.status === "expired") {
     await prisma.scannerSession.update({ where: { id: sessionId }, data: { status: "expired" } })
-    return NextResponse.json({ error: "Sesión expirada" }, { status: 410 })
+    return NextResponse.json({ error: "Sesión expirada. Vuelve a generar el QR desde el POS." }, { status: 410 })
   }
 
   await prisma.scannerSession.update({
