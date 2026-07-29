@@ -394,7 +394,8 @@ export function ProductForm({
       setScannerToken(data.token)
 
       setScannerStatus("idle")
-      setScannerQrUrl(`${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`)
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      setScannerQrUrl(`${baseUrl.replace(/\/$/, "")}/scanner/${data.sessionId}?token=${data.token}`)
 
       const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
       if (pusherKey) {
@@ -445,7 +446,7 @@ export function ProductForm({
       if (!file) return
 
       try {
-        const code = await Html5Qrcode.scanFile(file, false)
+        const code = await (Html5Qrcode as any).scanFile(file, false)
         const trimmed = code.trim()
         const barcodeInput = document.getElementById("barcode") as HTMLInputElement
         if (barcodeInput) {

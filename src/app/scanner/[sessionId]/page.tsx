@@ -17,8 +17,11 @@ const PUSHER_KEY = process.env.NEXT_PUBLIC_PUSHER_KEY || ""
 const PUSHER_CLUSTER = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2"
 
 function playBeep(type: "scan" | "found" | "not_found") {
+  if (typeof window === "undefined") return
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain)
@@ -62,13 +65,16 @@ function ScannerPage() {
   const [status, setStatus] = useState<ConnectionStatus>("connecting")
   const [lastScan, setLastScan] = useState<ScanFeedback | null>(null)
   const [scanCount, setScanCount] = useState(0)
-  const [deviceName] = useState(() => {
-    const ua = navigator.userAgent
-    if (ua.includes("Android")) return "Android"
-    if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS"
-    if (ua.includes("Samsung")) return "Samsung"
-    return "Teléfono"
-  })
+  const [deviceName, setDeviceName] = useState("Teléfono")
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator?.userAgent) {
+      const ua = navigator.userAgent
+      if (ua.includes("Android")) setDeviceName("Android")
+      else if (ua.includes("iPhone") || ua.includes("iPad")) setDeviceName("iOS")
+      else if (ua.includes("Samsung")) setDeviceName("Samsung")
+    }
+  }, [])
   const [errorMsg, setErrorMsg] = useState("")
 
   const scannerRef = useRef<Html5Qrcode | null>(null)

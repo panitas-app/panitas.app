@@ -437,7 +437,8 @@ async function processSale() {
       setScannerToken(data.token)
       setScannerStatus("idle")
 
-      const qrUrl = `${window.location.origin}/scanner/${data.sessionId}?token=${data.token}`
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      const qrUrl = `${baseUrl.replace(/\/$/, "")}/scanner/${data.sessionId}?token=${data.token}`
       if (qrCanvasRef.current) {
         await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
           width: 280,
