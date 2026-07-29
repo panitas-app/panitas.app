@@ -337,17 +337,17 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-black/55 lg:hidden"
             />
             <motion.div
               ref={sheetRef}
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-hidden shadow-2xl gpu"
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-hidden shadow-2xl gpu will-change-transform"
             >
               <div className="relative h-full">
                 <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={() => setMobileOpen(false)} />

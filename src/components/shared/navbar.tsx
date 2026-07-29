@@ -164,7 +164,7 @@ export function Navbar() {
               transition={{ duration: 0.2 }}
               className="absolute top-full left-0 w-full md:hidden"
             >
-              <nav className="mx-4 mt-2 rounded-2xl bg-[#FFB92E]/95 backdrop-blur-md border border-accent/10 p-6 shadow-2xl">
+              <nav className="mx-4 mt-2 rounded-2xl bg-[#FFB92E] border border-accent/15 p-6 shadow-2xl gpu">
                 <div className="flex flex-col gap-3">
                   <Link href="/" onClick={() => setOpen(false)} className="text-sm font-bold text-accent/80 hover:text-accent py-2">Inicio</Link>
                   <button onClick={() => scrollToSection("caracteristicas")} className="text-sm font-bold text-accent/80 hover:text-accent py-2 text-left cursor-pointer">Características</button>
