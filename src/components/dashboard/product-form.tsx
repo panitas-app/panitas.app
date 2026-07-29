@@ -30,8 +30,17 @@ import {
   ChevronDown,
   Sparkles,
   Ruler,
+  Smartphone,
 } from "lucide-react"
 import type { Product, Category } from "@prisma/client"
+import Pusher from "pusher-js"
+import QRCode from "qrcode"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface PriceScale {
   quantity: string
@@ -80,6 +89,14 @@ export function ProductForm({
   const [isWholesale, setIsWholesale] = useState(product?.isWholesale || false)
   const [wholesaleLabel, setWholesaleLabel] = useState(product?.wholesaleLabel || "")
   const [wholesalePrice, setWholesalePrice] = useState(product?.wholesalePrice?.toString() || "")
+
+  // Scanner states
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
+  const [scannerToken, setScannerToken] = useState<string | null>(null)
+  const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const pusherRef = useRef<Pusher | null>(null)
   
   // Parse wholesale scales from JSON
   const initialScales: PriceScale[] = (() => {

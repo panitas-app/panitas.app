@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { Role } from "@/lib/roles"
+import { resolvePlanId } from "@/lib/plans"
 
 export type { Role }
 
@@ -302,6 +303,18 @@ export async function requireRole(allowedRoles: Role[]): Promise<StoreInfo> {
     throw new Error(
       "Tu plan está pendiente de pago. Actívalo para empezar a usar todas las funciones."
     )
+  }
+
+  // Sync store.plan from negocio.planId if out of sync
+  if (negocio && current.store.plan !== negocio.planId) {
+    const resolvedStorePlan = resolvePlanId(negocio.planId)
+    if (resolvedStorePlan && resolvedStorePlan !== current.store.plan) {
+      await prisma.store.update({
+        where: { id: current.store.id },
+        data: { plan: resolvedStorePlan },
+      })
+      current.store.plan = resolvedStorePlan
+    }
   }
 
   return current

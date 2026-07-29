@@ -49,7 +49,7 @@ function generateSku(name: string): string {
   return prefix ? `${prefix}-${random}` : `PROD-${random}`
 }
 
-import { PLAN_LIMITS } from "@/lib/constants"
+import { PLAN_LIMITS, resolvePlanLimitKey } from "@/lib/constants"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
 import { rateLimit } from "@/lib/rate-limit"
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const current = await requireRole(["admin", "manager", "seller"])
 
-    const storePlan = (current.store.plan || "free") as keyof typeof PLAN_LIMITS
+    const storePlan = resolvePlanLimitKey(current.store.plan || "free")
     const limit = PLAN_LIMITS[storePlan]?.products ?? 30
 
     if (limit !== -1) {

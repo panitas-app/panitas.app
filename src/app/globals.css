@@ -373,52 +373,40 @@
   }
 }
 
-/* ── Mobile Performance Mode — High-efficiency glassmorphism ── */
-/* Touch devices (Android/iOS) get minimal blur for GPU savings */
-@media (hover: none) and (pointer: coarse) {
+/* ── Mobile Performance Mode — Ultra High Efficiency for Android / Mobile ── */
+/* Touch devices (Android/iOS) and screens <= 768px get ZERO backdrop-blur for 60 FPS GPU rendering */
+@media (hover: none) and (pointer: coarse), (max-width: 768px) {
   .glass {
-    backdrop-filter: blur(2px) !important;
-    -webkit-backdrop-filter: blur(2px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.96) !important;
   }
   .glass-dark {
-    backdrop-filter: blur(2px) !important;
-    -webkit-backdrop-filter: blur(2px) !important;
-    background: var(--glass-dark-bg, rgba(240,244,255,0.92)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(13, 27, 42, 0.96) !important;
   }
   .glass-card {
-    backdrop-filter: blur(2px) !important;
-    -webkit-backdrop-filter: blur(2px) !important;
-    background: var(--glass-bg, rgba(255,255,255,0.88)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.97) !important;
   }
-  /* Reduce heavy backdrop blurs on Tailwind classes */
+  /* Neutralize backdrop blurs on mobile to prevent compositor lag */
   .backdrop-blur-3xl,
   .backdrop-blur-2xl,
   .backdrop-blur-xl,
   .backdrop-blur-lg,
-  .backdrop-blur-md {
-    backdrop-filter: blur(2px) !important;
-    -webkit-backdrop-filter: blur(2px) !important;
+  .backdrop-blur-md,
+  .backdrop-blur-sm,
+  .backdrop-blur-xs,
+  .backdrop-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
-}
-/* Fallback for max-width (non-touch tablets, etc.) */
-@media (max-width: 768px) {
-  .glass {
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-  }
-  .glass-dark {
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-  }
-  .glass-card {
-    backdrop-filter: blur(3px) !important;
-    -webkit-backdrop-filter: blur(3px) !important;
-  }
-  .backdrop-blur-3xl,
-  .backdrop-blur-2xl,
-  .backdrop-blur-xl {
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
+  
+  /* Disable costly shadows on mobile lists */
+  .shadow-2xl, .shadow-xl {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08) !important;
   }
 }
 

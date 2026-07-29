@@ -49,4 +49,27 @@ export const PLAN_LIMITS = {
   agenda: { products: 0, orders: false },
   comercio: { products: -1, orders: true },
   mayorista: { products: -1, orders: true },
+  emprendedor: { products: -1, orders: true },
+  negocio: { products: -1, orders: true },
+  empresarial: { products: -1, orders: true },
+  tienda: { products: -1, orders: true },
 } as const
+
+export type PlanLimitKey = keyof typeof PLAN_LIMITS
+
+export function resolvePlanLimitKey(plan: string): PlanLimitKey {
+  const map: Record<string, PlanLimitKey> = {
+    free: "free",
+    basic: "basic",
+    advanced: "advanced",
+    agenda: "agenda",
+    comercio: "comercio",
+    mayorista: "mayorista",
+    emprendedor: "comercio",
+    negocio: "comercio",
+    empresarial: "mayorista",
+    tienda: "comercio",
+    empresa: "mayorista",
+  }
+  return map[plan.toLowerCase()] || "free"
+}
