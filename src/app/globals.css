@@ -354,17 +354,17 @@
 
 /* ── Mobile Performance Mode — High-efficiency glassmorphism ── */
 @media (max-width: 768px) {
-  @utility glass {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  .glass {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
   }
-  @utility glass-dark {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  .glass-dark {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
   }
-  @utility glass-card {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+  .glass-card {
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
   }
   /* Reduce heavy backdrop blurs on mobile Tailwind classes */
   .backdrop-blur-3xl {
