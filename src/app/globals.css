@@ -358,6 +358,14 @@
   -webkit-backdrop-filter: none;
 }
 
+@media (min-width: 1024px) {
+  .sidebar-solid {
+    background: var(--glass-dark-bg, rgba(240,244,255,0.85));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar-solid {
     backdrop-filter: none !important;

@@ -320,7 +320,7 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
   return (
     <>
       <aside data-tour="sidebar" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-64 lg:flex-col z-30 shadow-2xl overflow-hidden">
-        <div className="flex flex-1 flex-col glass-dark sidebar-solid min-h-0">
+        <div className="flex flex-1 flex-col glass-dark min-h-0">
           <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} />
         </div>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-10" />
