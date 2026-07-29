@@ -11,12 +11,25 @@ function validateEmail(email: unknown): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null
 }
 
+const isProd = process.env.NODE_ENV === "production"
+const cookiePrefix = isProd ? "__Secure-" : ""
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   trustHost: true,
-  // Auth.js v5 resolves secret automatically: AUTH_SECRET ?? NEXTAUTH_SECRET
-  // Do NOT pass secret explicitly — it caused PKCE cookie decryption failures
   adapter: undefined,
+  cookies: {
+    pkceCodeVerifier: {
+      name: `${cookiePrefix}authjs.pkce`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+        maxAge: 60 * 15,
+      },
+    },
+  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
