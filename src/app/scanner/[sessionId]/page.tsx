@@ -80,12 +80,30 @@ function ScannerPage() {
   const scanningRef = useRef(false)
   const lastScanTimeRef = useRef<{ code: string; time: number }>({ code: "", time: 0 })
 
+  const [copiedLogs, setCopiedLogs] = useState(false)
+
   const logDiag = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString("es-VE", { hour12: false })
     const entry = `[${time}] ${msg}`
     console.log(`[Scanner] ${entry}`)
     setDiagLogs((prev) => [entry, ...prev.slice(0, 49)])
   }, [])
+
+  const copyLogsToClipboard = useCallback(() => {
+    const text = diagLogs.join("\n")
+    if (!text) return
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopiedLogs(true)
+        setTimeout(() => setCopiedLogs(false), 2000)
+      }).catch(() => {
+        // Fallback prompt
+      })
+    } else {
+      // Fallback
+      alert(text)
+    }
+  }, [diagLogs])
 
   // 1. Monitor user agent and camera permissions
   useEffect(() => {
@@ -597,17 +615,27 @@ function ScannerPage() {
 
       {/* Collapsible Live Diagnostics Drawer */}
       {showDiag && (
-        <div className="bg-zinc-955 border-t border-zinc-800 p-3 max-h-48 overflow-y-auto text-[10px] font-mono text-zinc-300 z-30">
-          <div className="flex items-center justify-between mb-2 pb-1 border-b border-zinc-800">
-            <span className="font-bold text-amber-400">Consola de Diagnóstico Escáner</span>
-            <button onClick={() => setDiagLogs([])} className="text-zinc-500 hover:text-white">
-              Limpiar
-            </button>
+        <div className="bg-zinc-950 border-t border-zinc-800 p-3 max-h-56 overflow-y-auto text-[11px] font-mono text-zinc-200 z-30 select-text">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-zinc-800 select-none">
+            <span className="font-bold text-amber-400 text-xs">Consola de Diagnóstico Escáner</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copyLogsToClipboard}
+                className="px-2.5 py-1 bg-amber-500 text-black font-bold rounded text-[11px] hover:bg-amber-400 active:scale-95 transition-all shadow flex items-center gap-1"
+              >
+                {copiedLogs ? "✓ ¡Copiado!" : "📋 Copiar Logs"}
+              </button>
+              <button onClick={() => setDiagLogs([])} className="text-zinc-400 hover:text-white text-[11px] px-1.5 py-1">
+                Limpiar
+              </button>
+            </div>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5 select-text cursor-text">
             {diagLogs.length === 0 && <p className="text-zinc-600">Sin eventos registrados</p>}
             {diagLogs.map((log, index) => (
-              <div key={index} className="leading-tight">{log}</div>
+              <div key={index} className="leading-snug select-text text-zinc-300 hover:text-white break-words">
+                {log}
+              </div>
             ))}
           </div>
         </div>
