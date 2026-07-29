@@ -60,7 +60,7 @@ export default function AdminStoreDetailPage() {
         <Badge className={cn(store.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
           {store.isActive ? "Activa" : "Inactiva"}
         </Badge>
-        <a href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer">
+        <a href={`/${store.slug}`} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" size="sm" className="gap-2">
             <ExternalLink className="size-4" /> Ver tienda
           </Button>

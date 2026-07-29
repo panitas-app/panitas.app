@@ -585,7 +585,7 @@ _¡Muchas gracias por su compra!_`
               <Button
                 variant="outline"
                 className="w-full h-12"
-                onClick={() => router.push(`/store/${slug}`)}
+                onClick={() => router.push(`/${slug}`)}
               >
                 Volver a la tienda
               </Button>
@@ -608,7 +608,7 @@ _¡Muchas gracias por su compra!_`
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-foreground"
-            onClick={() => step === 1 ? router.push(`/store/${slug}`) : setStep(step - 1)}
+            onClick={() => step === 1 ? router.push(`/${slug}`) : setStep(step - 1)}
           >
             <ChevronLeftIcon className="size-4" />
             {step === 1 ? "Volver a la tienda" : "Atrás"}
@@ -655,7 +655,7 @@ _¡Muchas gracias por su compra!_`
                       <p className="font-medium">Tu carrito está vacío</p>
                       <p className="text-xs text-muted-foreground">Agrega productos desde la tienda para continuar</p>
                     </div>
-                    <Button variant="outline" onClick={() => router.push(`/store/${slug}`)}>
+                    <Button variant="outline" onClick={() => router.push(`/${slug}`)}>
                       Ir a la tienda
                     </Button>
                   </div>

@@ -90,7 +90,7 @@ export function templateOrderPaymentVerified(nombre: string, orderNumber: string
     <p>El pago de tu pedido <strong>#${orderNumber}</strong> en <strong>${storeName}</strong> ha sido verificado exitosamente.</p>
     <p>Tu pedido ya está siendo procesado y pronto recibirás actualizaciones sobre su estado.</p>
     <p style="text-align:center">
-      <a class="btn" href="${baseUrl()}/store/${storeName.toLowerCase().replace(/\s+/g, "-")}">Seguir comprando</a>
+      <a class="btn" href="${baseUrl()}/${storeName.toLowerCase().replace(/\s+/g, "-")}">Seguir comprando</a>
     </p>
   `
 }

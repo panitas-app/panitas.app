@@ -71,10 +71,10 @@ export async function generateMetadata({
   }
 
   return {
-title: `${store.name}`,
-      description: store.description || `Compra en la tienda oficial de ${store.name} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`,
+    title: `${store.name}`,
+    description: store.description || `Compra en la tienda oficial de ${store.name} en Panitas. Catálogo de productos con tasa oficial BCV y pago coordinado en Venezuela.`,
     metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"),
-    alternates: { canonical: `/store/${slug}` },
+    alternates: { canonical: `/${slug}` },
     openGraph: {
       title: `${store.name}`,
       description: store.description || `Visita el catálogo en línea de ${store.name}.`,
@@ -101,7 +101,7 @@ title: `${store.name}`,
   }
 }
 
-export default async function StorePage({
+export default async function StoreSlugCatchAll({
   params,
 }: {
   params: Promise<{ slug: string }>

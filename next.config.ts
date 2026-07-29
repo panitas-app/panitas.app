@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
         destination: "/landing.html",
       },
       {
+        source: "/:slug/booking",
+        destination: "/store/:slug/booking",
+      },
+      {
+        source: "/:slug/checkout",
+        destination: "/store/:slug/checkout",
+      },
+      {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },

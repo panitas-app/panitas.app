@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { slugify } from "@/lib/utils"
 import { getCurrentStore, requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
-import { safeStr, safeColor, safePlan, safeUrl, LIMITS } from "@/lib/validate"
+import { safeStr, safeColor, safePlan, safeUrl, safeSlug, LIMITS } from "@/lib/validate"
 import bcrypt from "bcryptjs"
 
 export async function GET() {
@@ -95,15 +95,30 @@ export async function PUT(request: NextRequest) {
 
   const data: any = {}
 
+  if (body.slug !== undefined) {
+    const slug = safeSlug(body.slug)
+    if (!slug) return NextResponse.json({ error: "Slug inválido. Solo letras, números y guiones." }, { status: 400 })
+    const existing = await prisma.store.findFirst({
+      where: { slug, NOT: { id: storeInfo.store.id } }
+    })
+    if (existing) return NextResponse.json({ error: "Ese slug ya está en uso. Prueba con otro." }, { status: 409 })
+    data.slug = slug
+  }
+
   if (body.name !== undefined) {
     const name = safeStr(body.name, LIMITS.MAX_NAME, 1)
     if (!name) return NextResponse.json({ error: "Nombre inválido" }, { status: 400 })
     data.name = name
-    data.slug = slugify(name)
-    // Also update Negocio name
-    if (storeInfo.store.negocioId) {
-      await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: { nombre: name, slug: slugify(name) } }).catch(() => {})
+    if (body.slug === undefined) {
+      data.slug = slugify(name)
     }
+    if (storeInfo.store.negocioId) {
+      const nd: any = { nombre: name }
+      if (data.slug) nd.slug = data.slug
+      await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: nd }).catch(() => {})
+    }
+  } else if (body.slug !== undefined && storeInfo.store.negocioId) {
+    await prisma.negocio.update({ where: { id: storeInfo.store.negocioId }, data: { slug: data.slug } }).catch(() => {})
   }
 
   if (body.description !== undefined) {

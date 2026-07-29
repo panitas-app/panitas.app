@@ -141,7 +141,7 @@ export function ModernTemplate({
           <div className="flex items-center gap-2 mt-3 sm:mt-0">
             {canBook && (
               <Button
-                onClick={() => router.push(`/store/${slug}/booking`)}
+                onClick={() => router.push(`/${slug}/booking`)}
                 className="rounded-full px-4 h-9 text-xs font-semibold whitespace-nowrap gap-1.5"
                 style={{ backgroundColor: accentColor, color: "#102A43" }}
               >
@@ -353,7 +353,7 @@ export function ModernTemplate({
             <div>
               <h4 className="text-xs font-semibold tracking-wider text-primary-foreground/80 uppercase mb-3">Links</h4>
               <div className="space-y-2">
-                <button onClick={() => router.push(`/store/${slug}`)}
+                <button onClick={() => router.push(`/${slug}`)}
                   className="block text-xs text-primary-foreground/60 hover:text-primary-foreground transition-colors">
                   Inicio
                 </button>

@@ -138,7 +138,7 @@ export default function AgendaProfile({ slug }: { slug: string }) {
           className="flex gap-3 mb-8"
         >
           <Button
-            onClick={() => router.push(`/store/${slug}/booking`)}
+            onClick={() => router.push(`/${slug}/booking`)}
             className="flex-1 rounded-xl py-5 text-sm font-bold shadow-sm"
             style={{ backgroundColor: accentColor, color: "#fff" }}
           >
@@ -196,7 +196,7 @@ export default function AgendaProfile({ slug }: { slug: string }) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + idx * 0.05 }}
-                  onClick={() => router.push(`/store/${slug}/booking`)}
+                  onClick={() => router.push(`/${slug}/booking`)}
                   className="w-full text-left rounded-xl border border-gray-100 bg-white p-4 hover:border-gray-200 hover:shadow-sm transition-all flex items-center gap-4"
                 >
                   {svc.image ? (
@@ -282,7 +282,7 @@ export default function AgendaProfile({ slug }: { slug: string }) {
         open={qrOpen}
         onClose={() => setQrOpen(false)}
         storeName={store.name}
-        storeUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/store/${slug}`}
+        storeUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/${slug}`}
         storeLogo={store.logo}
       />
     </div>

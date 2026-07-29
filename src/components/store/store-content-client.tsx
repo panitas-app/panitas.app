@@ -149,7 +149,7 @@ export default function StoreContentClient({ store, products, bcvRate, slug, can
   function handleCheckout() {
     localStorage.setItem(`panitas_checkout_${slug}`, JSON.stringify({ cart, storeSlug: slug }))
     setCartOpen(false)
-    router.push(`/store/${slug}/checkout`)
+    router.push(`/${slug}/checkout`)
   }
 
   if (!mounted) {
@@ -161,7 +161,7 @@ const Template = getTemplateComponent(templateId)
     return <LoadingState message="Plantilla no encontrada..." />
   }
 
-  const storeUrl = typeof window !== "undefined" ? `${window.location.origin}/store/${slug}` : `/store/${slug}`
+  const storeUrl = typeof window !== "undefined" ? `${window.location.origin}/${slug}` : `/${slug}`
 
   return (
     <>

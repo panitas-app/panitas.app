@@ -38,8 +38,20 @@ async function ensurePlanExists(planId: string) {
   }
 }
 
+async function getUniqueSlug(base: string): Promise<string> {
+  let slug = slugify(base)
+  let counter = 0
+  while (true) {
+    const candidate = counter === 0 ? slug : `${slug}-${counter}`
+    const negocioExists = await prisma.negocio.findUnique({ where: { slug: candidate } })
+    const storeExists = await prisma.store.findUnique({ where: { slug: candidate } })
+    if (!negocioExists && !storeExists) return candidate
+    counter++
+  }
+}
+
 async function createStoreForUser(userId: string, userName: string, planId: string, cfg: { modalidad: string | null; planType: string; hasAgenda: boolean }) {
-  const slug = slugify(userName) + "-" + userId.slice(0, 6)
+  const slug = await getUniqueSlug(userName)
 
   const negocio = await prisma.negocio.create({
     data: {

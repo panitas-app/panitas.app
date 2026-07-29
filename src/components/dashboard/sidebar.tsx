@@ -288,7 +288,7 @@ function SidebarContent({ store, role, planId, modalidad, onNavClick }: SidebarC
       <div className="mt-auto shrink-0 px-4 pb-4 safe-bottom">
         <Separator className="bg-muted mb-4" />
         {!isEnterprise && (
-          <Link data-tour="view-store" href={`/store/${store.slug}`} target="_blank" rel="noopener noreferrer">
+          <Link data-tour="view-store" href={`/${store.slug}`} target="_blank" rel="noopener noreferrer">
             <Button
               variant="ghost"
               className="w-full justify-center gap-2 rounded-xl bg-muted min-h-[44px] text-xs font-bold uppercase tracking-wider text-primary hover:bg-accent hover:text-foreground transition-all"

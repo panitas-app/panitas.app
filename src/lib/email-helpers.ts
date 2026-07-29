@@ -23,7 +23,7 @@ export function formatTime(time: string): string {
 
 export function getStoreUrl(slug: string): string {
   const base = process.env.NEXTAUTH_URL || "http://localhost:3000"
-  return `${base}/store/${slug}`
+  return `${base}/${slug}`
 }
 
 export async function getStoreOwnerEmail(storeId: string): Promise<string | null> {

@@ -66,17 +66,16 @@ async function planFindOrCreate(p: { id: string; nombre: string; label: string; 
   }
 }
 
-async function generateUniqueNegocioSlug(baseName: string, userId: string): Promise<string> {
-  const baseSlug = slugify(baseName) + "-" + userId.slice(0, 6)
-  const existing = await prisma.negocio.findUnique({ where: { slug: baseSlug } })
-  if (!existing) return baseSlug
-  return `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`
-}
-
-async function generateUniqueStoreSlug(baseSlug: string): Promise<string> {
-  const existing = await prisma.store.findUnique({ where: { slug: baseSlug } })
-  if (!existing) return baseSlug
-  return `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`
+async function generateUniqueSlug(baseName: string): Promise<string> {
+  let slug = slugify(baseName)
+  let counter = 0
+  while (true) {
+    const candidate = counter === 0 ? slug : `${slug}-${counter}`
+    const negocioExists = await prisma.negocio.findUnique({ where: { slug: candidate } })
+    const storeExists = await prisma.store.findUnique({ where: { slug: candidate } })
+    if (!negocioExists && !storeExists) return candidate
+    counter++
+  }
 }
 
 async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
@@ -86,7 +85,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     if (!negocio) {
       const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
       const name = user?.name || "Mi Tienda"
-      const slug = await generateUniqueNegocioSlug(name, userId)
+      const slug = await generateUniqueSlug(name)
 
       // Asegurar que existan los planes por defecto (sin transacciones para Neon HTTP)
       for (const p of [
@@ -136,7 +135,7 @@ async function autoCreateStore(userId: string): Promise<StoreInfo | null> {
     let store = await prisma.store.findUnique({ where: { userId } })
     if (!store) {
       const name = negocio.nombre
-      const slug = await generateUniqueStoreSlug(negocio.slug)
+      const slug = await generateUniqueSlug(negocio.nombre)
       const planType = negocio.modalidad === "tienda" ? "tienda"
         : negocio.modalidad === "agenda" ? "agenda"
         : negocio.planId === "agenda" ? "agenda"

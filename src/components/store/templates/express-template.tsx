@@ -241,7 +241,7 @@ export function ExpressTemplate({
             <div>
               <h4 className="text-xs font-semibold tracking-wider text-primary-foreground/80 uppercase mb-3">Info</h4>
               <div className="space-y-2">
-                <button onClick={() => router.push(`/store/${slug}`)}
+                <button onClick={() => router.push(`/${slug}`)}
                   className="block text-xs text-primary-foreground/60 hover:text-primary-foreground transition-colors">
                   Inicio
                 </button>

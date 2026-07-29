@@ -132,6 +132,10 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        if (res.status === 409) {
+          toast.error(err.error || "Ese slug ya está en uso. Prueba con otro.")
+          return
+        }
         throw new Error(err.error || "Error al guardar")
       }
       toast.success(title === "Editar perfil" ? "Perfil guardado" : "Tienda guardada")
@@ -164,11 +168,11 @@ export function EditProfileForm({ store, planType, storeId }: Props) {
           <div className="space-y-2">
             <Label htmlFor="slug">URL</Label>
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-xl px-3 border border-border">
-              <span className="shrink-0 text-xs">panitas.app/store/</span>
+              <span className="shrink-0 text-xs">panitas.app/</span>
               <input
                 id="slug"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value.replace(/\s+/g, "-").toLowerCase())}
+                onChange={(e) => setSlug(e.target.value.replace(/\s+/g, "-").toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                 className="flex-1 bg-transparent py-2 outline-none text-foreground font-medium"
               />
             </div>

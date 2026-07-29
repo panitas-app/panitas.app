@@ -129,7 +129,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
 
     for (const store of stores) {
       entries.push({
-        url: `${baseUrl}/store/${store.slug}`,
+        url: `${baseUrl}/${store.slug}`,
         lastModified: store.updatedAt,
         changeFrequency: "weekly",
         priority: 0.8,
@@ -138,7 +138,7 @@ export default async function sitemap(): Promise<SitemapEntry[]> {
       // Agregar booking solo si el plan tiene agenda
       if (store.planType === "agenda" || store.planType === "reservas") {
         entries.push({
-          url: `${baseUrl}/store/${store.slug}/booking`,
+          url: `${baseUrl}/${store.slug}/booking`,
           lastModified: store.updatedAt,
           changeFrequency: "weekly",
           priority: 0.7,
