@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { signIn } from "next-auth/react"
+import { loginWithGoogle } from "@/lib/actions/auth-actions"
 import posthog from "posthog-js"
 import { motion } from "framer-motion"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -34,6 +35,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
   const [name, setName] = useState("")
   const [country, setCountry] = useState("VE")
   const [loading, setLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   const countryOptions = [
     { value: "VE", label: "🇻🇪 Venezuela" },
@@ -268,16 +270,26 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
               <Button
                 variant="outline"
                 type="button"
-                disabled={!acceptedTerms}
+                disabled={!acceptedTerms || isGoogleLoading}
                 className="w-full rounded-xl bg-white font-black text-[#050505]/80 h-12 shadow-sm transition-all duration-300 hover:bg-muted active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm tracking-wider uppercase"
-                onClick={() => {
-                  posthog.capture("user_registered", { plan: selectedPlan || "none", method: "google" })
-                  signIn("google", { callbackUrl: "/choose-plan" })
+                onClick={async () => {
+                  setIsGoogleLoading(true)
+                  try {
+                    posthog.capture("user_registered", { plan: selectedPlan || "none", method: "google" })
+                    await loginWithGoogle("/choose-plan")
+                  } catch (error) {
+                    console.error("[Google signin error]", error)
+                    setIsGoogleLoading(false)
+                  }
                 }}
               >
-                <svg className="h-5 w-5" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                  <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                </svg>
+                {isGoogleLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <svg className="h-5 w-5" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                    <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                  </svg>
+                )}
                 Registrarme con Google
               </Button>
 
