@@ -281,26 +281,22 @@ function ScannerPage() {
 
       let startErr: any = null
 
-      // Attempt 1: HD Rear camera with ideal constraints
+      // Attempt 1: Rear camera with ideal environment constraint
       try {
-        logDiag("Intento 1: Cámara Trasera HD (facingMode ideal environment, 1080p)...")
+        logDiag("Intento 1: Cámara Trasera (facingMode ideal environment)...")
         await scanner.start(
-          {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-          },
+          { facingMode: { ideal: "environment" } },
           config,
           onScanSuccess,
           () => {}
         )
-        setActiveCamLabel("Trasera HD")
-        logDiag("ÉXITO: Cámara Trasera HD iniciada a 25 FPS")
+        setActiveCamLabel("Trasera")
+        logDiag("ÉXITO: Cámara Trasera iniciada a 25 FPS")
         return
       } catch (e1: any) {
         startErr = e1
         logDiag(`Intento 1 falló: ${e1?.name || e1}`)
-        await new Promise((r) => setTimeout(r, 250))
+        await new Promise((r) => setTimeout(r, 200))
       }
 
       // Attempt 2: Standard Rear camera string
@@ -313,7 +309,7 @@ function ScannerPage() {
       } catch (e2: any) {
         if (!startErr) startErr = e2
         logDiag(`Intento 2 falló: ${e2?.name || e2}`)
-        await new Promise((r) => setTimeout(r, 250))
+        await new Promise((r) => setTimeout(r, 200))
       }
 
       // Attempt 3: Front camera fallback
@@ -326,7 +322,7 @@ function ScannerPage() {
       } catch (e3: any) {
         if (!startErr) startErr = e3
         logDiag(`Intento 3 falló: ${e3?.name || e3}`)
-        await new Promise((r) => setTimeout(r, 250))
+        await new Promise((r) => setTimeout(r, 200))
       }
 
       // Attempt 4: Explicit Camera ID resolution via getCameras
@@ -354,7 +350,7 @@ function ScannerPage() {
 
       if (errName === "NotAllowedError" || errText.includes("Permission denied")) {
         setPermissionState("denied")
-        setErrorMsg("Permiso de cámara denegado en tu navegador. Habilita la cámara en la configuración de la página y recarga.")
+        setErrorMsg("Permiso de cámara denegado o bloqueado. Verifica que no haya otra app usando la cámara y presiona recargar.")
       } else if (errName === "NotReadableError" || errText.includes("Could not start video source")) {
         setErrorMsg("La cámara física está ocupada por otra app (ej: WhatsApp, Cámara nativa). Ciérrala e intenta de nuevo.")
       } else if (errName === "NotFoundError" || errText.includes("Requested device not found")) {
@@ -388,14 +384,12 @@ function ScannerPage() {
 
     try {
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        logDiag("Invocando getUserMedia sincrónicamente para activar diálogo nativo...")
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-        })
+        logDiag("Invocando getUserMedia sincrónicamente...")
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         setPermissionState("granted")
-        logDiag("Permiso otorgado por el usuario en ventana emergente nativa")
+        logDiag("Permiso de cámara verificado correctamente")
         stream.getTracks().forEach((t) => t.stop())
-        await new Promise((r) => setTimeout(r, 250))
+        await new Promise((r) => setTimeout(r, 200))
       }
     } catch (err: any) {
       const name = err?.name || ""
@@ -404,7 +398,7 @@ function ScannerPage() {
       if (name === "NotAllowedError" || msg.includes("Permission denied")) {
         setPermissionState("denied")
         setStatus("error")
-        setErrorMsg("Permiso de cámara bloqueado en tu navegador. Toca el candado 🔒 al lado de la URL arriba, entra a Permisos -> Cámara -> Permitir y presiona este botón.")
+        setErrorMsg("Permiso de cámara no disponible. Verifica que la cámara no esté en uso por otra app.")
         return
       }
     }
