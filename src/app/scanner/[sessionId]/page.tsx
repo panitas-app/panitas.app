@@ -170,6 +170,7 @@ function ScannerPage() {
         return
       } catch (e1: any) {
         startErr = e1
+        await new Promise((r) => setTimeout(r, 300))
       }
 
       try {
@@ -177,6 +178,7 @@ function ScannerPage() {
         return
       } catch (e2: any) {
         if (!startErr) startErr = e2
+        await new Promise((r) => setTimeout(r, 300))
       }
 
       try {
@@ -242,17 +244,8 @@ function ScannerPage() {
   const requestPermissionAndStart = useCallback(async () => {
     setErrorMsg("")
     setStatus("connecting")
-    try {
-      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })
-        stream.getTracks().forEach((t) => t.stop())
-      }
-    } catch (e) {
-      console.warn("[scanner] Permiso de cámara interactivo:", e)
-    }
     await connectToSession()
-    startCamera()
-  }, [connectToSession, startCamera])
+  }, [connectToSession])
 
   useEffect(() => {
     connectToSession()
