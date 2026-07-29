@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   const session = await prisma.scannerSession.findUnique({ where: { id: sessionId } })
   if (!session) return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
   if (session.token !== token) return NextResponse.json({ error: "Token inválido" }, { status: 403 })
-  if (session.status !== "pending") return NextResponse.json({ error: "Sesión ya no está disponible" }, { status: 400 })
+  if (session.status !== "pending" && session.status !== "connected") return NextResponse.json({ error: "Sesión ya no está disponible" }, { status: 400 })
   if (new Date() > session.expiresAt) {
     await prisma.scannerSession.update({ where: { id: sessionId }, data: { status: "expired" } })
     return NextResponse.json({ error: "Sesión expirada" }, { status: 410 })

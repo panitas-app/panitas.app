@@ -404,7 +404,7 @@ export function ProductForm({
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
           })
           pusherRef.current = pusher
-          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+          const channel = pusher.subscribe(`scanner-${data.sessionId}`)
 
           channel.bind("barcode_scanned", (d: any) => {
             const barcodeInput = document.getElementById("barcode") as HTMLInputElement
@@ -476,7 +476,7 @@ export function ProductForm({
     stopScannerCamera()
     if (pusherRef.current) {
       if (scannerSessionId) {
-        const ch = pusherRef.current.channel(`private-scanner-${scannerSessionId}`)
+        const ch = pusherRef.current.channel(`scanner-${scannerSessionId}`)
         if (ch) { ch.unbind_all(); ch.unsubscribe() }
       }
       pusherRef.current.disconnect()

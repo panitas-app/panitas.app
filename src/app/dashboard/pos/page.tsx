@@ -454,7 +454,7 @@ async function processSale() {
             cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
           })
           pusherRef.current = pusher
-          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+          const channel = pusher.subscribe(`scanner-${data.sessionId}`)
 
           channel.bind("phone_connected", (d: any) => {
             setScannerStatus("connected")
@@ -511,7 +511,7 @@ async function processSale() {
   function cleanupScanner() {
     if (pusherRef.current) {
       if (scannerSessionId) {
-        const ch = pusherRef.current.channel(`private-scanner-${scannerSessionId}`)
+        const ch = pusherRef.current.channel(`scanner-${scannerSessionId}`)
         if (ch) { ch.unbind_all(); ch.unsubscribe() }
       }
       pusherRef.current.disconnect()

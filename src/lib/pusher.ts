@@ -19,7 +19,7 @@ function createPusher(): Pusher | null {
 const pusher = createPusher()
 
 export function getPusherChannel(sessionId: string): string {
-  return `private-scanner-${sessionId}`
+  return `scanner-${sessionId}`
 }
 
 export async function triggerSessionEvent(

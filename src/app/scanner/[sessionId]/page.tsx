@@ -194,43 +194,43 @@ function ScannerPage() {
     if (status !== "connected") return
 
     if (PUSHER_KEY) {
-      const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER })
-      pusherRef.current = pusher
-      const channel = pusher.subscribe(`private-scanner-${sessionId}`)
+      try {
+        const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER })
+        pusherRef.current = pusher
+        const channel = pusher.subscribe(`scanner-${sessionId}`)
 
-      channel.bind("product_found", (data: any) => {
-        if (navigator.vibrate) navigator.vibrate(200)
-        playBeep("found")
-        setLastScan({ barcode: data.barcode, productName: data.product?.name, status: "found" })
-        setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
-      })
+        channel.bind("product_found", (data: any) => {
+          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(200)
+          playBeep("found")
+          setLastScan({ barcode: data.barcode, productName: data.product?.name, status: "found" })
+          setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+        })
 
-      channel.bind("product_not_found", (data: any) => {
-        if (navigator.vibrate) navigator.vibrate([100, 100, 100])
-        playBeep("not_found")
-        setLastScan({ barcode: data.barcode, status: "not_found" })
-        setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
-      })
+        channel.bind("product_not_found", (data: any) => {
+          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([100, 100, 100])
+          playBeep("not_found")
+          setLastScan({ barcode: data.barcode, status: "not_found" })
+          setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+        })
 
-      channel.bind("scanner_disconnect", () => {
-        stopCamera()
-        setStatus("disconnected")
-      })
-
-      pusher.connection.bind("state_change", (states: { previous: string; current: string }) => {
-        if (states.current === "disconnected" || states.current === "failed") {
+        channel.bind("scanner_disconnect", () => {
+          stopCamera()
           setStatus("disconnected")
-        }
-      })
+        })
+      } catch {
+        // Silent — scanner camera continues scanning even if Pusher is offline
+      }
     }
 
     startCamera()
 
     return () => {
       if (pusherRef.current) {
-        const ch = pusherRef.current.channel(`private-scanner-${sessionId}`)
-        if (ch) { ch.unbind_all(); ch.unsubscribe() }
-        pusherRef.current.disconnect()
+        try {
+          const ch = pusherRef.current.channel(`scanner-${sessionId}`)
+          if (ch) { ch.unbind_all(); ch.unsubscribe() }
+          pusherRef.current.disconnect()
+        } catch {}
         pusherRef.current = null
       }
       stopCamera()
