@@ -36,6 +36,15 @@ export function csrfGuard(request: Request): NextResponse | null {
     }
 
     if (!allowed) {
+      const host = request.headers.get("host")
+      if (host && origin) {
+        try {
+          allowed = new URL(origin).host === host
+        } catch {}
+      }
+    }
+
+    if (!allowed) {
       return NextResponse.json({ error: "CSRF: origen no válido" }, { status: 403 })
     }
   }
