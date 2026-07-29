@@ -106,6 +106,13 @@ function ScannerPage() {
     if (scannerRef.current || scanningRef.current) return
     scanningRef.current = true
 
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setErrorMsg("La cámara requiere HTTPS. Conéctate desde un dispositivo con HTTPS o usa el modo QR desde el POS.")
+      setStatus("error")
+      scanningRef.current = false
+      return
+    }
+
     try {
       const scanner = new Html5Qrcode("scanner-viewport")
       scannerRef.current = scanner

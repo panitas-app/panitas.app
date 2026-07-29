@@ -315,6 +315,7 @@ export function ProductForm({
   // ─── Scanner functions ───
   function isTouchMobile() {
     if (typeof window === "undefined") return false
+    if (typeof navigator === "undefined") return false
     return window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
   }
 
@@ -325,21 +326,27 @@ export function ProductForm({
     const mobile = isTouchMobile()
     setIsMobileMode(mobile)
 
-    try {
-      // On mobile, request camera permission while still in user-gesture context
-      if (mobile) {
+    // On mobile, check if camera is available (HTTPS required for getUserMedia)
+    let cameraAvailable = false
+    if (mobile) {
+      if (!window.isSecureContext) {
+        // HTTP — getUserMedia blocked. Show QR so user can scan with another device.
+        // We skip the QR-generating path below, but still need to create the session.
+      } else {
+        // Request camera permission while still in user-gesture context
         try {
           const tempStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: "environment" },
           })
           tempStream.getTracks().forEach(t => t.stop())
+          cameraAvailable = true
         } catch {
-          setScannerStatus("error")
-          setScannerErrorMsg("No se pudo acceder a la cámara. Verifica los permisos.")
-          return
+          // Camera denied or unavailable — fall back to QR flow
         }
       }
+    }
 
+    try {
       const res = await fetch("/api/scanner/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -354,7 +361,7 @@ export function ProductForm({
       setScannerSessionId(data.sessionId)
       setScannerToken(data.token)
 
-      if (mobile) {
+      if (mobile && cameraAvailable) {
         setScannerStatus("connected")
         try {
           scannerRef.current = new Html5Qrcode("scanner-viewport")
@@ -1367,7 +1374,9 @@ export function ProductForm({
           ) : (
             <div className="py-4 space-y-4 text-center">
               <p className="text-sm text-muted-foreground">
-                Escanea este código QR con la cámara de tu teléfono para usarlo como lector.
+                {isMobileMode
+                  ? "La cámara no está disponible (requiere HTTPS). Escanea este QR con otro teléfono o usa tu computadora."
+                  : "Escanea este código QR con la cámara de tu teléfono para usarlo como lector."}
               </p>
               <div className="flex justify-center">
                 <canvas ref={qrCanvasRef} className="rounded-lg border border-border" />
