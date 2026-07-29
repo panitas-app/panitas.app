@@ -96,6 +96,7 @@ export function ProductForm({
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
+  const [scannerErrorMsg, setScannerErrorMsg] = useState("")
   const [isMobileMode, setIsMobileMode] = useState(false)
   const [scannerQrUrl, setScannerQrUrl] = useState<string | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -320,16 +321,35 @@ export function ProductForm({
   async function startProductScanner() {
     setScannerStatus("connecting")
     setScannerOpen(true)
+    setScannerErrorMsg("")
     const mobile = isTouchMobile()
     setIsMobileMode(mobile)
 
     try {
+      // On mobile, request camera permission while still in user-gesture context
+      if (mobile) {
+        try {
+          const tempStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+          })
+          tempStream.getTracks().forEach(t => t.stop())
+        } catch {
+          setScannerStatus("error")
+          setScannerErrorMsg("No se pudo acceder a la cámara. Verifica los permisos.")
+          return
+        }
+      }
+
       const res = await fetch("/api/scanner/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       })
-      if (!res.ok) { setScannerStatus("error"); return }
+      if (!res.ok) {
+        setScannerStatus("error")
+        setScannerErrorMsg("Error al crear la sesión. Verifica tu conexión.")
+        return
+      }
       const data = await res.json()
       setScannerSessionId(data.sessionId)
       setScannerToken(data.token)
@@ -354,6 +374,7 @@ export function ProductForm({
           )
         } catch {
           setScannerStatus("error")
+          setScannerErrorMsg("Error al iniciar la cámara. Reinicia la página e intenta de nuevo.")
         }
       } else {
         setScannerStatus("idle")
@@ -394,6 +415,7 @@ export function ProductForm({
       }
     } catch {
       setScannerStatus("error")
+      setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
     }
   }
 
@@ -421,6 +443,7 @@ export function ProductForm({
     setScannerToken(null)
     setScannerQrUrl(null)
     setScannerStatus("idle")
+    setScannerErrorMsg("")
   }
 
   useEffect(() => {
@@ -1327,7 +1350,7 @@ export function ProductForm({
             </div>
           ) : scannerStatus === "error" ? (
             <div className="flex flex-col items-center py-8 text-center">
-              <p className="text-red-500 text-sm font-medium mb-1">Error al crear la sesión</p>
+              <p className="text-red-500 text-sm font-medium mb-1">{scannerErrorMsg || "Error al crear la sesión"}</p>
               <p className="text-xs text-muted-foreground mb-4">Verifica tu conexión e intenta de nuevo</p>
               <Button size="sm" onClick={startProductScanner}>Reintentar</Button>
             </div>

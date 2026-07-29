@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { Html5Qrcode } from "html5-qrcode"
 import Pusher from "pusher-js"
@@ -43,7 +43,17 @@ function playBeep(type: "scan" | "found" | "not_found") {
   } catch {}
 }
 
-export default function ScannerPage() {
+export default function ScannerPageWrapper() {
+  return (
+    <Suspense fallback={<div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+    </div>}>
+      <ScannerPage />
+    </Suspense>
+  )
+}
+
+function ScannerPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const sessionId = typeof params.sessionId === "string" ? params.sessionId : ""
@@ -149,42 +159,46 @@ export default function ScannerPage() {
   useEffect(() => {
     if (status !== "connected") return
 
-    const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER })
-    pusherRef.current = pusher
-    const channel = pusher.subscribe(`private-scanner-${sessionId}`)
+    if (PUSHER_KEY) {
+      const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER })
+      pusherRef.current = pusher
+      const channel = pusher.subscribe(`private-scanner-${sessionId}`)
 
-    channel.bind("product_found", (data: any) => {
-      if (navigator.vibrate) navigator.vibrate(200)
-      playBeep("found")
-      setLastScan({ barcode: data.barcode, productName: data.product?.name, status: "found" })
-      setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
-    })
+      channel.bind("product_found", (data: any) => {
+        if (navigator.vibrate) navigator.vibrate(200)
+        playBeep("found")
+        setLastScan({ barcode: data.barcode, productName: data.product?.name, status: "found" })
+        setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+      })
 
-    channel.bind("product_not_found", (data: any) => {
-      if (navigator.vibrate) navigator.vibrate([100, 100, 100])
-      playBeep("not_found")
-      setLastScan({ barcode: data.barcode, status: "not_found" })
-      setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
-    })
+      channel.bind("product_not_found", (data: any) => {
+        if (navigator.vibrate) navigator.vibrate([100, 100, 100])
+        playBeep("not_found")
+        setLastScan({ barcode: data.barcode, status: "not_found" })
+        setTimeout(() => setLastScan(prev => prev?.barcode === data.barcode ? null : prev), 3000)
+      })
 
-    channel.bind("scanner_disconnect", () => {
-      stopCamera()
-      setStatus("disconnected")
-    })
-
-    // Reconnect on Pusher connection drop
-    pusher.connection.bind("state_change", (states: { previous: string; current: string }) => {
-      if (states.current === "disconnected" || states.current === "failed") {
+      channel.bind("scanner_disconnect", () => {
+        stopCamera()
         setStatus("disconnected")
-      }
-    })
+      })
+
+      pusher.connection.bind("state_change", (states: { previous: string; current: string }) => {
+        if (states.current === "disconnected" || states.current === "failed") {
+          setStatus("disconnected")
+        }
+      })
+    }
 
     startCamera()
 
     return () => {
-      channel.unbind_all()
-      channel.unsubscribe()
-      pusher.disconnect()
+      if (pusherRef.current) {
+        const ch = pusherRef.current.channel(`private-scanner-${sessionId}`)
+        if (ch) { ch.unbind_all(); ch.unsubscribe() }
+        pusherRef.current.disconnect()
+        pusherRef.current = null
+      }
       stopCamera()
     }
   }, [status, sessionId, startCamera, stopCamera])
