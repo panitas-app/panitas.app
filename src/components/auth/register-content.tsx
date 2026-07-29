@@ -27,7 +27,7 @@ interface SessionData {
   user?: SessionUser
 }
 
-export default function RegisterContent({ session, plan: selectedPlan }: { session: SessionData | null; plan?: string }) {
+export default function RegisterContent({ session, plan: selectedPlan, paymentMode }: { session: SessionData | null; plan?: string; paymentMode?: string }) {
   const router = useRouter()
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [email, setEmail] = useState("")
@@ -63,11 +63,17 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
     { value: "ES", label: "🇪🇸 España" },
   ]
 
+  const getTargetUrl = () => {
+    if (selectedPlan && paymentMode) return `/subscribe?plan=${selectedPlan}&paymentMode=${paymentMode}`
+    if (selectedPlan) return `/choose-plan?plan=${selectedPlan}`
+    return "/choose-plan"
+  }
+
   useEffect(() => {
     if (session) {
-      router.push("/dashboard")
+      router.push(getTargetUrl())
     }
-  }, [session, router])
+  }, [session, router, selectedPlan, paymentMode])
 
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -276,7 +282,7 @@ export default function RegisterContent({ session, plan: selectedPlan }: { sessi
                   setIsGoogleLoading(true)
                   try {
                     posthog.capture("user_registered", { plan: selectedPlan || "none", method: "google" })
-                    await loginWithGoogle("/dashboard")
+                    await loginWithGoogle(getTargetUrl())
                   } catch (error) {
                     console.error("[Google signin error]", error)
                     setIsGoogleLoading(false)

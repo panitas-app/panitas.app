@@ -1,8 +1,8 @@
 "use client"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, Suspense } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { applyPlanSelection } from "@/lib/actions/plan-selection"
 
@@ -10,6 +10,11 @@ const CLOUDINARY_CLOUD = "dxgqv585u"
 
 function cv(publicId: string): string {
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/f_auto,q_auto/${publicId}`
+}
+
+const contentVariants = {
+  collapsed: { opacity: 0, y: 16 },
+  hovered: { opacity: 1, y: 0 },
 }
 
 const plans = [
@@ -147,18 +152,22 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
   )
 }
 
-const contentVariants = {
-  collapsed: { opacity: 0, y: 16 },
-  hovered: { opacity: 1, y: 0 },
-}
-
-export default function ChoosePlanPage() {
+function ChoosePlanContent() {
   const { data: session, status } = useSession()
   const isAuthenticated = status === "authenticated"
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialPlan = searchParams.get("plan")
+
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(initialPlan)
   const [selectingPlan, setSelectingPlan] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (initialPlan && plans.some((p) => p.id === initialPlan)) {
+      setExpandedId(initialPlan)
+    }
+  }, [initialPlan])
 
   const expandedPlan = expandedId ? plans.find((p) => p.id === expandedId) : null
 
@@ -543,5 +552,13 @@ export default function ChoosePlanPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function ChoosePlanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#071A33]" />}>
+      <ChoosePlanContent />
+    </Suspense>
   )
 }

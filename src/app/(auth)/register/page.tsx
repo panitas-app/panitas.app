@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   twitter: { title: PAGE_META["/register"].title, description: PAGE_META["/register"].description },
 }
 
-export default async function RegisterPage(props: { searchParams: Promise<{ plan?: string }> }) {
+export default async function RegisterPage(props: { searchParams: Promise<{ plan?: string; paymentMode?: string }> }) {
   const searchParams = await props.searchParams
   const session = await auth()
-  return <RegisterContent session={session} plan={searchParams.plan} />
+  return <RegisterContent session={session} plan={searchParams.plan} paymentMode={searchParams.paymentMode} />
 }

@@ -14,15 +14,5 @@ export const metadata: Metadata = {
 }
 
 export default async function ChoosePlanLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
-  if (session?.user?.id) {
-    const [storeMember, ownedStore] = await Promise.all([
-      prisma.storeMember.findFirst({ where: { userId: session.user.id }, select: { id: true } }).catch(() => null),
-      prisma.store.findUnique({ where: { userId: session.user.id }, select: { id: true } }).catch(() => null),
-    ])
-    if (storeMember || ownedStore) {
-      redirect("/dashboard")
-    }
-  }
   return children
 }
