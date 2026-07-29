@@ -35,7 +35,7 @@ import {
 import type { Product, Category } from "@prisma/client"
 import Pusher from "pusher-js"
 import QRCode from "qrcode"
-import { Html5Qrcode } from "html5-qrcode"
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import {
   Dialog,
   DialogContent,
@@ -361,9 +361,29 @@ export function ProductForm({
           return
         }
         try {
-          const scanner = new Html5Qrcode("scanner-viewport")
+          const scanner = new Html5Qrcode("scanner-viewport", {
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+              Html5QrcodeSupportedFormats.QR_CODE,
+              Html5QrcodeSupportedFormats.DATA_MATRIX,
+            ],
+            verbose: false,
+          })
           scannerRef.current = scanner
-          const config = { fps: 15, qrbox: { width: 280, height: 150 } }
+          const config = {
+            fps: 20,
+            qrbox: (w: number, h: number) => ({
+              width: Math.floor(Math.min(w * 0.88, 340)),
+              height: Math.floor(Math.min(h * 0.45, 180)),
+            }),
+            aspectRatio: 1.0,
+          }
           const onScanSuccess = (decodedText: string) => {
             const code = decodedText.trim()
             const barcodeInput = document.getElementById("barcode") as HTMLInputElement
@@ -376,23 +396,27 @@ export function ProductForm({
           }
 
           try {
-            await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+            await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
           } catch {
             try {
-              await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+              await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
             } catch {
               try {
-                const cameras = await Html5Qrcode.getCameras()
-                if (cameras && cameras.length > 0) {
-                  const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
-                  const chosenId = backCam ? backCam.id : cameras[0].id
-                  await scanner.start(chosenId, config, onScanSuccess, () => {})
-                } else {
-                  throw new Error("Sin cámaras disponibles")
+                await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+              } catch {
+                try {
+                  const cameras = await Html5Qrcode.getCameras()
+                  if (cameras && cameras.length > 0) {
+                    const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
+                    const chosenId = backCam ? backCam.id : cameras[0].id
+                    await scanner.start(chosenId, config, onScanSuccess, () => {})
+                  } else {
+                    throw new Error("Sin cámaras disponibles")
+                  }
+                } catch (err: any) {
+                  setScannerStatus("error")
+                  setScannerErrorMsg(`No se pudo iniciar la cámara: ${err?.message || "Verifica que otra app no la esté usando."}`)
                 }
-              } catch (err: any) {
-                setScannerStatus("error")
-                setScannerErrorMsg(`No se pudo iniciar la cámara: ${err?.message || "Verifica que otra app no la esté usando."}`)
               }
             }
           }

@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
-import { Html5Qrcode } from "html5-qrcode"
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import Pusher from "pusher-js"
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "expired" | "error"
@@ -128,10 +128,30 @@ function ScannerPage() {
     }
 
     try {
-      const scanner = new Html5Qrcode("scanner-viewport")
+      const scanner = new Html5Qrcode("scanner-viewport", {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+        ],
+        verbose: false,
+      })
       scannerRef.current = scanner
 
-      const config = { fps: 15, qrbox: { width: 280, height: 150 } }
+      const config = {
+        fps: 20,
+        qrbox: (w: number, h: number) => ({
+          width: Math.floor(Math.min(w * 0.88, 340)),
+          height: Math.floor(Math.min(h * 0.45, 180)),
+        }),
+        aspectRatio: 1.0,
+      }
       const onScanSuccess = async (decodedText: string) => {
         const code = decodedText.trim()
         const now = Date.now()
@@ -166,19 +186,27 @@ function ScannerPage() {
       let startErr: any = null
 
       try {
-        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+        await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
         return
       } catch (e1: any) {
         startErr = e1
-        await new Promise((r) => setTimeout(r, 300))
+        await new Promise((r) => setTimeout(r, 200))
+      }
+
+      try {
+        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+        return
+      } catch (e2: any) {
+        if (!startErr) startErr = e2
+        await new Promise((r) => setTimeout(r, 200))
       }
 
       try {
         await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
         return
-      } catch (e2: any) {
-        if (!startErr) startErr = e2
-        await new Promise((r) => setTimeout(r, 300))
+      } catch (e3: any) {
+        if (!startErr) startErr = e3
+        await new Promise((r) => setTimeout(r, 200))
       }
 
       try {
@@ -244,11 +272,13 @@ function ScannerPage() {
   const requestPermissionAndStart = useCallback(async () => {
     setErrorMsg("")
     setStatus("connecting")
+
+    // Force prompt on click
     try {
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })
         stream.getTracks().forEach((t) => t.stop())
-        await new Promise((r) => setTimeout(r, 300))
+        await new Promise((r) => setTimeout(r, 250))
       }
     } catch (err: any) {
       const name = err?.name || ""
@@ -259,6 +289,7 @@ function ScannerPage() {
         return
       }
     }
+
     await connectToSession()
   }, [connectToSession])
 
