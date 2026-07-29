@@ -163,42 +163,51 @@ function ScannerPage() {
         }
       }
 
+      let startErr: any = null
+
       try {
         await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
-      } catch (err1: any) {
-        // Fallback for Android devices where facingMode constraint fails: use getCameras
-        try {
-          const cameras = await Html5Qrcode.getCameras()
-          if (cameras && cameras.length > 0) {
-            const backCam = cameras.find((c) =>
-              /back|rear|trasera|environment/i.test(c.label)
-            )
-            const chosenId = backCam ? backCam.id : cameras[cameras.length - 1].id
-            await scanner.start(chosenId, config, onScanSuccess, () => {})
-          } else {
-            await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
-          }
-        } catch (err2: any) {
-          const finalErr = err2 || err1
-          const errName = finalErr?.name || ""
-          const errText = String(finalErr?.message || finalErr || "")
+        return
+      } catch (e1: any) {
+        startErr = e1
+      }
 
-          if (errName === "NotAllowedError" || errText.includes("Permission denied")) {
-            setErrorMsg("Permiso de cámara denegado. Habilita el acceso a la cámara en el navegador y recarga la página.")
-          } else if (errName === "NotReadableError" || errText.includes("Could not start video source")) {
-            setErrorMsg("La cámara está siendo usada por otra app (ej: WhatsApp, Cámara). Ciérrala e intenta de nuevo.")
-          } else if (errName === "NotFoundError" || errText.includes("Requested device not found")) {
-            setErrorMsg("No se encontró una cámara compatible en tu dispositivo.")
-          } else {
-            setErrorMsg(`No se pudo iniciar la cámara: ${errText || "Error de hardware o permisos."}`)
-          }
-          setStatus("error")
-          scanningRef.current = false
-          if (scannerRef.current) {
-            try { scannerRef.current.clear() } catch {}
-            scannerRef.current = null
-          }
+      try {
+        await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+        return
+      } catch (e2: any) {
+        if (!startErr) startErr = e2
+      }
+
+      try {
+        const cameras = await Html5Qrcode.getCameras()
+        if (cameras && cameras.length > 0) {
+          const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
+          const chosenId = backCam ? backCam.id : cameras[0].id
+          await scanner.start(chosenId, config, onScanSuccess, () => {})
+          return
         }
+      } catch {
+        // ignore getCameras error string
+      }
+
+      const errName = startErr?.name || ""
+      const errText = String(startErr?.message || startErr || "")
+
+      if (errName === "NotAllowedError") {
+        setErrorMsg("Permiso de cámara denegado. Presiona el icono de candado/permisos junto a la URL en tu navegador y selecciona 'Permitir cámara'.")
+      } else if (errName === "NotReadableError" || errText.includes("Could not start video source")) {
+        setErrorMsg("La cámara está ocupada por otra app (ej: WhatsApp). Ciérrala e intenta de nuevo.")
+      } else if (errName === "NotFoundError" || errText.includes("Requested device not found")) {
+        setErrorMsg("No se encontró una cámara en tu dispositivo.")
+      } else {
+        setErrorMsg(`No se pudo iniciar la cámara: ${errText || "Error de hardware o navegador."}`)
+      }
+      setStatus("error")
+      scanningRef.current = false
+      if (scannerRef.current) {
+        try { scannerRef.current.clear() } catch {}
+        scannerRef.current = null
       }
     } catch (err: any) {
       setErrorMsg(`No se pudo iniciar la cámara: ${err?.message || String(err)}`)
