@@ -332,31 +332,37 @@ export function ProductForm({
         })
       }
 
-      const pusher = new Pusher(
-        process.env.NEXT_PUBLIC_PUSHER_KEY || "",
-        { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2" }
-      )
-      pusherRef.current = pusher
-      const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
+      const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
+      if (pusherKey) {
+        try {
+          const pusher = new Pusher(pusherKey, {
+            cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
+          })
+          pusherRef.current = pusher
+          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
 
-      channel.bind("barcode_scanned", (d: any) => {
-        const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-        if (barcodeInput) {
-          barcodeInput.value = d.barcode
-          barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
-          toast.success(`Código escaneado: ${d.barcode}`)
+          channel.bind("barcode_scanned", (d: any) => {
+            const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+            if (barcodeInput) {
+              barcodeInput.value = d.barcode
+              barcodeInput.dispatchEvent(new Event("input", { bubbles: true }))
+              toast.success(`Código escaneado: ${d.barcode}`)
+            }
+            cleanupProductScanner()
+            setScannerOpen(false)
+          })
+
+          channel.bind("phone_connected", () => {
+            setScannerStatus("connected")
+          })
+
+          channel.bind("phone_disconnected", () => {
+            cleanupProductScanner()
+          })
+        } catch {
+          console.warn("[scanner] Error al conectar con Pusher — escaneo funcionará sin eventos en tiempo real")
         }
-        cleanupProductScanner()
-        setScannerOpen(false)
-      })
-
-      channel.bind("phone_connected", () => {
-        setScannerStatus("connected")
-      })
-
-      channel.bind("phone_disconnected", () => {
-        cleanupProductScanner()
-      })
+      }
     } catch {
       setScannerStatus("error")
     }

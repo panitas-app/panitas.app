@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, createContext, useContext, useCallback, type ReactNode } from "react"
+import { useState, useEffect, createContext, useContext, useCallback, useMemo, type ReactNode } from "react"
 import { SetupWizard } from "./setup-wizard"
 
 interface SetupContextValue {
@@ -80,8 +80,13 @@ export function SetupWizardProvider({ storeId, negocioId, planId, planType, stor
 
   const wizardPlanType = planId === "mayorista" ? "mayorista" : planType === "agenda" ? "agenda" : "comercio"
 
+  const value = useMemo(
+    () => ({ isOpen: status === "open", completeStep, close }),
+    [status, completeStep, close],
+  )
+
   return (
-    <SetupContext.Provider value={{ isOpen: status === "open", completeStep, close }}>
+    <SetupContext.Provider value={value}>
       {status === "open" && (
         <SetupWizard
           storeId={storeId}

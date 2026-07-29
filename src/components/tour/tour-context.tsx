@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from "react"
 import type { TourStep, TourPosition } from "@/lib/tour/types"
 import { getTourSteps } from "@/lib/tour/registry"
 
@@ -207,8 +207,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.currentStep, updateTargetRect])
 
+  const value = useMemo(
+    () => ({ ...state, start, stop, next, prev, goTo, skip, finish }),
+    [state, start, stop, next, prev, goTo, skip, finish],
+  )
+
   return (
-    <TourContext.Provider value={{ ...state, start, stop, next, prev, goTo, skip, finish }}>
+    <TourContext.Provider value={value}>
       {children}
     </TourContext.Provider>
   )

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, BarChart3, Receipt, LogOut, Store, Menu, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { MobileSheet } from "@/components/shared/MobileSheet"
 
 interface Props {
   seller: { name: string; storeName: string }
@@ -16,13 +16,6 @@ export function SellerSidebar({ seller }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  // Lock body scroll when mobile sidebar is open
-  useEffect(() => {
-    if (!mobileOpen) return
-    document.body.style.overflow = "hidden"
-    return () => { document.body.style.overflow = "" }
-  }, [mobileOpen])
 
   const closeMobile = useCallback(() => setMobileOpen(false), [])
   const openMobile = useCallback(() => setMobileOpen(true), [])
@@ -89,55 +82,35 @@ export function SellerSidebar({ seller }: Props) {
         <Menu className="size-5" />
       </button>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={closeMobile}
-              className="fixed inset-0 z-40 perf-overlay"
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] bg-[#0A1628] text-white p-4 shadow-2xl safe-bottom gpu will-change-transform"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Store className="size-5 shrink-0 text-primary" />
-                  <div className="truncate min-w-0">
-                    <p className="text-xs font-bold text-primary truncate">{seller.storeName}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{seller.name}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closeMobile}
-                  className="touch-target rounded-full bg-white/10 text-white"
-                  aria-label="Cerrar"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-              {navContent}
-              <div className="mt-auto pt-4">
-                <Button
-                  variant="ghost"
-                  onClick={logout}
-                  className="w-full justify-start gap-3 rounded-xl min-h-[44px] text-slate-500 hover:text-red-400 hover:bg-white/5"
-                >
-                  <LogOut className="size-4 shrink-0" />
-                  <span className="text-sm">Cerrar sesión</span>
-                </Button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileSheet isOpen={mobileOpen} onClose={closeMobile} className="bg-[#0A1628] text-white p-4 safe-bottom">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2 min-w-0">
+            <Store className="size-5 shrink-0 text-primary" />
+            <div className="truncate min-w-0">
+              <p className="text-xs font-bold text-primary truncate">{seller.storeName}</p>
+              <p className="text-[10px] text-slate-500 truncate">{seller.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={closeMobile}
+            className="touch-target rounded-full bg-white/10 text-white"
+            aria-label="Cerrar"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        {navContent}
+        <div className="mt-auto pt-4">
+          <Button
+            variant="ghost"
+            onClick={logout}
+            className="w-full justify-start gap-3 rounded-xl min-h-[44px] text-slate-500 hover:text-red-400 hover:bg-white/5"
+          >
+            <LogOut className="size-4 shrink-0" />
+            <span className="text-sm">Cerrar sesión</span>
+          </Button>
+        </div>
+      </MobileSheet>
     </>
   )
 }

@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { requireRole } from "@/lib/permissions"
 import { rateLimit } from "@/lib/rate-limit"
 import { csrfGuard } from "@/lib/csrf"
-import { triggerSessionEvent } from "@/lib/pusher"
 import { randomUUID } from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -33,11 +32,6 @@ export async function POST(request: NextRequest) {
       token,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     },
-  })
-
-  await triggerSessionEvent(session.id, "session_created", {
-    sessionId: session.id,
-    expiresAt: session.expiresAt.toISOString(),
   })
 
   return NextResponse.json({

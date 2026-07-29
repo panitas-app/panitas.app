@@ -446,56 +446,62 @@ async function processSale() {
         })
       }
 
-      const pusher = new Pusher(
-        process.env.NEXT_PUBLIC_PUSHER_KEY || "",
-        { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2" }
-      )
-      pusherRef.current = pusher
-      const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
-
-      channel.bind("phone_connected", (d: any) => {
-        setScannerStatus("connected")
-        setScannerDevice(d.deviceName || "Teléfono")
-      })
-
-      channel.bind("phone_disconnected", () => {
-        setScannerStatus("idle")
-        setScannerDevice("")
-        cleanupScanner()
-      })
-
-      channel.bind("barcode_scanned", async (d: any) => {
-        const code = d.barcode
-        const found = products.find(p => p.barcode?.toLowerCase() === code.toLowerCase() ||
-          p.sku?.toLowerCase() === code.toLowerCase())
-        if (found) {
-          addToCart(found)
-          await fetch("/api/scanner/scan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: data.sessionId, barcode: code }),
+      const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
+      if (pusherKey) {
+        try {
+          const pusher = new Pusher(pusherKey, {
+            cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "us2",
           })
-        } else {
-          try {
-            const res = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)
-            const resData = await res.json()
-            const list = resData.data || []
-            if (list.length > 0) {
-              addToCart(list[0])
-              setProducts(prev => {
-                if (!prev.find(p => p.id === list[0].id)) return [...prev, list[0]]
-                return prev
-              })
-            }
-          } catch {}
-        }
-      })
+          pusherRef.current = pusher
+          const channel = pusher.subscribe(`private-scanner-${data.sessionId}`)
 
-      channel.bind("scanner_disconnect", () => {
-        setScannerStatus("idle")
-        setScannerDevice("")
-        cleanupScanner()
-      })
+          channel.bind("phone_connected", (d: any) => {
+            setScannerStatus("connected")
+            setScannerDevice(d.deviceName || "Teléfono")
+          })
+
+          channel.bind("phone_disconnected", () => {
+            setScannerStatus("idle")
+            setScannerDevice("")
+            cleanupScanner()
+          })
+
+          channel.bind("barcode_scanned", async (d: any) => {
+            const code = d.barcode
+            const found = products.find(p => p.barcode?.toLowerCase() === code.toLowerCase() ||
+              p.sku?.toLowerCase() === code.toLowerCase())
+            if (found) {
+              addToCart(found)
+              await fetch("/api/scanner/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sessionId: data.sessionId, barcode: code }),
+              })
+            } else {
+              try {
+                const res = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)
+                const resData = await res.json()
+                const list = resData.data || []
+                if (list.length > 0) {
+                  addToCart(list[0])
+                  setProducts(prev => {
+                    if (!prev.find(p => p.id === list[0].id)) return [...prev, list[0]]
+                    return prev
+                  })
+                }
+              } catch {}
+            }
+          })
+
+          channel.bind("scanner_disconnect", () => {
+            setScannerStatus("idle")
+            setScannerDevice("")
+            cleanupScanner()
+          })
+        } catch {
+          console.warn("[scanner] Error al conectar con Pusher — escaneo funcionará sin eventos en tiempo real")
+        }
+      }
     } catch {
       setScannerStatus("error")
     }

@@ -5,11 +5,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, Users, Store, Layers, TrendingUp, Activity,
-  Banknote, Settings2, ChevronDown, ChevronRight, MessageCircle,
-  DollarSign, Shield, CreditCard, Menu, X, Target,
+  LayoutDashboard, Users, Store, TrendingUp, Activity,
+  ChevronDown, ChevronRight, MessageCircle,
+  Shield, Menu, X, Target,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { MobileSheet } from "@/components/shared/MobileSheet"
 
 interface NavGroup {
   label: string
@@ -175,39 +175,19 @@ export function AdminSidebar() {
         <Menu className="size-5" />
       </button>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={closeMobile}
-              className="fixed inset-0 z-40 perf-overlay lg:hidden"
-            />
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-y-auto bg-background shadow-2xl gpu will-change-transform"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <span className="text-sm font-bold">Panel Admin</span>
-                <button
-                  onClick={closeMobile}
-                  className="touch-target rounded-full bg-muted text-foreground"
-                  aria-label="Cerrar"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-              <AdminSidebarContent />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileSheet isOpen={mobileOpen} onClose={closeMobile} className="overflow-y-auto bg-background">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <span className="text-sm font-bold">Panel Admin</span>
+          <button
+            onClick={closeMobile}
+            className="touch-target rounded-full bg-muted text-foreground"
+            aria-label="Cerrar"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <AdminSidebarContent />
+      </MobileSheet>
     </>
   )
 }

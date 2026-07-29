@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { motion, AnimatePresence } from "framer-motion"
 import { playNotificationSound } from "@/lib/notification-sound"
+import { MobileSheet } from "@/components/shared/MobileSheet"
 import {
   LayoutDashboard,
   Package,
@@ -306,13 +306,6 @@ const SidebarContent = memo(function SidebarContent({ store, role, planId, modal
 
 export function DashboardSidebar({ store, role, planId, modalidad }: { store: PrismaStore; role: Role; planId?: string; modalidad?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const sheetRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!mobileOpen) return
-    document.body.style.overflow = "hidden"
-    return () => { document.body.style.overflow = "" }
-  }, [mobileOpen])
 
   const closeMobile = useCallback(() => setMobileOpen(false), [])
   const openMobile = useCallback(() => setMobileOpen(true), [])
@@ -334,40 +327,18 @@ export function DashboardSidebar({ store, role, planId, modalidad }: { store: Pr
         <Menu className="size-5" />
       </button>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={closeMobile}
-              onTouchMove={(e) => e.preventDefault()}
-              className="fixed inset-0 z-40 perf-overlay lg:hidden"
-            />
-            <motion.div
-              ref={sheetRef}
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-y-0 left-0 z-50 w-[75vw] max-w-[300px] lg:hidden overflow-hidden shadow-2xl gpu will-change-transform"
-            >
-              <div className="relative h-full">
-                <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={closeMobile} />
-                <button
-                  onClick={closeMobile}
-                  className="absolute top-4 right-4 touch-target rounded-full bg-muted/80 text-foreground"
-                  aria-label="Cerrar menú"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileSheet isOpen={mobileOpen} onClose={closeMobile} className="overflow-hidden">
+        <div className="relative h-full">
+          <SidebarContent store={store} role={role} planId={planId} modalidad={modalidad} onNavClick={closeMobile} />
+          <button
+            onClick={closeMobile}
+            className="absolute top-4 right-4 touch-target rounded-full bg-muted/80 text-foreground"
+            aria-label="Cerrar menú"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      </MobileSheet>
     </>
   )
 }
