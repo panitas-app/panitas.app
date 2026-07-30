@@ -42,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { MobileCameraScanner } from "@/components/scanner/mobile-camera-scanner"
 
 interface PriceScale {
   quantity: string
@@ -93,6 +94,7 @@ export function ProductForm({
 
   // Scanner states
   const [scannerOpen, setScannerOpen] = useState(false)
+  const [mobileScannerOpen, setMobileScannerOpen] = useState(false)
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
@@ -334,101 +336,17 @@ export function ProductForm({
   }
 
   async function startProductScanner() {
-    setScannerStatus("connecting")
-    setScannerOpen(true)
     setScannerErrorMsg("")
     const mobile = isTouchMobile()
     setIsMobileMode(mobile)
 
     if (mobile) {
-      if (typeof window !== "undefined" && !window.isSecureContext) {
-        setScannerOpen(false)
-        setScannerStatus("idle")
-        scanBarcodeFromFile()
-        return
-      }
-
-      setScannerStatus("connected")
-      const startMobileCamera = async (attempts = 0) => {
-        const el = document.getElementById("scanner-viewport")
-        if (!el && attempts < 10) {
-          setTimeout(() => startMobileCamera(attempts + 1), 100)
-          return
-        }
-        if (!el) {
-          setScannerStatus("error")
-          setScannerErrorMsg("No se encontró el visor de la cámara en la pantalla.")
-          return
-        }
-        try {
-          const scanner = new Html5Qrcode("scanner-viewport", {
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.EAN_8,
-              Html5QrcodeSupportedFormats.CODE_128,
-              Html5QrcodeSupportedFormats.CODE_39,
-              Html5QrcodeSupportedFormats.UPC_A,
-              Html5QrcodeSupportedFormats.UPC_E,
-              Html5QrcodeSupportedFormats.ITF,
-              Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
-              Html5QrcodeSupportedFormats.QR_CODE,
-              Html5QrcodeSupportedFormats.DATA_MATRIX,
-            ],
-            verbose: false,
-          })
-          scannerRef.current = scanner
-          const config = {
-            fps: 20,
-            qrbox: (w: number, h: number) => ({
-              width: Math.floor(Math.min(w * 0.88, 340)),
-              height: Math.floor(Math.min(h * 0.45, 180)),
-            }),
-            aspectRatio: 1.0,
-          }
-          const onScanSuccess = (decodedText: string) => {
-            const code = decodedText.trim()
-            const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-            if (barcodeInput) {
-              setNativeInputValue(barcodeInput, code)
-              toast.success(`Código escaneado: ${code}`)
-            }
-            cleanupProductScanner()
-            setScannerOpen(false)
-          }
-
-          try {
-            await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
-          } catch {
-            try {
-              await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
-            } catch {
-              try {
-                await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
-              } catch {
-                try {
-                  const cameras = await Html5Qrcode.getCameras()
-                  if (cameras && cameras.length > 0) {
-                    const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
-                    const chosenId = backCam ? backCam.id : cameras[0].id
-                    await scanner.start(chosenId, config, onScanSuccess, () => {})
-                  } else {
-                    throw new Error("Sin cámaras disponibles")
-                  }
-                } catch (err: any) {
-                  setScannerStatus("error")
-                  setScannerErrorMsg(`No se pudo iniciar la cámara: ${err?.message || "Verifica que otra app no la esté usando."}`)
-                }
-              }
-            }
-          }
-        } catch (err: any) {
-          setScannerStatus("error")
-          setScannerErrorMsg(`Error inesperado al iniciar la cámara: ${err?.message || "Intenta nuevamente."}`)
-        }
-      }
-      startMobileCamera()
+      setMobileScannerOpen(true)
       return
     }
+
+    setScannerStatus("connecting")
+    setScannerOpen(true)
 
     // Desktop path: create session + show QR
     try {
@@ -1572,6 +1490,21 @@ export function ProductForm({
           )}
         </DialogContent>
       </Dialog>
+      {/* Mobile Direct Scanner */}
+      <MobileCameraScanner
+        open={mobileScannerOpen}
+        onClose={() => setMobileScannerOpen(false)}
+        onSend={(code) => {
+          const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+          if (barcodeInput) {
+            setNativeInputValue(barcodeInput, code)
+            toast.success(`Código escaneado: ${code}`)
+          }
+          setMobileScannerOpen(false)
+        }}
+        title="Escáner de Productos"
+        sendButtonLabel="Usar código"
+      />
     </div>
   )
 }

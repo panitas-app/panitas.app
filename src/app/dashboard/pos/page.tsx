@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import Pusher from "pusher-js"
 import QRCode from "qrcode"
+import { MobileCameraScanner } from "@/components/scanner/mobile-camera-scanner"
 
 interface Product {
   id: string; name: string; price: number; stock: number; images: string; sku?: string | null; barcode?: string | null
@@ -110,6 +111,7 @@ export default function POSPage() {
 
   // Scanner
   const [scannerOpen, setScannerOpen] = useState(false)
+  const [mobileScannerOpen, setMobileScannerOpen] = useState(false)
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
@@ -422,6 +424,32 @@ async function processSale() {
     finally { setSubmitting(false) }
   }
 
+  async function handlePOSMobileBarcode(code: string) {
+    const cleanCode = code.trim().toLowerCase()
+    const found = products.find(p => p.barcode?.toLowerCase() === cleanCode || p.sku?.toLowerCase() === cleanCode)
+    if (found) {
+      addToCart(found)
+      toast.success(`Añadido: ${found.name}`)
+    } else {
+      try {
+        const res = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)
+        if (res.ok) {
+          const resData = await res.json()
+          const list = resData.data || []
+          if (list.length > 0) {
+            addToCart(list[0])
+            setProducts(prev => prev.find(p => p.id === list[0].id) ? prev : [...prev, list[0]])
+            toast.success(`Añadido: ${list[0].name}`)
+            return
+          }
+        }
+        toast.error(`Producto no encontrado para código: ${code}`)
+      } catch {
+        toast.error("Error al buscar producto")
+      }
+    }
+  }
+
   // ─── Scanner functions ──────────────────────────────────────
   async function startScanner() {
     setScannerStatus("connecting")
@@ -700,7 +728,10 @@ async function processSale() {
             size="sm"
             className={`gap-1.5 text-xs ${scannerStatus === "connected" ? "bg-green-600 hover:bg-green-700" : ""}`}
             onClick={() => {
-              if (scannerSessionId && scannerStatus === "connected") {
+              const isMobile = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+              if (isMobile) {
+                setMobileScannerOpen(true)
+              } else if (scannerSessionId && scannerStatus === "connected") {
                 setScannerOpen(true)
               } else {
                 startScanner()
@@ -1512,6 +1543,17 @@ async function processSale() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Direct Scanner */}
+      <MobileCameraScanner
+        open={mobileScannerOpen}
+        onClose={() => setMobileScannerOpen(false)}
+        onSend={(code) => {
+          handlePOSMobileBarcode(code)
+        }}
+        title="Escáner Punto de Venta"
+        sendButtonLabel="Agregar al carrito"
+      />
     </div>
   )
 }
