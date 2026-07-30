@@ -17,9 +17,9 @@ export const planAgendaContent: PlanLandingContent = {
   heroTitle: "Software de Agenda Online para tu Negocio en Venezuela",
   heroSubtitle:
     "Lleva el control de tus citas, reservas y profesionales con un sistema diseñado para barberías, clínicas, consultorios, spas y salones de belleza. Tus clientes reservan 24/7 desde su celular sin que tengas que contestar un solo mensaje.",
-  price: "$15",
-  priceYearly: "$150",
-  priceInstallment: "$18",
+  price: "$14.99",
+  priceYearly: "$149.90",
+  priceInstallment: "$17.98",
   comparisonLabel: "Plan Agenda vs otras soluciones",
   includes: [
     {
@@ -138,7 +138,7 @@ export const planAgendaContent: PlanLandingContent = {
     {
       question: "¿Funciona para negocios que no son de citas?",
       answer:
-        "El Plan Agenda está diseñado para negocios por cita (barberías, clínicas, spas). Si vendes productos o necesitas inventario y POS, el Plan Emprendedor ($25/mes) es mejor para ti.",
+        "El Plan Agenda está diseñado para negocios por cita (barberías, clínicas, spas). Si vendes productos o necesitas inventario y POS, el Plan Emprendedor ($19.99/mes) es mejor para ti.",
     },
     {
       question: "¿Puedo cancelar cuando quiera?",
@@ -166,9 +166,9 @@ export const planEmprendedorContent: PlanLandingContent = {
   heroTitle: "Software Todo en Uno para Emprendedores en Venezuela",
   heroSubtitle:
     "Vende online con tienda profesional, gestiona inventario en tiempo real, cobra con POS integrado y conoce a tus clientes con CRM. Todo desde un solo lugar, sin instalar nada en tu computadora.",
-  price: "$25",
-  priceYearly: "$250",
-  priceInstallment: "$28",
+  price: "$19.99",
+  priceYearly: "$199.90",
+  priceInstallment: "$25.98",
   comparisonLabel: "Plan Emprendedor vs Excel y cuadernos",
   includes: [
     {
@@ -207,7 +207,7 @@ export const planEmprendedorContent: PlanLandingContent = {
   excludes: [
     {
       label: "Gestión B2B para mayoristas",
-      detail: "Si vendes al por mayor y necesitas comisiones y notas de entrega, el Plan Mayorista ($45/mes) es mejor.",
+      detail: "Si vendes al por mayor y necesitas comisiones y notas de entrega, el Plan Mayorista ($49.99/mes) es mejor.",
     },
     {
       label: "Inventario ilimitado",
@@ -307,9 +307,9 @@ export const planMayoristaContent: PlanLandingContent = {
   heroTitle: "Sistema B2B para Mayoristas y Distribuidoras en Venezuela",
   heroSubtitle:
     "Controla pedidos al mayor, gestiona comisiones de vendedores, genera notas de entrega automatizadas y maneja precios por volumen. Todo lo que una distribuidora necesita para operar sin caos.",
-  price: "$45",
-  priceYearly: "$450",
-  priceInstallment: "$50",
+  price: "$49.99",
+  priceYearly: "$499.90",
+  priceInstallment: "$55.98",
   comparisonLabel: "Plan Mayorista vs sistemas genéricos",
   includes: [
     {

@@ -5,12 +5,12 @@ import { FaqPageSchema, BreadcrumbSchema, WebPageSchema, PricingOfferSchema } fr
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://panitas.app"
 
 export const metadata: Metadata = {
-  title: "Panitas | Planes y Precios del Software Administrativo — Desde $15/mes",
-  description: "Conoce los planes de Panitas: Agenda ($15/mes) para profesionales de citas, Emprendedor ($25/mes) con tienda online y POS, y Mayorista ($45/mes) para distribución B2B. Sin comisiones por transacción.",
+  title: "Panitas | Planes y Precios del Software Administrativo — Desde $14.99/mes",
+  description: "Conoce los planes de Panitas: Agenda ($14.99/mes) para profesionales de citas, Emprendedor ($19.99/mes) con tienda online y POS, y Mayorista ($49.99/mes) para distribución B2B. Sin comisiones por transacción.",
   alternates: { canonical: "/precios" },
   openGraph: {
-    title: "Panitas | Planes y Precios del Software Administrativo — Desde $15/mes",
-    description: "Conoce los planes de Panitas: Agenda ($15/mes), Emprendedor ($25/mes) y Mayorista ($45/mes). Sin comisiones por transacción.",
+    title: "Panitas | Planes y Precios del Software Administrativo — Desde $14.99/mes",
+    description: "Conoce los planes de Panitas: Agenda ($14.99/mes), Emprendedor ($19.99/mes) y Mayorista ($49.99/mes). Sin comisiones por transacción.",
     url: `${baseUrl}/precios`,
     siteName: "Panitas",
     locale: "es_VE",
@@ -18,27 +18,27 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Panitas | Planes y Precios del Software Administrativo — Desde $15/mes",
-    description: "Conoce los planes de Panitas: Agenda ($15/mes), Emprendedor ($25/mes) y Mayorista ($45/mes). Sin comisiones por transacción.",
+    title: "Panitas | Planes y Precios del Software Administrativo — Desde $14.99/mes",
+    description: "Conoce los planes de Panitas: Agenda ($14.99/mes), Emprendedor ($19.99/mes) y Mayorista ($49.99/mes). Sin comisiones por transacción.",
   },
 }
 
 const faqData = [
   {
     question: "¿Cuánto cuesta Panitas?",
-    answer: "Panitas tiene tres planes: Agenda a $15/mes, Emprendedor a $25/mes y Mayorista a $45/mes. Todos incluyen 14 días de prueba gratuita sin tarjeta de crédito. También puedes pagar anualmente con descuento: $150/año, $250/año y $450/año respectivamente.",
+    answer: "Panitas tiene tres planes: Agenda a $14.99/mes, Emprendedor a $19.99/mes y Mayorista a $49.99/mes. Todos incluyen 14 días de prueba gratuita sin tarjeta de crédito. También puedes pagar anualmente con descuento: $149.90/año, $199.90/año y $499.90/año respectivamente.",
   },
   {
     question: "¿Qué plan es mejor para una barbería o peluquería?",
-    answer: "El Plan Agenda ($15/mes) es ideal para barberías y peluquerías. Incluye agenda de citas online, reservas 24/7, recordatorios automáticos y gestión de múltiples profesionales. Si además vendes productos, el Plan Emprendedor ($25/mes) agrega tienda online e inventario.",
+    answer: "El Plan Agenda ($14.99/mes) es ideal para barberías y peluquerías. Incluye agenda de citas online, reservas 24/7, recordatorios automáticos y gestión de múltiples profesionales. Si además vendes productos, el Plan Emprendedor ($19.99/mes) agrega tienda online e inventario.",
   },
   {
     question: "¿Qué plan es mejor para una tienda o comercio?",
-    answer: "El Plan Emprendedor ($25/mes) es ideal para tiendas y comercios. Incluye tienda online profesional, punto de venta (POS), control de inventario, CRM y reportes. Si necesitas vender al por mayor, el Plan Mayorista ($45/mes) agrega funcionalidades B2B.",
+    answer: "El Plan Emprendedor ($19.99/mes) es ideal para tiendas y comercios. Incluye tienda online profesional, punto de venta (POS), control de inventario, CRM y reportes. Si necesitas vender al por mayor, el Plan Mayorista ($49.99/mes) agrega funcionalidades B2B.",
   },
   {
     question: "¿Qué plan es mejor para una distribuidora o mayorista?",
-    answer: "El Plan Mayorista ($45/mes) está diseñado para distribuidoras y mayoristas. Incluye gestión B2B, precios por volumen, comisiones de vendedores, notas de entrega automatizadas e inventario ilimitado con hasta 10 miembros de equipo.",
+    answer: "El Plan Mayorista ($49.99/mes) está diseñado para distribuidoras y mayoristas. Incluye gestión B2B, precios por volumen, comisiones de vendedores, notas de entrega automatizadas e inventario ilimitado con hasta 10 miembros de equipo.",
   },
   {
     question: "¿Puedo cambiar de plan después de registrarme?",
@@ -72,7 +72,7 @@ export default function PreciosPage() {
             Planes y precios de Panitas
           </h1>
           <p className="text-xl text-gray-700 mb-4 max-w-3xl mx-auto font-medium">
-            Panitas ofrece tres planes de software administrativo para negocios en Venezuela: desde $15/mes para profesionales de citas hasta $45/mes para distribuidoras y mayoristas. Sin comisiones por transacción, sin tarjeta de crédito.
+            Panitas ofrece tres planes de software administrativo para negocios en Venezuela: desde $14.99/mes para profesionales de citas hasta $49.99/mes para distribuidoras y mayoristas. Sin comisiones por transacción, sin tarjeta de crédito.
           </p>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Todos los planes incluyen 14 días de prueba gratuita. Paga por transferencia o pago móvil.
@@ -96,21 +96,21 @@ export default function PreciosPage() {
               <tbody>
                 <tr>
                   <td className="border border-gray-200 px-4 py-3 font-medium text-gray-900">Precio mensual</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-gray-900">$15/mes</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-amber-700 bg-amber-50">$25/mes</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-gray-900">$45/mes</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-gray-900">$14.99/mes</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-amber-700 bg-amber-50">$19.99/mes</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center font-bold text-gray-900">$49.99/mes</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-200 px-4 py-3 font-medium text-gray-900">Precio anual</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$150/año</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-amber-700 bg-amber-50">$250/año</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$450/año</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$149.90/año</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-amber-700 bg-amber-50">$199.90/año</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$499.90/año</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-200 px-4 py-3 font-medium text-gray-900">Cuota (2 pagos)</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$9 × 2</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-amber-700 bg-amber-50">$14 × 2</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$25 × 2</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$8.99 × 2</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-amber-700 bg-amber-50">$12.99 × 2</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$27.99 × 2</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-200 px-4 py-3 font-medium text-gray-900">Miembros de equipo</td>

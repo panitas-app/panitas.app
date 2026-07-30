@@ -41,8 +41,8 @@ const planCards = [
     desc: "Sistema de agendamiento inteligente para servicios por cita.",
     icon: Calendar,
     iconBg: "from-amber-500 to-amber-700",
-    price: 15,
-    yearlyPrice: 150,
+    price: 14.99,
+    yearlyPrice: 149.90,
     popular: false,
   },
   {
@@ -51,8 +51,8 @@ const planCards = [
     desc: "Tienda online + agenda + CRM para minoristas.",
     icon: Store,
     iconBg: "from-primary to-blue-600",
-    price: 25,
-    yearlyPrice: 250,
+    price: 19.99,
+    yearlyPrice: 199.90,
     popular: true,
   },
   {
@@ -61,8 +61,8 @@ const planCards = [
     desc: "Sistema B2B para distribuidoras y mayoristas.",
     icon: Crown,
     iconBg: "from-slate-700 to-slate-900",
-    price: 45,
-    yearlyPrice: 450,
+    price: 49.99,
+    yearlyPrice: 499.90,
     popular: false,
   },
 ]

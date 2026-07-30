@@ -59,6 +59,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   await prisma.storeSubscription.update({ where: { id }, data: updateData })
 
+  // Create expense for second installment
+  await prisma.expense.create({
+    data: {
+      description: `Suscripción ${subscription.plan} (2da cuota)`,
+      amount: subscription.installmentAmount || 0,
+      category: "suscripcion",
+      subcategory: "cuota2",
+      isRecurring: true,
+      storeId: subscription.storeId,
+    },
+  }).catch(e => console.error("[expense] Error al crear gasto de 2da cuota:", e))
+
   // Update Negocio.planVencimiento — add days to remaining
   const store = await prisma.store.findUnique({ where: { id: subscription.storeId }, select: { negocioId: true } })
   if (store?.negocioId) {

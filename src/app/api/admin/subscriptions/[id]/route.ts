@@ -65,6 +65,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: { planEstado: "activo", planVencimiento: endDate },
       })
     }
+
+    // Create expense for plan payment
+    const expenseAmount = existing.paymentMode === "installment" && existing.installmentAmount
+      ? existing.installmentAmount
+      : existing.amount
+    await prisma.expense.create({
+      data: {
+        description: `Suscripción ${existing.plan}${existing.paymentMode === "installment" ? " (1ra cuota)" : ""}`,
+        amount: expenseAmount,
+        category: "suscripcion",
+        subcategory: existing.paymentMode === "installment" ? "cuota1" : "pago_unico",
+        isRecurring: true,
+        storeId: existing.storeId,
+      },
+    }).catch(e => console.error("[expense] Error al crear gasto de suscripción:", e))
   } else if (status === "rejected") {
     updateData.status = "rejected"
     updateData.rejectedAt = new Date()
