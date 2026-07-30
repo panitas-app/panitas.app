@@ -6,7 +6,6 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
 import Pusher from "pusher-js"
 
 type ConnectionStatus = "connecting" | "connected" | "disconnected" | "expired" | "error"
-type PermissionState = "granted" | "denied" | "prompt" | "unknown"
 
 interface ScanFeedback {
   barcode: string
@@ -66,7 +65,6 @@ function ScannerPage() {
   const token = searchParams?.get("token") || ""
 
   const [status, setStatus] = useState<ConnectionStatus>("connecting")
-  const [permissionState, setPermissionState] = useState<PermissionState>("unknown")
   const [lastScan, setLastScan] = useState<ScanFeedback | null>(null)
   const [scanCount, setScanCount] = useState(0)
   const [deviceName, setDeviceName] = useState("Teléfono")
@@ -119,21 +117,6 @@ function ScannerPage() {
       else if (ua.includes("Samsung")) setDeviceName("Samsung Browser")
       logDiag(`[NAVEGADOR] User Agent: ${ua}`)
     }
-
-    if (navigator?.permissions?.query) {
-      navigator.permissions.query({ name: "camera" as PermissionName })
-        .then((perm) => {
-          setPermissionState(perm.state as PermissionState)
-          logDiag(`[DIAGNÓSTICO PERMISO] Estado reportado por browser: ${perm.state} (No bloquea getUserMedia)`)
-          perm.onchange = () => {
-            setPermissionState(perm.state as PermissionState)
-            logDiag(`[DIAGNÓSTICO PERMISO] Cambio a: ${perm.state}`)
-          }
-        })
-        .catch(() => {
-          logDiag("[DIAGNÓSTICO PERMISO] API Permissions.query no soportada en este browser")
-        })
-    }
   }, [logDiag])
 
   // 2. Connect to scanner session API
@@ -175,7 +158,7 @@ function ScannerPage() {
       }
 
       setStatus("connected")
-      logDiag("[SESIÓN] ✅ Sesión remota validada correctamente. Autorizado para iniciar escáner.")
+      logDiag("[SESSION] Sesión validada")
     } catch (e: any) {
       setStatus("error")
       setErrorMsg("Error de conexión. Verifica tu internet.")
@@ -244,79 +227,10 @@ function ScannerPage() {
       return
     }
 
-    // Step A: Log available devices via enumerateDevices()
+    // Instantiate Html5Qrcode Scanner Engine (single instance)
+    logDiag("[SCANNER] Iniciando lector")
+    logDiag("[CAMERA] Solicitando stream")
     try {
-      if (navigator?.mediaDevices?.enumerateDevices) {
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter((d) => d.kind === "videoinput")
-        logDiag(`[DISPOSITIVOS] Cámaras encontradas en el sistema: ${videoDevices.length}`)
-        videoDevices.forEach((dev, idx) => {
-          logDiag(`[DISPOSITIVO #${idx + 1}] Label: '${dev.label || "Sin etiqueta"}' (ID: ${dev.deviceId.slice(0, 8)}...)`)
-        })
-      }
-    } catch (enumErr: any) {
-      logDiag(`[DISPOSITIVOS AVISO] enumerateDevices: ${enumErr?.message || enumErr}`)
-    }
-
-    // Step B: Single getUserMedia Test & Inspection
-    logDiag("[CAMERA] Intentando abrir stream")
-    let stream: MediaStream | null = null
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-      })
-      logDiag("[CAMERA] Stream recibido")
-    } catch (gErr1: any) {
-      logDiag(`[CAMERA] Intento con facingMode ideal falló: ${gErr1?.name} - ${gErr1?.message}`)
-      try {
-        logDiag("[CAMERA] Reintentando getUserMedia con { video: true }...")
-        stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        logDiag("[CAMERA] Stream recibido")
-      } catch (gErr2: any) {
-        const errName = gErr2?.name || gErr1?.name || "Error"
-        const errMsg = String(gErr2?.message || gErr1?.message || gErr2 || gErr1)
-        logDiag(`[CAMERA] Error exacto: name=${errName}, message=${errMsg}`)
-
-        if (errName === "NotAllowedError" || errMsg.includes("Permission denied")) {
-          setErrorMsg("Permiso de cámara rechazado. Toca el candado 🔒 arriba para dar permiso y presiona Activar Cámara.")
-        } else if (errName === "NotReadableError" || errMsg.includes("Could not start video source")) {
-          setErrorMsg("La cámara está siendo ocupada por otra app (WhatsApp, Zoom, Cámara nativa). Ciérrala e intenta de nuevo.")
-        } else if (errName === "NotFoundError" || errMsg.includes("Requested device not found")) {
-          setErrorMsg("No se encontró ningún sensor de cámara en el dispositivo.")
-        } else if (errName === "OverconstrainedError") {
-          setErrorMsg("La resolución o parámetro de cámara no es soportado por tu sensor.")
-        } else {
-          setErrorMsg(`Error al abrir la cámara [${errName}]: ${errMsg}`)
-        }
-
-        setStatus("error")
-        scanningRef.current = false
-        return
-      }
-    }
-
-    if (!stream || stream.getVideoTracks().length === 0) {
-      logDiag("[CAMERA] Error exacto: name=EmptyStream, message=El stream no contiene pistas de video")
-      setErrorMsg("El stream de la cámara no devolvió ninguna pista de video.")
-      setStatus("error")
-      scanningRef.current = false
-      return
-    }
-
-    activeStreamRef.current = stream
-    const videoTrack = stream.getVideoTracks()[0]
-    const trackSettings = videoTrack.getSettings ? videoTrack.getSettings() : {}
-    logDiag(`[CAMERA] Track activo: '${videoTrack.label}' | Estado: ${videoTrack.readyState}`)
-    logDiag(`[CAMERA] Resolución devuelta por el sensor: ${trackSettings.width || "N/A"}x${trackSettings.height || "N/A"} px`)
-
-    // Release temporary inspection stream before passing control to Html5Qrcode
-    videoTrack.stop()
-    activeStreamRef.current = null
-    await new Promise((r) => setTimeout(r, 200))
-
-    // Step C: Instantiate Html5Qrcode Scanner Engine
-    try {
-      logDiag("[CAMERA] Inicializando visor con Html5Qrcode...")
       const formats = [
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
@@ -355,7 +269,7 @@ function ScannerPage() {
         }
         lastScanTimeRef.current = { code, time: now }
 
-        logDiag(`[CÓDIGO DETECTADO] ${code}`)
+        logDiag(`[SCANNER] Código detectado: ${code}`)
         if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
         playBeep("scan")
         setLastScan({ barcode: code, status: "scanning" })
@@ -399,62 +313,76 @@ function ScannerPage() {
         }, 150)
       }
 
-      // Attempt 1: facingMode environment
-      try {
-        logDiag("[CAMERA] Iniciando capturador con facingMode 'environment'...")
-        await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
-        setActiveCamLabel("Trasera Estándar")
-        logDiag("[CAMERA] ✅ Escáner activo con cámara trasera")
-        bindVideoAttributesAndPlay()
-        return
-      } catch (e1: any) {
-        logDiag(`[CAMERA INTENTO 1 FALLÓ] ${e1?.name || "Error"}: ${e1?.message || e1}`)
-      }
-
-      // Attempt 2: facingMode ideal environment
+      // Single attempt with priority on rear camera (facingMode ideal environment).
+      // Html5Qrcode handles getUserMedia internally; one camera cycle only.
       try {
         logDiag("[CAMERA] Iniciando capturador con facingMode ideal 'environment'...")
-        await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
-        setActiveCamLabel("Trasera Ideal")
-        logDiag("[CAMERA] ✅ Escáner activo con cámara trasera ideal")
+        await scanner.start(
+          { facingMode: { ideal: "environment" } },
+          config,
+          onScanSuccess,
+          () => {}
+        )
+        logDiag("[CAMERA] Stream recibido")
+        setActiveCamLabel("Trasera")
         bindVideoAttributesAndPlay()
+        logDiag("[SCANNER] ✅ Lector iniciado con cámara trasera")
+        return
+      } catch (e1: any) {
+        logDiag(`[CAMERA] Intento trasera ideal falló: ${e1?.name || "Error"}: ${e1?.message || e1}`)
+      }
+
+      // Generic fallback (no facingMode preference). Still meets user gesture requirement.
+      try {
+        logDiag("[CAMERA] Iniciando capturador con configuración genérica...")
+        await scanner.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          () => {}
+        )
+        logDiag("[CAMERA] Stream recibido")
+        setActiveCamLabel("Trasera Estándar")
+        bindVideoAttributesAndPlay()
+        logDiag("[SCANNER] ✅ Lector iniciado con cámara trasera estándar")
         return
       } catch (e2: any) {
-        logDiag(`[CAMERA INTENTO 2 FALLÓ] ${e2?.name || "Error"}: ${e2?.message || e2}`)
+        logDiag(`[CAMERA] Intento trasera estándar falló: ${e2?.name || "Error"}: ${e2?.message || e2}`)
       }
 
-      // Attempt 3: facingMode user
+      // Last resort: front camera (user-facing).
       try {
         logDiag("[CAMERA] Iniciando capturador con cámara frontal 'user'...")
-        await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
+        await scanner.start(
+          { facingMode: "user" },
+          config,
+          onScanSuccess,
+          () => {}
+        )
+        logDiag("[CAMERA] Stream recibido")
         setActiveCamLabel("Frontal")
-        logDiag("[CAMERA] ✅ Escáner activo con cámara frontal")
         bindVideoAttributesAndPlay()
+        logDiag("[SCANNER] ✅ Lector iniciado con cámara frontal (último recurso)")
         return
       } catch (e3: any) {
-        logDiag(`[CAMERA INTENTO 3 FALLÓ] ${e3?.name || "Error"}: ${e3?.message || e3}`)
-      }
+        logDiag(`[CAMERA] Intento frontal falló: ${e3?.name || "Error"}: ${e3?.message || e3}`)
+        const errName = e3?.name || "Error"
+        const errMsg = String(e3?.message || e3)
 
-      // Attempt 4: Select camera by device ID
-      try {
-        logDiag("[CAMERA] Seleccionando cámara por ID explícito...")
-        const cameras = await Html5Qrcode.getCameras()
-        if (cameras && cameras.length > 0) {
-          const backCam = cameras.find((c) => /back|rear|trasera|environment/i.test(c.label))
-          const chosenId = backCam ? backCam.id : cameras[0].id
-          logDiag(`[CAMERA] Iniciando ID: ${chosenId} (${backCam?.label || cameras[0].label})`)
-          await scanner.start(chosenId, config, onScanSuccess, () => {})
-          setActiveCamLabel(backCam?.label || "Cámara por ID")
-          logDiag("[CAMERA] ✅ Escáner activo por ID de dispositivo")
-          bindVideoAttributesAndPlay()
-          return
+        if (errName === "NotAllowedError" || errMsg.includes("Permission denied")) {
+          setErrorMsg("Permiso de cámara rechazado. Toca el candado 🔒 arriba para dar permiso y presiona Activar Cámara.")
+        } else if (errName === "NotReadableError" || errMsg.includes("Could not start video source")) {
+          setErrorMsg("La cámara está siendo ocupada por otra app (WhatsApp, Zoom, Cámara nativa). Ciérrala e intenta de nuevo.")
+        } else if (errName === "NotFoundError" || errMsg.includes("Requested device not found")) {
+          setErrorMsg("No se encontró ningún sensor de cámara en el dispositivo.")
+        } else if (errName === "OverconstrainedError") {
+          setErrorMsg("La resolución o parámetro de cámara no es soportado por tu sensor.")
+        } else {
+          setErrorMsg(`Error al abrir la cámara [${errName}]: ${errMsg}`)
         }
-      } catch (camErr: any) {
-        logDiag(`[CAMERA INTENTO 4 FALLÓ] ${camErr?.message || camErr}`)
       }
 
-      logDiag("[CAMERA] Error exacto: name=AllAttemptsFailed, message=No se pudo iniciar el capturador de video")
-      setErrorMsg("No se pudo iniciar el capturador de video del escáner.")
+      logDiag("[CAMERA] Error: name=AllAttemptsFailed, message=No se pudo iniciar el capturador de video")
       setStatus("error")
       scanningRef.current = false
       if (scannerRef.current) {
@@ -473,11 +401,11 @@ function ScannerPage() {
         scannerRef.current = null
       }
     }
-  }, [sessionId, status, logDiag])
+  }, [sessionId, status, logDiag, stopCamera])
 
   // 5. Direct User Tap Handler - Triggers startCamera directly without duplicate getUserMedia calls
   const requestPermissionAndStart = useCallback(async () => {
-    logDiag("[CAMERA] Usuario solicitó cámara")
+    logDiag("[CAMERA] Usuario activó cámara")
     setErrorMsg("")
     scanningRef.current = false
 
@@ -496,7 +424,7 @@ function ScannerPage() {
     return () => { stopCamera() }
   }, [connectToSession, stopCamera])
 
-  // Pusher subscriptions and auto-start camera when connected
+  // Pusher subscriptions when session is connected (NO auto-start camera)
   useEffect(() => {
     if (status !== "connected") return
 
@@ -533,8 +461,6 @@ function ScannerPage() {
       }
     }
 
-    startCamera()
-
     return () => {
       if (pusherRef.current) {
         try {
@@ -546,7 +472,7 @@ function ScannerPage() {
       }
       stopCamera()
     }
-  }, [status, sessionId, startCamera, stopCamera, logDiag])
+  }, [status, sessionId, stopCamera, logDiag])
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col font-sans select-none overflow-hidden">
