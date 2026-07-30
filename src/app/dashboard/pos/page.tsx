@@ -514,6 +514,71 @@ async function processSale() {
     }
   }
 
+  const lastProcessedPosEventIdRef = useRef<string | null>(null)
+
+  // Hybrid Realtime Event Listener for POS
+  useEffect(() => {
+    if (!scannerSessionId) return
+
+    let isCancelled = false
+    lastProcessedPosEventIdRef.current = null
+
+    const checkPosScannerEvents = async () => {
+      try {
+        const res = await fetch(`/api/scanner/session/${scannerSessionId}/events`)
+        if (!res.ok || isCancelled) return
+        const events = await res.json()
+        if (Array.isArray(events) && events.length > 0) {
+          const hasPhone = events.some((e: any) => e.type === "phone_connected")
+          if (hasPhone) setScannerStatus("connected")
+
+          const barcodeEvent = events.find((e: any) => e.type === "barcode_scanned")
+          if (barcodeEvent && barcodeEvent.id !== lastProcessedPosEventIdRef.current) {
+            lastProcessedPosEventIdRef.current = barcodeEvent.id
+            try {
+              const payload = typeof barcodeEvent.payload === "string"
+                ? JSON.parse(barcodeEvent.payload)
+                : barcodeEvent.payload
+              if (payload?.barcode) {
+                const code = payload.barcode
+                const found = products.find(p => p.barcode?.toLowerCase() === code.toLowerCase() ||
+                  p.sku?.toLowerCase() === code.toLowerCase())
+                if (found) {
+                  addToCart(found)
+                } else {
+                  try {
+                    const searchRes = await fetch(`/api/products?q=${encodeURIComponent(code)}&limit=1`)
+                    const searchData = await searchRes.json()
+                    const list = searchData.data || []
+                    if (list.length > 0) {
+                      addToCart(list[0])
+                      setProducts(prev => {
+                        if (!prev.find(p => p.id === list[0].id)) return [...prev, list[0]]
+                        return prev
+                      })
+                    }
+                  } catch {}
+                }
+              }
+            } catch (err) {
+              console.error("[pos scanner] Error processing event:", err)
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[pos scanner] Polling error:", err)
+      }
+    }
+
+    checkPosScannerEvents()
+    const intervalId = setInterval(checkPosScannerEvents, 1000)
+
+    return () => {
+      isCancelled = true
+      clearInterval(intervalId)
+    }
+  }, [scannerSessionId, products])
+
   async function disconnectScanner() {
     if (scannerSessionId) {
       try {

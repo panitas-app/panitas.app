@@ -419,47 +419,49 @@ function ScannerPage() {
 
         {/* UI Overlays */}
         {uiState !== "SCANNING" && (
-          <div className="flex flex-col items-center gap-3 text-center px-6 max-w-sm">
-            {errorMsg ? (
-               <div className="flex flex-col items-center gap-3">
-                 <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-3xl">⚠️</div>
-                 <p className="text-base font-bold text-white">Atención</p>
-                 <p className="text-xs text-zinc-400 leading-relaxed text-center">{errorMsg}</p>
-                 
-                 {uiState === "WAITING_USER" && (
-                   <div className="flex flex-col gap-2 w-full mt-4">
-                     <button onClick={() => handleStartCamera("environment")} className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl">
-                       Reintentar Cámara Trasera
-                     </button>
-                     <button onClick={() => handleStartCamera("user")} className="w-full py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-zinc-700">
-                       Intentar Cámara Frontal
-                     </button>
-                   </div>
-                 )}
-               </div>
-            ) : uiState === "WAITING_USER" ? (
-              <>
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl">📷</div>
-                <p className="text-base font-bold text-white">Sesión Conectada</p>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Pulsa para activar la cámara y empezar a escanear productos.
-                </p>
-                <button
-                  onClick={() => handleStartCamera("environment")}
-                  className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-1 text-xs"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                  </svg>
-                  Activar Cámara
-                </button>
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs">Conectando...</p>
-              </div>
-            )}
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-black/85 backdrop-blur-md">
+            <div className="flex flex-col items-center gap-3 text-center px-4 max-w-sm w-full">
+              {errorMsg ? (
+                 <div className="flex flex-col items-center gap-3 w-full">
+                   <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-3xl">⚠️</div>
+                   <p className="text-base font-bold text-white">Atención</p>
+                   <p className="text-xs text-zinc-400 leading-relaxed text-center">{errorMsg}</p>
+                   
+                   {uiState === "WAITING_USER" && (
+                     <div className="flex flex-col gap-2 w-full mt-4">
+                       <button onClick={() => handleStartCamera("environment")} className="w-full py-3 bg-amber-500 text-black font-bold rounded-xl active:scale-95">
+                         Reintentar Cámara Trasera
+                       </button>
+                       <button onClick={() => handleStartCamera("user")} className="w-full py-3 bg-zinc-800 text-zinc-300 font-bold rounded-xl border border-zinc-700 active:scale-95">
+                         Intentar Cámara Frontal
+                       </button>
+                     </div>
+                   )}
+                 </div>
+              ) : uiState === "WAITING_USER" ? (
+                <>
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl shadow-lg">📷</div>
+                  <p className="text-lg font-extrabold text-white">Sesión Conectada</p>
+                  <p className="text-xs text-zinc-300 leading-relaxed max-w-xs">
+                    Pulsa para activar la cámara y empezar a escanear productos.
+                  </p>
+                  <button
+                    onClick={() => handleStartCamera("environment")}
+                    className="w-full py-3.5 px-5 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 mt-2 text-sm"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                    </svg>
+                    Activar Cámara
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-zinc-300">Conectando...</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

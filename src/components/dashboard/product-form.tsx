@@ -585,6 +585,59 @@ export function ProductForm({
     setScannerErrorMsg("")
   }
 
+  const lastProcessedEventIdRef = useRef<string | null>(null)
+
+  // Hybrid Realtime Event Listener (Polling fallback + Pusher)
+  useEffect(() => {
+    if (!scannerSessionId) return
+    
+    let isCancelled = false
+    lastProcessedEventIdRef.current = null
+
+    const checkScannerEvents = async () => {
+      try {
+        const res = await fetch(`/api/scanner/session/${scannerSessionId}/events`)
+        if (!res.ok || isCancelled) return
+        const events = await res.json()
+        if (Array.isArray(events) && events.length > 0) {
+          // Detect phone connection
+          const hasPhoneConnected = events.some((e: any) => e.type === "phone_connected")
+          if (hasPhoneConnected) setScannerStatus("connected")
+
+          // Process latest barcode scanned
+          const barcodeEvent = events.find((e: any) => e.type === "barcode_scanned")
+          if (barcodeEvent && barcodeEvent.id !== lastProcessedEventIdRef.current) {
+            lastProcessedEventIdRef.current = barcodeEvent.id
+            try {
+              const payload = typeof barcodeEvent.payload === "string" 
+                ? JSON.parse(barcodeEvent.payload) 
+                : barcodeEvent.payload
+              if (payload?.barcode) {
+                const barcodeInput = document.getElementById("barcode") as HTMLInputElement
+                if (barcodeInput) {
+                  setNativeInputValue(barcodeInput, payload.barcode)
+                  toast.success(`Código escaneado: ${payload.barcode}`)
+                }
+              }
+            } catch (err) {
+              console.error("[scanner] Error parsing barcode payload:", err)
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[scanner] Event check error:", err)
+      }
+    }
+
+    checkScannerEvents()
+    const intervalId = setInterval(checkScannerEvents, 1000)
+
+    return () => {
+      isCancelled = true
+      clearInterval(intervalId)
+    }
+  }, [scannerSessionId])
+
   useEffect(() => {
     if (scannerStatus === "idle" && scannerQrUrl && qrCanvasRef.current) {
       QRCode.toCanvas(qrCanvasRef.current, scannerQrUrl, {
