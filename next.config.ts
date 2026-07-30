@@ -12,7 +12,7 @@ const csp = [
     !isProd ? " ws: wss: http://localhost:* ws://localhost:*" : ""
   }`,
   "frame-src 'self' https://accounts.google.com https://www.googletagmanager.com",
-  "media-src 'self' https://res.cloudinary.com",
+  "media-src 'self' blob: data: https://res.cloudinary.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
@@ -73,7 +73,7 @@ const nextConfig: NextConfig = {
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Content-Security-Policy", value: csp },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
         ],
       },
       {
