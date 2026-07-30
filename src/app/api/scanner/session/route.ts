@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     sessionId: session.id,
     token,
+    createdAt: session.createdAt.toISOString(),
     expiresAt: session.expiresAt.toISOString(),
+    status: session.status,
+    storeName: current.store.name,
   })
 }

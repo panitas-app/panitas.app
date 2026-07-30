@@ -44,5 +44,14 @@ export async function POST(request: NextRequest) {
 
   await triggerSessionEvent(sessionId, "phone_connected", { deviceName: deviceName || "Teléfono" })
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({
+    success: true,
+    session: {
+      id: session.id,
+      createdAt: session.createdAt.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+      status: "connected",
+      deviceName: deviceName || "Teléfono",
+    },
+  })
 }

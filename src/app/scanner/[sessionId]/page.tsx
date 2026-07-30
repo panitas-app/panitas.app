@@ -141,35 +141,45 @@ function ScannerPage() {
     if (!sessionId || !token) {
       setStatus("error")
       setErrorMsg("Enlace inválido. Escanea el código QR nuevamente.")
-      logDiag("Error: sessionId o token faltante en URL")
+      logDiag("[SESIÓN] Error: sessionId o token faltante en la URL")
       return
     }
 
-    logDiag(`Conectando a la sesión ${sessionId.slice(0, 8)}...`)
+    logDiag(`[SESIÓN] Iniciando verificación de sesión ID: ${sessionId}`)
     try {
       const res = await fetch("/api/scanner/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, token, deviceName }),
       })
+      const data = await res.json().catch(() => ({}))
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Error al conectar" }))
         if (res.status === 410) {
           setStatus("expired")
-          logDiag("Sesión de escáner expirada (HTTP 410)")
+          logDiag(`[SESIÓN] DENEGADA (HTTP 410): ${data.error || "Sesión expirada"}`)
         } else {
           setStatus("error")
-          logDiag(`Error de conexión HTTP ${res.status}: ${err.error}`)
+          logDiag(`[SESIÓN] DENEGADA (HTTP ${res.status}): ${data.error || "Error de sesión"}`)
         }
-        setErrorMsg(err.error || "Error al conectar con el POS")
+        setErrorMsg(data.error || "Error al conectar con el POS")
         return
       }
+
+      if (data.session) {
+        logDiag(`[SESIÓN] ID Confirmado: ${data.session.id}`)
+        logDiag(`[SESIÓN] Timestamp Creación: ${data.session.createdAt}`)
+        logDiag(`[SESIÓN] Timestamp Expiración: ${data.session.expiresAt}`)
+        logDiag(`[SESIÓN] Estado BD: ${data.session.status}`)
+        logDiag(`[SESIÓN] Dispositivo Registrado: ${data.session.deviceName}`)
+      }
+
       setStatus("connected")
-      logDiag("Sesión conectada exitosamente con el POS")
+      logDiag("[SESIÓN] ✅ Sesión remota validada correctamente. Autorizado para iniciar escáner.")
     } catch (e: any) {
       setStatus("error")
       setErrorMsg("Error de conexión. Verifica tu internet.")
-      logDiag(`Excepción de red al conectar: ${e?.message || e}`)
+      logDiag(`[SESIÓN] Excepción de red al conectar: ${e?.message || e}`)
     }
   }, [sessionId, token, deviceName, logDiag])
 
@@ -198,6 +208,11 @@ function ScannerPage() {
   // 4. Start camera stream with multi-constraint fallbacks
   const startCamera = useCallback(async () => {
     if (scannerRef.current || scanningRef.current) return
+
+    if (status !== "connected") {
+      logDiag(`[CÁMARA BLOQUEADA] Cámara en espera: la sesión remota no ha sido validada (estado actual: ${status})`)
+      return
+    }
     scanningRef.current = true
 
     if (typeof window !== "undefined" && !window.isSecureContext) {
