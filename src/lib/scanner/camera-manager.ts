@@ -59,13 +59,30 @@ export const CameraManager = {
    * Único punto en toda la app que debe llamar getUserMedia.
    */
   async openCamera(preferRear: boolean): Promise<CameraInfo> {
-    const constraints = {
+    const constraints: MediaStreamConstraints = {
       video: preferRear
-        ? { facingMode: "environment" }
-        : { facingMode: "user" }
+        ? ({
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            focusMode: { ideal: "continuous" },
+          } as any)
+        : ({
+            facingMode: { ideal: "user" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          } as any)
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints)
+    } catch {
+      // Fallback si la cámara no soporta restricciones avanzadas
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: preferRear ? { facingMode: "environment" } : { facingMode: "user" }
+      })
+    }
 
     const tracks = stream.getVideoTracks()
     if (tracks.length === 0) {
@@ -82,6 +99,47 @@ export const CameraManager = {
       label: track.label || "Cámara desconocida",
       width: settings.width || 0,
       height: settings.height || 0,
+    }
+  },
+
+  /**
+   * Obtiene las capacidades de zoom de una pista de video si están soportadas
+   */
+  getZoomCapabilities(stream: MediaStream): { supported: boolean; min: number; max: number; step: number; current: number } {
+    try {
+      const track = stream.getVideoTracks()[0]
+      if (!track) return { supported: false, min: 1, max: 1, step: 0.1, current: 1 }
+      const capabilities = track.getCapabilities ? (track.getCapabilities() as any) : {}
+      const settings = track.getSettings ? (track.getSettings() as any) : {}
+      if (capabilities.zoom) {
+        return {
+          supported: true,
+          min: capabilities.zoom.min || 1,
+          max: capabilities.zoom.max || 4,
+          step: capabilities.zoom.step || 0.1,
+          current: settings.zoom || 1,
+        }
+      }
+    } catch (e) {
+      console.warn("[CameraManager] Error al consultar capacidades de zoom:", e)
+    }
+    return { supported: false, min: 1, max: 1, step: 0.1, current: 1 }
+  },
+
+  /**
+   * Aplica un nivel de zoom a la pista de video
+   */
+  async applyZoom(stream: MediaStream, zoomValue: number): Promise<boolean> {
+    try {
+      const track = stream.getVideoTracks()[0]
+      if (!track || !track.applyConstraints) return false
+      await track.applyConstraints({
+        advanced: [{ zoom: zoomValue }] as any
+      })
+      return true
+    } catch (e) {
+      console.warn("[CameraManager] Error al aplicar zoom:", e)
+      return false
     }
   },
 

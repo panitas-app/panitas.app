@@ -34,14 +34,19 @@ export const ScannerEngine = {
     onScanSuccess: (decodedText: string) => void
   ): Promise<void> {
     const config = {
-      fps: 20,
+      fps: 25,
       qrbox: (w: number, h: number) => {
         const vw = w || 300
         const vh = h || 300
         return {
-          width: Math.floor(Math.max(Math.min(vw * 0.85, 340), 220)),
-          height: Math.floor(Math.max(Math.min(vh * 0.45, 180), 120)),
+          width: Math.floor(Math.max(Math.min(vw * 0.9, 360), 240)),
+          height: Math.floor(Math.max(Math.min(vh * 0.5, 200), 140)),
         }
+      },
+      videoConstraints: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        focusMode: { ideal: "continuous" },
       },
     }
 
@@ -52,6 +57,35 @@ export const ScannerEngine = {
       onScanSuccess,
       () => {} // Ignorar callbacks de errores de frame individuales
     )
+  },
+
+  /**
+   * Aplica nivel de zoom a la transmisión de video activa si el dispositivo lo permite
+   */
+  async setZoom(scanner: Html5Qrcode, zoomValue: number): Promise<boolean> {
+    try {
+      if (!scanner.isScanning) return false
+      const capabilities = (scanner as any).getRunningTrackCapabilities ? (scanner as any).getRunningTrackCapabilities() : {}
+      if (capabilities && capabilities.zoom) {
+        await (scanner as any).applyVideoConstraints({
+          advanced: [{ zoom: zoomValue }]
+        })
+        return true
+      }
+      // Intento alternativo directo en el stream video track
+      const videoEl = document.querySelector("#scanner-viewport video") as HTMLVideoElement
+      if (videoEl && videoEl.srcObject) {
+        const stream = videoEl.srcObject as MediaStream
+        const track = stream.getVideoTracks()[0]
+        if (track && track.applyConstraints) {
+          await track.applyConstraints({ advanced: [{ zoom: zoomValue }] as any })
+          return true
+        }
+      }
+    } catch (e) {
+      console.warn("[ScannerEngine] Error al aplicar zoom:", e)
+    }
+    return false
   },
 
   /**

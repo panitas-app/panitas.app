@@ -45,6 +45,7 @@ next-env.d.ts
 # DB backups (large, auto-generated)
 /backups/*
 !/backups/.gitkeep
+.backup_scanner/
 
 # Prisma safety wrappers
 prisma.cmd

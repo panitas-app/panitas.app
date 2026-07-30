@@ -85,10 +85,36 @@ function ScannerPage() {
   // Scanning data
   const [scanCount, setScanCount] = useState(0)
   const [lastScan, setLastScan] = useState<ScanFeedback | null>(null)
+  const [zoomLevel, setZoomLevel] = useState<number>(1)
+  const [sendConfirmed, setSendConfirmed] = useState(false)
   const lastScanTimeRef = useRef<{ code: string; time: number }>({ code: "", time: 0 })
   
   // Scanner Instance
   const scannerRef = useRef<Html5Qrcode | null>(null)
+
+  const handleZoomChange = async (level: number) => {
+    setZoomLevel(level)
+    if (scannerRef.current) {
+      await ScannerEngine.setZoom(scannerRef.current, level)
+      logDiag(`[CAMERA] Zoom cambiado a ${level}x`)
+    }
+  }
+
+  const handleManualSendCode = async (overrideCode?: string) => {
+    const code = overrideCode || lastScan?.barcode
+    if (!code || !sessionId) return
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([60, 40, 60])
+    playBeep("found")
+
+    logDiag(`[SCANNER] Enviando código a Panitas: ${code}`)
+    const res = await SessionManager.sendBarcode(sessionId, code)
+    if (res.success) {
+      setSendConfirmed(true)
+      setTimeout(() => setSendConfirmed(false), 2500)
+    } else {
+      logDiag(`[RED] Error al enviar código: ${res.error}`)
+    }
+  }
 
   const logDiag = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString("es-VE", { hour12: false })
@@ -359,15 +385,36 @@ function ScannerPage() {
         />
 
         {uiState === "SCANNING" && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4 z-10">
-            <div className="w-[88%] max-w-[360px] h-36 border-2 border-amber-400/50 rounded-xl relative shadow-[0_0_30px_rgba(251,191,36,0.15)] bg-black/10">
-              <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ef4444] animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] top-1/2 -translate-y-1/2" />
-              <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-amber-400 rounded-tl-lg" />
-              <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-amber-400 rounded-tr-lg" />
-              <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-amber-400 rounded-bl-lg" />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-amber-400 rounded-br-lg" />
+          <>
+            {/* Zoom Selector Bar */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-zinc-900/85 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-zinc-700/60 shadow-xl">
+              <span className="text-[10px] font-bold text-zinc-400 mr-1 uppercase tracking-wider">Zoom</span>
+              {[1, 2, 3, 4].map((z) => (
+                <button
+                  key={z}
+                  onClick={() => handleZoomChange(z)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-full transition-all ${
+                    zoomLevel === z
+                      ? "bg-amber-400 text-black shadow-md scale-105"
+                      : "bg-zinc-800/80 text-zinc-300 hover:text-white hover:bg-zinc-700"
+                  }`}
+                >
+                  {z}x
+                </button>
+              ))}
             </div>
-          </div>
+
+            {/* Frame Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4 z-10">
+              <div className="w-[88%] max-w-[360px] h-36 border-2 border-amber-400/50 rounded-xl relative shadow-[0_0_30px_rgba(251,191,36,0.15)] bg-black/10">
+                <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_12px_#ef4444] animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] top-1/2 -translate-y-1/2" />
+                <div className="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-amber-400 rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-amber-400 rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-amber-400 rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-amber-400 rounded-br-lg" />
+              </div>
+            </div>
+          </>
         )}
 
         {/* UI Overlays */}
@@ -416,29 +463,50 @@ function ScannerPage() {
           </div>
         )}
 
-        {/* Last Scan Feedback Toast */}
+        {/* Interactive Last Scan Feedback Toast */}
         {lastScan && uiState === "SCANNING" && (
-          <div className={`absolute bottom-6 left-4 right-4 p-3 rounded-2xl backdrop-blur-md transition-all border shadow-2xl z-20 ${
-            lastScan.status === "found" ? "bg-emerald-950/90 border-emerald-500/40 text-emerald-100" :
-            lastScan.status === "not_found" ? "bg-rose-950/90 border-rose-500/40 text-rose-100" :
-            "bg-zinc-900/90 border-zinc-700 text-zinc-100"
-          }`}>
+          <div 
+            onClick={() => handleManualSendCode()}
+            className={`absolute bottom-6 left-4 right-4 p-3.5 rounded-2xl backdrop-blur-md transition-all border shadow-2xl z-20 cursor-pointer active:scale-98 ${
+              sendConfirmed ? "bg-emerald-950/95 border-emerald-400 text-emerald-100 ring-2 ring-emerald-500/50" :
+              lastScan.status === "found" ? "bg-emerald-950/95 border-emerald-500/50 text-emerald-100" :
+              lastScan.status === "not_found" ? "bg-zinc-900/95 border-amber-500/60 text-zinc-100" :
+              "bg-zinc-900/95 border-zinc-700 text-zinc-100"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <div className="text-2xl">
-                {lastScan.status === "found" ? "✅" :
-                 lastScan.status === "not_found" ? "❌" : "📷"}
+              <div className="text-2xl shrink-0">
+                {sendConfirmed ? "✅" : lastScan.status === "found" ? "📦" : "🏷️"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate">
-                  {lastScan.productName || lastScan.barcode}
+                <p className="text-xs font-black tracking-wide font-mono truncate text-amber-300">
+                  {lastScan.barcode}
                 </p>
                 {lastScan.productName && (
-                  <p className="text-[10px] opacity-80 font-mono">{lastScan.barcode}</p>
+                  <p className="text-[11px] font-bold text-white truncate">{lastScan.productName}</p>
                 )}
-                {lastScan.status === "not_found" && (
-                  <p className="text-[10px] text-rose-300">Producto no registrado en inventario</p>
-                )}
+                <p className="text-[10px] text-zinc-300 mt-0.5 flex items-center gap-1 font-semibold">
+                  {sendConfirmed ? (
+                    <span className="text-emerald-400 font-bold">¡Código enviado al formulario de Panitas!</span>
+                  ) : (
+                    <span>Toca aquí para enviar a Panitas 👉</span>
+                  )}
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleManualSendCode()
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 shadow-md ${
+                  sendConfirmed
+                    ? "bg-emerald-500 text-black shadow-emerald-500/30"
+                    : "bg-amber-400 hover:bg-amber-300 text-black active:scale-95"
+                }`}
+              >
+                {sendConfirmed ? "¡Enviado!" : "Enviar 🚀"}
+              </button>
             </div>
           </div>
         )}
