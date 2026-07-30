@@ -196,13 +196,18 @@ function ScannerPage() {
 
   // 4. Single Unified Camera Acquisition Flow
   const startCamera = useCallback(async () => {
-    if (scannerRef.current || scanningRef.current) return
+    logDiag(`[CAMERA] startCamera invocado (scannerRef=${!!scannerRef.current}, scanningRef=${scanningRef.current})`)
+    if (scannerRef.current || scanningRef.current) {
+      logDiag("[CAMERA] Salida temprana: ya hay scanner activo o escaneando")
+      return
+    }
 
     if (status !== "connected") {
       logDiag(`[CAMERA BLOQUEADA] En espera de sesión validada (estado actual: ${status})`)
       return
     }
     scanningRef.current = true
+    logDiag("[CAMERA] Usuario activó cámara")
 
     if (typeof window !== "undefined" && !window.isSecureContext) {
       const errStr = "La cámara requiere conexión HTTPS segura."
@@ -413,17 +418,23 @@ function ScannerPage() {
 
   // 5. Direct User Tap Handler - Triggers startCamera directly without duplicate getUserMedia calls
   const requestPermissionAndStart = useCallback(async () => {
-    logDiag("[CAMERA] Usuario activó cámara")
+    logDiag("[CAMERA] Botón pulsado - requestPermissionAndStart ejecutado")
     setErrorMsg("")
     scanningRef.current = false
 
-    if (status !== "connected") {
-      logDiag("[CAMERA] Verificando sesión remota antes de iniciar cámara...")
-      await connectToSession()
-      return
-    }
+    try {
+      if (status !== "connected") {
+        logDiag("[CAMERA] Verificando sesión remota antes de iniciar cámara...")
+        await connectToSession()
+        return
+      }
 
-    await startCamera()
+      await startCamera()
+    } catch (e: any) {
+      logDiag(`[CAMERA ERROR] Excepción no capturada en requestPermissionAndStart: ${e?.message || e}`)
+      setErrorMsg(`Error inesperado: ${e?.message || e}`)
+      setStatus("error")
+    }
   }, [status, connectToSession, startCamera, logDiag])
 
   // Initial mount: connect to session
