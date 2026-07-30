@@ -33,6 +33,7 @@ const FIELD_LABELS: Record<string, string> = {
   stock: "Stock",
   unidadBase: "Unidad",
   description: "Descripción",
+  category: "Categoría",
   isActive: "Activo",
   featured: "Destacado",
   isWholesale: "Mayorista",

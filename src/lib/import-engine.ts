@@ -5,8 +5,8 @@ import { safeStr, safeFloat, safeInt, safeBool } from "./validate"
 
 // Known product field names (Spanish + English aliases)
 export const FIELD_ALIASES: Record<string, string[]> = {
-  name: ["nombre", "producto", "name", "product", "articulo", "artículo", "descripcion", "descripción", "description", "denominacion", "denominación", "item", "articulo name", "nombre del producto", "producto nombre", "producto name"],
-  price: ["precio", "price", "venta", "pvp", "pvp usd", "precio venta", "precio de venta", "precio usd", "precio final", "precio venta usd", "pv", "pvps", "sell price", "retail price", "public price", "precio publico", "precio público"],
+  name: ["nombre", "producto", "name", "product", "articulo", "artículo", "descripcion", "descripción", "description", "denominacion", "denominación", "item", "articulo name", "nombre del producto", "nombre del ítem", "nombre del item", "producto nombre", "producto name"],
+  price: ["precio", "price", "venta", "pvp", "pvp usd", "precio venta", "precio de venta", "precio usd", "precio final", "precio venta usd", "precio unitario", "precio minorista", "precio lista", "pv", "pvps", "valor", "valor unitario", "valor venta", "sell price", "retail price", "public price", "precio publico", "precio público"],
   costPrice: ["costo", "cost", "costo usd", "precio costo", "cost price", "costo unitario", "costo unitario usd", "precio de costo", "costo base", "cost base", "purchase price", "precio compra", "precio de compra", "costo de compra", "costo promedio"],
   sku: ["sku", "codigo", "código", "code", "cod", "ref", "referencia", "referencia producto", "cod producto", "cod. producto"],
   barcode: ["barcode", "cod. barras", "código de barras", "codigo de barras", "ean", "ean13", "ean8", "upc", "upca", "upce", "gtin", "código ean", "codigo ean"],
@@ -375,7 +375,7 @@ export function mapRows(rows: ParsedRow[], columns: DetectedColumn[]): { mapped:
       continue
     }
 
-    const category = row._category as string | null
+    const category = extractCategory(row, fieldMap) ?? (row._category as string | null)
 
     mapped.push({
       name,
@@ -473,5 +473,10 @@ function extractWholesalePrice(row: ParsedRow, fieldMap: Record<string, string>)
 
 function extractWholesaleLabel(row: ParsedRow, fieldMap: Record<string, string>): string | null {
   const v = getFieldValue(row, fieldMap, "wholesaleLabel")
+  return safeStr(v, 100, 1)
+}
+
+function extractCategory(row: ParsedRow, fieldMap: Record<string, string>): string | null {
+  const v = getFieldValue(row, fieldMap, "categoryId")
   return safeStr(v, 100, 1)
 }
