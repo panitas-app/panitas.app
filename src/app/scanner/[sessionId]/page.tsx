@@ -298,19 +298,22 @@ function ScannerPage() {
       const bindVideoAttributesAndPlay = () => {
         setTimeout(async () => {
           const videoEl = document.querySelector("#scanner-viewport video") as HTMLVideoElement
-          if (videoEl) {
-            videoEl.setAttribute("autoplay", "true")
-            videoEl.setAttribute("playsinline", "true")
-            videoEl.setAttribute("webkit-playsinline", "true")
-            videoEl.muted = true
-            try {
-              await videoEl.play()
-              logDiag("[VIDEO] ✅ Elemento <video> reproduciendo en vivo")
-            } catch (playErr: any) {
-              logDiag(`[VIDEO AVISO] video.play(): ${playErr?.message || playErr}`)
-            }
+          if (!videoEl) {
+            logDiag("[VIDEO AVISO] No se encontró <video> dentro de #scanner-viewport")
+            return
           }
-        }, 150)
+          logDiag(`[VIDEO] Estado encontrado: src=${!!videoEl.srcObject}, readyState=${videoEl.readyState}, paused=${videoEl.paused}`)
+          videoEl.setAttribute("autoplay", "true")
+          videoEl.setAttribute("playsinline", "true")
+          videoEl.setAttribute("webkit-playsinline", "true")
+          videoEl.muted = true
+          try {
+            await videoEl.play()
+            logDiag(`[VIDEO] ✅ Reproduciendo. Resolution: ${videoEl.videoWidth}x${videoEl.videoHeight}`)
+          } catch (playErr: any) {
+            logDiag(`[VIDEO AVISO] video.play(): ${playErr?.message || playErr}`)
+          }
+        }, 200)
       }
 
       // Single attempt with priority on rear camera (facingMode ideal environment).
@@ -515,14 +518,31 @@ function ScannerPage() {
           <>
             <div id="scanner-viewport" className="w-full h-full object-cover" />
             <style>{`
+              #scanner-viewport {
+                width: 100% !important;
+                height: 100% !important;
+                position: relative !important;
+                overflow: hidden !important;
+              }
               #scanner-viewport video {
                 width: 100% !important;
                 height: 100% !important;
                 object-fit: cover !important;
                 display: block !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                z-index: 1 !important;
               }
               #scanner-viewport canvas {
-                display: none !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                z-index: 2 !important;
+                pointer-events: none !important;
               }
             `}</style>
             
