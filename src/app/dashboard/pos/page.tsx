@@ -114,6 +114,7 @@ export default function POSPage() {
   const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
   const [scannerDevice, setScannerDevice] = useState<string>("")
+  const [scannerQrUrl, setScannerQrUrl] = useState<string | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const pusherRef = useRef<Pusher | null>(null)
 
@@ -439,13 +440,7 @@ async function processSale() {
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
       const qrUrl = `${baseUrl.replace(/\/$/, "")}/scanner/${data.sessionId}?token=${data.token}`
-      if (qrCanvasRef.current) {
-        await QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
-          width: 280,
-          margin: 2,
-          color: { dark: "#000000", light: "#ffffff" },
-        })
-      }
+      setScannerQrUrl(qrUrl)
 
       const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY
       if (pusherKey) {
@@ -579,6 +574,16 @@ async function processSale() {
     }
   }, [scannerSessionId, products])
 
+  useEffect(() => {
+    if (scannerQrUrl && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, scannerQrUrl, {
+        width: 280,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+      }).catch(console.error)
+    }
+  }, [scannerStatus, scannerQrUrl, scannerOpen])
+
   async function disconnectScanner() {
     if (scannerSessionId) {
       try {
@@ -593,6 +598,7 @@ async function processSale() {
     setScannerOpen(false)
     setScannerSessionId(null)
     setScannerToken(null)
+    setScannerQrUrl(null)
     setScannerStatus("idle")
     setScannerDevice("")
   }
