@@ -109,10 +109,15 @@ function ScannerPage() {
     logDiag(`[SCANNER] Enviando código a Panitas: ${code}`)
     const res = await SessionManager.sendBarcode(sessionId, code)
     if (res.success) {
+      setScanCount((c) => c + 1)
       setSendConfirmed(true)
       setTimeout(() => setSendConfirmed(false), 2500)
     } else {
       logDiag(`[RED] Error al enviar código: ${res.error}`)
+      if (res.status === 410) {
+        handleStop()
+        setErrorMsg("Sesión Expirada. Por favor escanea el código QR de nuevo.")
+      }
     }
   }
 
@@ -257,21 +262,10 @@ function ScannerPage() {
         }
         lastScanTimeRef.current = { code, time: now }
 
-        logDiag(`[SCANNER] Código detectado: ${code}`)
-        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(100)
+        logDiag(`[SCANNER] Código detectado en cámara: ${code}`)
+        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(80)
         playBeep("scan")
         setLastScan({ barcode: code, status: "scanning" })
-
-        const res = await SessionManager.sendBarcode(sessionId, code)
-        if (res.success) {
-          setScanCount(c => c + 1)
-        } else {
-          logDiag(`[RED] Error: ${res.error}`)
-          if (res.status === 410) { // Expired
-             handleStop()
-             setErrorMsg("Sesión Expirada")
-          }
-        }
       }
 
       logDiag(`[SCANNER] Ejecutando start con deviceId: ${camInfo.deviceId.slice(0,8)}...`)
