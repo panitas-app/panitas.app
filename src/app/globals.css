@@ -543,8 +543,23 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
 }
 
 /* ── Scanner Viewport Rules ── */
-#scanner-viewport,
-#scanner-viewport > div,
+#scanner-viewport {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  overflow: hidden !important;
+  background: black !important;
+}
+#scanner-viewport > div {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
 #scanner-viewport video {
   width: 100% !important;
   height: 100% !important;
@@ -553,21 +568,13 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
   object-fit: cover !important;
   object-position: center !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
-  background: black !important;
+  background: transparent !important;
 }
 #scanner-viewport canvas {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  pointer-events: none !important;
+  display: none !important;
 }

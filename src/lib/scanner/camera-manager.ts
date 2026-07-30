@@ -61,28 +61,11 @@ export const CameraManager = {
   async openCamera(preferRear: boolean): Promise<CameraInfo> {
     const constraints: MediaStreamConstraints = {
       video: preferRear
-        ? ({
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-            focusMode: { ideal: "continuous" },
-          } as any)
-        : ({
-            facingMode: { ideal: "user" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          } as any)
+        ? { facingMode: { ideal: "environment" } }
+        : { facingMode: { ideal: "user" } }
     }
 
-    let stream: MediaStream
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints)
-    } catch {
-      // Fallback si la cámara no soporta restricciones avanzadas
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: preferRear ? { facingMode: "environment" } : { facingMode: "user" }
-      })
-    }
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
 
     const tracks = stream.getVideoTracks()
     if (tracks.length === 0) {

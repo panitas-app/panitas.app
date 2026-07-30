@@ -43,11 +43,6 @@ export const ScannerEngine = {
           height: Math.floor(Math.max(Math.min(vh * 0.5, 200), 140)),
         }
       },
-      videoConstraints: {
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        focusMode: { ideal: "continuous" },
-      },
     }
 
     // Retorna la promesa, si falla lanza el error, no hay reintentos aquí.
