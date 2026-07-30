@@ -107,7 +107,7 @@ export function PlanUpgradeBanner({ planId, modalidad }: PlanUpgradeBannerProps)
                       ¿Mejorar a Negocio?
                     </h3>
                     <p className="mt-1.5 text-sm text-muted-foreground">
-                      Pasa de <strong className="text-accent">$15/mes</strong> a <strong className="text-primary">$25/mes</strong> y obtén todos los módulos combinados.
+                       Pasa de <strong className="text-accent">$14.99/mes</strong> a <strong className="text-primary">$19.99/mes</strong> y obtén todos los módulos combinados.
                     </p>
                   </div>
 

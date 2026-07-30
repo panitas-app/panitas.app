@@ -44,7 +44,7 @@ export const TEMPERATURE_MAP: Record<string, { label: string; color: string; min
 }
 
 export const PLAN_RECOMMENDATIONS: Record<string, { label: string; precio: string; features: string[] }> = {
-  agenda: { label: "Plan Agenda", precio: "$15/mes", features: ["1 empleado", "Agenda de citas", "Recordatorios"] },
+  agenda: { label: "Plan Agenda", precio: "$14.99/mes", features: ["1 empleado", "Agenda de citas", "Recordatorios"] },
   emprendedor: { label: "Plan Emprendedor", precio: "$25/mes", features: ["3 empleados", "Tienda online", "Inventario", "Reportes"] },
   empresarial: { label: "Plan Empresarial", precio: "$45/mes", features: ["10 empleados", "Multi-sucursal", "API", "Soporte prioritario"] },
 }

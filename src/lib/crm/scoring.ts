@@ -120,7 +120,7 @@ export function generateSummary(
       ? "Plan Empresarial ($45/mes)"
       : planRecomendado === "emprendedor"
         ? "Plan Emprendedor ($25/mes)"
-        : "Plan Agenda ($15/mes)"
+        : "Plan Agenda ($14.99/mes)"
 
   const routeLabel = getRouteLabel(route)
 

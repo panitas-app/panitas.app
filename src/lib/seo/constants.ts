@@ -57,7 +57,7 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
   },
   "/pricing": {
     title: "Panitas | Planes y Precios del Software Administrativo SaaS",
-    description: "Conoce los planes de Panitas: Agenda ($15/mes) para profesionales de citas, Emprendedor ($25/mes) con tienda online y POS, y Mayorista ($45/mes) para distribución B2B.",
+    description: "Conoce los planes de Panitas: Agenda ($14.99/mes) para profesionales de citas, Emprendedor ($19.99/mes) con tienda online y POS, y Mayorista ($49.99/mes) para distribución B2B.",
   },
   "/choose-plan": {
     title: "Panitas | Elige tu Plan y Activa tu Prueba Gratis",
@@ -208,20 +208,20 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
     description: "Guías paso a paso para usar Panitas y sacar el máximo provecho de tu software administrativo.",
   },
   "/plan-agenda": {
-    title: "Panitas | Software de Agenda Online para Venezuela — $15/mes",
-    description: "Software de agenda online para barberías, clínicas, consultorios y spas en Venezuela. Reservas 24/7, recordatorios automáticos y gestión de profesionales. Desde $15/mes.",
+    title: "Panitas | Software de Agenda Online para Venezuela — $14.99/mes",
+    description: "Software de agenda online para barberías, clínicas, consultorios y spas en Venezuela. Reservas 24/7, recordatorios automáticos y gestión de profesionales. Desde $14.99/mes.",
   },
   "/plan-emprendedor": {
-    title: "Panitas | Software Todo en Uno para Emprendedores — $25/mes",
-    description: "Software administrativo para tiendas y comercios en Venezuela. Tienda online, POS, inventario, CRM y agenda integrados. Sin instalar nada. Desde $25/mes.",
+    title: "Panitas | Software Todo en Uno para Emprendedores — $19.99/mes",
+    description: "Software administrativo para tiendas y comercios en Venezuela. Tienda online, POS, inventario, CRM y agenda integrados. Sin instalar nada. Desde $19.99/mes.",
   },
   "/plan-mayorista": {
-    title: "Panitas | Sistema B2B para Mayoristas y Distribuidoras — $45/mes",
-    description: "Sistema B2B para distribuidoras y mayoristas en Venezuela. Comisiones de vendedores, notas de entrega, precios por volumen e inventario ilimitado. Desde $45/mes.",
+    title: "Panitas | Sistema B2B para Mayoristas y Distribuidoras — $49.99/mes",
+    description: "Sistema B2B para distribuidoras y mayoristas en Venezuela. Comisiones de vendedores, notas de entrega, precios por volumen e inventario ilimitado. Desde $49.99/mes.",
   },
   "/precios": {
     title: "Panitas | Planes y Precios del Software Administrativo",
-    description: "Compara los planes de Panitas: Agenda ($15/mes), Emprendedor ($25/mes) y Mayorista ($45/mes). Sin comisiones por transacción. Prueba gratis 14 días.",
+    description: "Compara los planes de Panitas: Agenda ($14.99/mes), Emprendedor ($19.99/mes) y Mayorista ($49.99/mes). Sin comisiones por transacción. Prueba gratis 14 días.",
   },
   "/panitas-vs-alternativas": {
     title: "Panitas | Comparativa de Software Administrativo para Venezuela",

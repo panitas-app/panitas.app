@@ -147,7 +147,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         question: "¿Cuánto cuesta un sistema de inventario como Panitas?",
-        answer: "El Plan Emprendedor de Panitas cuesta $25/mes e incluye inventario, POS, tienda online y CRM. El Plan Agenda cuesta $15/mes y el Mayorista $45/mes."
+        answer: "El Plan Emprendedor de Panitas cuesta $19.99/mes e incluye inventario, POS, tienda online y CRM. El Plan Agenda cuesta $14.99/mes y el Mayorista $49.99/mes."
       },
       {
         question: "¿Necesito conocimientos técnicos para usar Panitas?",
@@ -292,7 +292,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         question: "¿Cuánto cuesta el POS de Panitas?",
-        answer: "El Plan Emprendedor de Panitas cuesta $25/mes e incluye punto de venta, inventario, tienda online y CRM. El Plan Agenda cuesta $15/mes."
+        answer: "El Plan Emprendedor de Panitas cuesta $19.99/mes e incluye punto de venta, inventario, tienda online y CRM. El Plan Agenda cuesta $14.99/mes."
       }
     ],
     relatedPosts: ["controlar-inventario-negocio-venezuela-sin-excel", "software-administrativo-vs-hojas-calculo"],
@@ -386,7 +386,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        content: "El Plan Emprendedor de Panitas cuesta $25/mes. Si tu negocio mueve más de $500 al mes, ese 5% de inversión en herramientas te ahorra mucho más en tiempo perdido, errores y productos sin registro. Y si solo necesitas agenda de citas, el Plan Agenda cuesta $15/mes."
+        content: "El Plan Emprendedor de Panitas cuesta $19.99/mes. Si tu negocio mueve más de $500 al mes, ese 5% de inversión en herramientas te ahorra mucho más en tiempo perdido, errores y productos sin registro. Y si solo necesitas agenda de citas, el Plan Agenda cuesta $14.99/mes."
       },
       {
         type: "callout",
@@ -396,7 +396,7 @@ export const BLOG_POSTS: BlogPost[] = [
     faq: [
       {
         question: "¿Cuánto cuesta un software administrativo como Panitas?",
-        answer: "Panitas tiene tres planes: Agenda desde $15/mes, Emprendedor desde $25/mes y Mayorista desde $45/mes. Todos incluyen prueba gratuita sin tarjeta de crédito."
+        answer: "Panitas tiene tres planes: Agenda desde $14.99/mes, Emprendedor desde $19.99/mes y Mayorista desde $49.99/mes. Todos incluyen prueba gratuita sin tarjeta de crédito."
       },
       {
         question: "¿Puedo migrar mi inventario de Excel a Panitas?",
@@ -503,7 +503,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        content: "No necesitas invertir una fortuna. El Plan Emprendedor de Panitas cuesta $25/mes e incluye todo lo que una ferretería necesita: inventario, POS, tienda online, CRM y reportes. No necesitas hardware especial; funciona desde cualquier computadora o celular con navegador web. Y si solo necesitas agenda de citas para servicios de instalación, el Plan Agenda cuesta $15/mes."
+        content: "No necesitas invertir una fortuna. El Plan Emprendedor de Panitas cuesta $19.99/mes e incluye todo lo que una ferretería necesita: inventario, POS, tienda online, CRM y reportes. No necesitas hardware especial; funciona desde cualquier computadora o celular con navegador web. Y si solo necesitas agenda de citas para servicios de instalación, el Plan Agenda cuesta $14.99/mes."
       },
       {
         type: "paragraph",
@@ -599,7 +599,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        content: "Los precios varían mucho. Algunos sistemas cobran por barbero, otros por citas, otros por mes. Lo ideal es un sistema con precio fijo que incluya todos los barberos sin costos extra. El Plan Agenda de Panitas cuesta $15/mes e incluye agenda de citas con reservas online, recordatorios automáticos, múltiples profesionales y un perfil público para tu barbería."
+        content: "Los precios varían mucho. Algunos sistemas cobran por barbero, otros por citas, otros por mes. Lo ideal es un sistema con precio fijo que incluya todos los barberos sin costos extra. El Plan Agenda de Panitas cuesta $14.99/mes e incluye agenda de citas con reservas online, recordatorios automáticos, múltiples profesionales y un perfil público para tu barbería."
       },
       {
         type: "paragraph",
@@ -637,7 +637,7 @@ export const BLOG_POSTS: BlogPost[] = [
     faq: [
       {
         question: "¿Cuánto cuesta un sistema de agenda para barberías?",
-        answer: "El Plan Agenda de Panitas cuesta $15/mes e incluye agenda de citas con reservas online, recordatorios automáticos y múltiples profesionales. No hay costos de instalación."
+        answer: "El Plan Agenda de Panitas cuesta $14.99/mes e incluye agenda de citas con reservas online, recordatorios automáticos y múltiples profesionales. No hay costos de instalación."
       },
       {
         question: "¿Puedo tener múltiples barberos en el mismo sistema?",

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 const faqData = [
   {
     question: "¿Cuánto cuesta un software administrativo para negocios en Venezuela?",
-    answer: "Panitas ofrece tres planes: Agenda desde $15/mes, Emprendedor desde $25/mes y Mayorista desde $45/mes. Todos incluyen 14 días de prueba gratuita sin tarjeta de crédito. No hay comisiones por transacción ni costos ocultos.",
+    answer: "Panitas ofrece tres planes: Agenda desde $14.99/mes, Emprendedor desde $19.99/mes y Mayorista desde $49.99/mes. Todos incluyen 14 días de prueba gratuita sin tarjeta de crédito. No hay comisiones por transacción ni costos ocultos.",
   },
   {
     question: "¿Qué software administrativo acepta pago móvil en Venezuela?",
@@ -42,7 +42,7 @@ const faqData = [
   },
   {
     question: "¿Cuál es el software más barato para negocios pequeños en Venezuela?",
-    answer: "El Plan Agenda de Panitas cuesta $15/mes e incluye agenda de citas con reservas online, recordatorios y gestión de profesionales. Es la opción más económica para profesionales de servicios.",
+    answer: "El Plan Agenda de Panitas cuesta $14.99/mes e incluye agenda de citas con reservas online, recordatorios y gestión de profesionales. Es la opción más económica para profesionales de servicios.",
   },
   {
     question: "¿Qué software administrativo tiene control de inventario en tiempo real?",
@@ -71,7 +71,7 @@ export default function ComparativasPage() {
             ¿Cuál es el mejor software administrativo para negocios en Venezuela?
           </h1>
           <p className="text-xl text-gray-700 mb-4 max-w-3xl mx-auto font-medium">
-            Panitas es un software administrativo todo-en-uno diseñado para el mercado venezolano, con planes desde $15/mes, pagos por pago móvil y transferencia, y tasa BCV automática. A diferencia de soluciones internacionales, no necesita tarjetas de crédito ni pasarelas de pago restringidas.
+            Panitas es un software administrativo todo-en-uno diseñado para el mercado venezolano, con planes desde $14.99/mes, pagos por pago móvil y transferencia, y tasa BCV automática. A diferencia de soluciones internacionales, no necesita tarjetas de crédito ni pasarelas de pago restringidas.
           </p>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Esta comparativa muestra las funcionalidades reales de Panitas frente a otras alternativas disponibles en el mercado.
@@ -95,7 +95,7 @@ export default function ComparativasPage() {
               <tbody>
                 <tr>
                   <td className="border border-gray-200 px-4 py-3 font-medium text-gray-900">Precio mensual</td>
-                  <td className="border border-gray-200 px-4 py-3 text-center font-semibold text-green-700 bg-green-50">Desde $15/mes</td>
+                  <td className="border border-gray-200 px-4 py-3 text-center font-semibold text-green-700 bg-green-50">Desde $14.99/mes</td>
                   <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">$79+/mes</td>
                   <td className="border border-gray-200 px-4 py-3 text-center text-gray-600">Gratis (pero con pérdida de tiempo)</td>
                 </tr>
@@ -219,7 +219,7 @@ export default function ComparativasPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Listo para probar Panitas?</h2>
           <p className="text-xl text-gray-600 mb-8">
-            14 días gratis, sin tarjeta de crédito, sin compromiso. Desde $15/mes.
+            14 días gratis, sin tarjeta de crédito, sin compromiso. Desde $14.99/mes.
           </p>
           <Link
             href="/register?utm_source=landing&utm_medium=organic&utm_campaign=comparativa"
