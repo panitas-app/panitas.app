@@ -10,10 +10,8 @@ import {
 } from "@/components/ui/card"
 import { Plus, Search, Upload } from "lucide-react"
 import { ProductsAccordion } from "@/components/dashboard/products-accordion"
-import { PaginationLinks } from "@/components/ui/pagination-links"
-import { resolvePlanType } from "@/lib/plans"
 
-const PER_PAGE = 20
+import { resolvePlanType } from "@/lib/plans"
 
 export default async function ProductsPage({
   searchParams,
@@ -28,7 +26,6 @@ export default async function ProductsPage({
 
   const searchParamsResolved = await searchParams
   const { q, category } = searchParamsResolved
-  const page = Math.max(1, parseInt(searchParamsResolved.page || "1"))
 
   const where: any = { storeId: current.store.id }
   if (q) where.name = { contains: q, mode: "insensitive" }
@@ -43,8 +40,6 @@ export default async function ProductsPage({
         where,
         include: { category: true },
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * PER_PAGE,
-        take: PER_PAGE,
       }),
       prisma.product.count({ where }),
     ])
@@ -57,8 +52,6 @@ export default async function ProductsPage({
   } catch (e) {
     console.error("[products page]", e)
   }
-
-  const totalPages = Math.ceil(total / PER_PAGE)
 
   return (
     <div className="space-y-6">
@@ -125,13 +118,6 @@ export default async function ProductsPage({
           ) : (
             <ProductsAccordion products={products} categories={categories} />
           )}
-          <PaginationLinks
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            basePath="/dashboard/products"
-            searchParams={searchParamsResolved}
-          />
         </CardContent>
       </Card>
     </div>
