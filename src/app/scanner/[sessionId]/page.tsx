@@ -300,12 +300,29 @@ function ScannerPage() {
 
       let startErr: any = null
 
+      const ensureVideoPlaying = () => {
+        setTimeout(() => {
+          const videoEl = document.querySelector("#scanner-viewport video") as HTMLVideoElement
+          if (videoEl) {
+            videoEl.setAttribute("playsinline", "true")
+            videoEl.setAttribute("webkit-playsinline", "true")
+            videoEl.muted = true
+            videoEl.play().then(() => {
+              logDiag("Video de cámara en vivo reproduciendo correctamente")
+            }).catch((err) => {
+              logDiag(`Estado de reproducción de video: ${err?.message || err}`)
+            })
+          }
+        }, 150)
+      }
+
       // Attempt 1: Standard Rear camera (facingMode: environment for Safari iOS & Chrome Android)
       try {
         logDiag("Intento 1: Cámara Trasera (facingMode environment)...")
         await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {})
         setActiveCamLabel("Trasera Estándar")
         logDiag("ÉXITO: Cámara Trasera iniciada")
+        ensureVideoPlaying()
         return
       } catch (e1: any) {
         startErr = e1
@@ -319,6 +336,7 @@ function ScannerPage() {
         await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess, () => {})
         setActiveCamLabel("Trasera Ideal")
         logDiag("ÉXITO: Cámara Trasera iniciada")
+        ensureVideoPlaying()
         return
       } catch (e2: any) {
         if (!startErr) startErr = e2
@@ -332,6 +350,7 @@ function ScannerPage() {
         await scanner.start({ facingMode: "user" }, config, onScanSuccess, () => {})
         setActiveCamLabel("Frontal")
         logDiag("ÉXITO: Cámara Frontal iniciada")
+        ensureVideoPlaying()
         return
       } catch (e3: any) {
         if (!startErr) startErr = e3
@@ -351,6 +370,7 @@ function ScannerPage() {
           await scanner.start(chosenId, config, onScanSuccess, () => {})
           setActiveCamLabel(backCam?.label || "Cámara por ID")
           logDiag("ÉXITO: Cámara iniciada por ID de dispositivo")
+          ensureVideoPlaying()
           return
         }
       } catch (camErr: any) {
@@ -518,6 +538,17 @@ function ScannerPage() {
         {status === "connected" ? (
           <>
             <div id="scanner-viewport" className="w-full h-full object-cover" />
+            <style>{`
+              #scanner-viewport video {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                display: block !important;
+              }
+              #scanner-viewport canvas {
+                display: none !important;
+              }
+            `}</style>
             
             {/* Professional 1D Barcode Viewfinder Box */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
