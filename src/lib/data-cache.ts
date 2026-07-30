@@ -10,7 +10,7 @@ export const getCachedStoreBySlug = cache(async (slug: string) => {
   return prisma.store.findUnique({
     where: { slug, isActive: true },
     include: {
-      categories: { orderBy: { order: "asc" } },
+      categories: { orderBy: { name: "desc" } },
       products: { where: { isActive: true }, include: { category: true } },
       paymentAccounts: { where: { isActive: true } },
     },

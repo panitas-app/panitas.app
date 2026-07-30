@@ -76,6 +76,19 @@ export function ModernTemplate({
     }))
   }, [store.categories, products])
 
+  const groupedCategories = useMemo(() => {
+    return store.categories
+      .map((c) => ({
+        ...c,
+        products: products.filter((p) => p.category?.id === c.id),
+      }))
+      .filter((c) => c.products.length > 0)
+  }, [store.categories, products])
+
+  const uncategorized = useMemo(() => {
+    return products.filter((p) => !p.category)
+  }, [products])
+
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ "--primary": accentColor, "--ring": accentColor } as React.CSSProperties}>
       {/* ==================== HEADER / HERO ==================== */}
@@ -83,7 +96,6 @@ export function ModernTemplate({
         {heroImages.length >= 2 ? (
           <div className="relative">
             <Carousel images={heroImages} alt={store.name} aspectRatio="aspect-[21/9] max-h-[70vh]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/20 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 sm:bottom-10 sm:left-10">
               <div className="mx-auto max-w-6xl">
                 <h1 className="text-2xl font-bold text-white drop-shadow-lg sm:text-4xl">{store.name}</h1>
@@ -102,7 +114,7 @@ export function ModernTemplate({
                 : { background: `linear-gradient(135deg, #184BBF 0%, ${accentColor} 100%)` }
             }
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+            {!store.banner && <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />}
             <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-8 sm:pb-12">
               <h1 className="text-2xl font-bold text-white drop-shadow-lg sm:text-4xl">{store.name}</h1>
               {store.description && (
@@ -269,37 +281,94 @@ export function ModernTemplate({
 
       {/* ==================== ALL PRODUCTS ==================== */}
       <section ref={featuredRef} className="mx-auto max-w-6xl px-4 mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-            {search || selectedCategory ? "Resultados" : "Todos los productos"}
-          </h2>
-          <span className="text-xs text-muted-foreground">{filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""}</span>
-        </div>
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-            <Search className="size-10 text-muted-foreground/40" />
-            <p className="text-sm font-semibold">No se encontraron productos</p>
-            <p className="text-xs">Prueba con otros términos o cambia de categoría.</p>
-          </div>
-        ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          >
-            {filteredProducts.map((product) => (
-              <motion.div key={product.id} variants={itemVariants}>
-                <ProductCard
-                  product={product}
-                  onAddToCart={onAddToCart}
-                  bcvRate={bcvRate}
-                  accentColor={accentColor}
-                  showBolivares={store.showBolivares}
-                />
+        {search || selectedCategory ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">Resultados</h2>
+              <span className="text-xs text-muted-foreground">{filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""}</span>
+            </div>
+            {filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+                <Search className="size-10 text-muted-foreground/40" />
+                <p className="text-sm font-semibold">No se encontraron productos</p>
+                <p className="text-xs">Prueba con otros términos o cambia de categoría.</p>
+              </div>
+            ) : (
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              >
+                {filteredProducts.map((product) => (
+                  <motion.div key={product.id} variants={itemVariants}>
+                    <ProductCard
+                      product={product}
+                      onAddToCart={onAddToCart}
+                      bcvRate={bcvRate}
+                      accentColor={accentColor}
+                      showBolivares={store.showBolivares}
+                    />
+                  </motion.div>
+                ))}
               </motion.div>
+            )}
+          </>
+        ) : (
+          <>
+            {groupedCategories.map((cat) => (
+              <section key={cat.id} className="mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">{cat.name}</h2>
+                  <span className="text-xs text-muted-foreground">{cat.products.length} producto{cat.products.length !== 1 ? "s" : ""}</span>
+                </div>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                >
+                  {cat.products.map((product) => (
+                    <motion.div key={product.id} variants={itemVariants}>
+                      <ProductCard
+                        product={product}
+                        onAddToCart={onAddToCart}
+                        bcvRate={bcvRate}
+                        accentColor={accentColor}
+                        showBolivares={store.showBolivares}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </section>
             ))}
-          </motion.div>
+            {uncategorized.length > 0 && (
+              <section className="mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">Sin categoría</h2>
+                  <span className="text-xs text-muted-foreground">{uncategorized.length} producto{uncategorized.length !== 1 ? "s" : ""}</span>
+                </div>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                >
+                  {uncategorized.map((product) => (
+                    <motion.div key={product.id} variants={itemVariants}>
+                      <ProductCard
+                        product={product}
+                        onAddToCart={onAddToCart}
+                        bcvRate={bcvRate}
+                        accentColor={accentColor}
+                        showBolivares={store.showBolivares}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </section>
+            )}
+          </>
         )}
       </section>
 

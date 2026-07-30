@@ -67,6 +67,19 @@ export function PremiumTemplate({
     }))
   }, [store.categories, products])
 
+  const groupedCategories = useMemo(() => {
+    return store.categories
+      .map((c) => ({
+        ...c,
+        products: products.filter((p) => p.category?.id === c.id),
+      }))
+      .filter((c) => c.products.length > 0)
+  }, [store.categories, products])
+
+  const uncategorized = useMemo(() => {
+    return products.filter((p) => !p.category)
+  }, [products])
+
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
 
   return (
@@ -176,7 +189,7 @@ export function PremiumTemplate({
             }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/10" />
+        {!store.banner && <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/10" />}
         <div className="absolute inset-0 bg-black/20" />
 
         <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-16 sm:pb-24">
@@ -345,48 +358,104 @@ export function PremiumTemplate({
             </div>
           </div>
 
-          <motion.div variants={fadeUp}>
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xs tracking-[0.2em] uppercase text-muted-foreground/60">
-                {search || selectedCategory ? "Resultados" : `Todos los artículos (${filteredProducts.length})`}
-              </h3>
-              {(search || selectedCategory) && (
+          {search || selectedCategory ? (
+            <motion.div variants={fadeUp}>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xs tracking-[0.2em] uppercase text-muted-foreground/60">Resultados</h3>
                 <button
                   onClick={() => { setSearch(""); setSelectedCategory(null) }}
                   className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Limpiar
                 </button>
+              </div>
+              {filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+                  <Search className="size-10 text-muted-foreground/40" />
+                  <p className="text-sm font-semibold">No se encontraron artículos</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {filteredProducts.map((product) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="transform transition-all duration-300 hover:scale-[1.02]"
+                    >
+                      <ProductCard
+                        product={product}
+                        onAddToCart={onAddToCart}
+                        bcvRate={bcvRate}
+                        accentColor={accentColor}
+                        showBolivares={store.showBolivares}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <div className="space-y-14">
+              {groupedCategories.map((cat) => (
+                <motion.div key={cat.id} variants={fadeUp}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-sm tracking-[0.2em] uppercase text-muted-foreground/60">
+                      {cat.name}
+                    </h3>
+                    <span className="text-xs text-muted-foreground">{cat.products.length} artículo{cat.products.length !== 1 ? "s" : ""}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {cat.products.map((product) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="transform transition-all duration-300 hover:scale-[1.02]"
+                      >
+                        <ProductCard
+                          product={product}
+                          onAddToCart={onAddToCart}
+                          bcvRate={bcvRate}
+                          accentColor={accentColor}
+                          showBolivares={store.showBolivares}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+              {uncategorized.length > 0 && (
+                <motion.div variants={fadeUp}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-sm tracking-[0.2em] uppercase text-muted-foreground/60">Sin categoría</h3>
+                    <span className="text-xs text-muted-foreground">{uncategorized.length} artículo{uncategorized.length !== 1 ? "s" : ""}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {uncategorized.map((product) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="transform transition-all duration-300 hover:scale-[1.02]"
+                      >
+                        <ProductCard
+                          product={product}
+                          onAddToCart={onAddToCart}
+                          bcvRate={bcvRate}
+                          accentColor={accentColor}
+                          showBolivares={store.showBolivares}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
               )}
             </div>
-
-            {filteredProducts.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-                <Search className="size-10 text-muted-foreground/40" />
-                <p className="text-sm font-semibold">No se encontraron artículos</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredProducts.map((product) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="transform transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <ProductCard
-                      product={product}
-                      onAddToCart={onAddToCart}
-                      bcvRate={bcvRate}
-                      accentColor={accentColor}
-                      showBolivares={store.showBolivares}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
+          )}
         </motion.div>
       </section>
 

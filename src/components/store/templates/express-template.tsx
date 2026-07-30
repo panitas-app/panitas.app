@@ -39,6 +39,19 @@ export function ExpressTemplate({
     return products.filter((p) => p.stock !== null && p.stock > 0 && p.stock <= 5)
   }, [products])
 
+  const groupedCategories = useMemo(() => {
+    return store.categories
+      .map((c) => ({
+        ...c,
+        products: products.filter((p) => p.category?.id === c.id),
+      }))
+      .filter((c) => c.products.length > 0)
+  }, [store.categories, products])
+
+  const uncategorized = useMemo(() => {
+    return products.filter((p) => !p.category)
+  }, [products])
+
   const handleQuickAdd = useCallback((product: ProductData) => {
     const qty = quickQty[product.id] || 1
     for (let i = 0; i < qty; i++) {
@@ -148,10 +161,10 @@ export function ExpressTemplate({
             <p className="text-sm font-semibold">No se encontraron productos</p>
             <p className="text-xs">Prueba con otros términos o cambia de categoría.</p>
           </div>
-        ) : (
+        ) : search || selectedCategory ? (
           <AnimatePresence mode="wait">
             <motion.div
-              key={selectedCategory || "all"}
+              key={selectedCategory || "search"}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -177,6 +190,61 @@ export function ExpressTemplate({
               ))}
             </motion.div>
           </AnimatePresence>
+        ) : (
+          <div className="space-y-8">
+            {groupedCategories.map((cat) => (
+              <div key={cat.id}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{cat.name}</h3>
+                  <span className="text-[10px] text-muted-foreground">{cat.products.length} producto{cat.products.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {cat.products.map((product) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ProductCard
+                        product={product}
+                        onAddToCart={handleQuickAdd}
+                        bcvRate={bcvRate}
+                        accentColor={accentColor}
+                        showBolivares={showBolivares}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {uncategorized.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Sin categoría</h3>
+                  <span className="text-[10px] text-muted-foreground">{uncategorized.length} producto{uncategorized.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {uncategorized.map((product) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ProductCard
+                        product={product}
+                        onAddToCart={handleQuickAdd}
+                        bcvRate={bcvRate}
+                        accentColor={accentColor}
+                        showBolivares={showBolivares}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </main>
 

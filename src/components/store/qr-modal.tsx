@@ -24,13 +24,16 @@ export function QrModal({ open, onClose, storeName, storeUrl, storeLogo }: QrMod
   useEffect(() => {
     if (!open || !canvasRef.current) return
     const canvas = canvasRef.current
-    QRCode.toCanvas(canvas, storeUrl, {
-      width: 180,
-      margin: 1,
-      color: { dark: "#000000", light: "#ffffff" },
-    }, (err) => {
-      if (err) console.error(err)
-    })
+    const timer = setTimeout(() => {
+      QRCode.toCanvas(canvas, storeUrl, {
+        width: 180,
+        margin: 1,
+        color: { dark: "#000000", light: "#ffffff" },
+      }, (err) => {
+        if (err) console.error(err)
+      })
+    }, 50)
+    return () => clearTimeout(timer)
   }, [open, storeUrl])
 
   async function handleDownload() {
@@ -75,7 +78,7 @@ export function QrModal({ open, onClose, storeName, storeUrl, storeLogo }: QrMod
           {/* Panitas logo */}
           <div className="relative z-10 pt-10 pb-3 flex items-center justify-center">
             <img
-              src="/logo.png"
+              src="/logonuevo.png"
               alt="Panitas"
               className="h-9 w-auto"
             />

@@ -99,7 +99,7 @@ export function DeliveryTemplate({
             : { background: `linear-gradient(135deg, #184BBF 0%, ${accentColor} 100%)` }
         }
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        {!store.banner && <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />}
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-6">
           <div className="flex items-end gap-4">
             <div className="size-16 shrink-0 overflow-hidden rounded-2xl border-2 border-background/50 bg-muted shadow-lg sm:size-20">
