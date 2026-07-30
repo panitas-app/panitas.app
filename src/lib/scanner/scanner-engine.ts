@@ -26,12 +26,11 @@ export const ScannerEngine = {
   },
 
   /**
-   * Inicia el escaneo usando un facingMode específico.
-   * Html5Qrcode manejará internamente la llamada a getUserMedia.
+   * Inicia el escaneo usando un deviceId específico.
    */
   async start(
     scanner: Html5Qrcode,
-    facingMode: FacingMode,
+    deviceId: string,
     onScanSuccess: (decodedText: string) => void
   ): Promise<void> {
     const config = {
@@ -48,7 +47,7 @@ export const ScannerEngine = {
 
     // Retorna la promesa, si falla lanza el error, no hay reintentos aquí.
     await scanner.start(
-      { facingMode },
+      deviceId,
       config,
       onScanSuccess,
       () => {} // Ignorar callbacks de errores de frame individuales

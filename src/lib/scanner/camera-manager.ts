@@ -3,6 +3,14 @@ export interface CameraDevice {
   label: string
 }
 
+export interface CameraInfo {
+  stream: MediaStream
+  deviceId: string
+  label: string
+  width: number
+  height: number
+}
+
 export const CameraManager = {
   /**
    * Verifica si el contexto actual es seguro (HTTPS o localhost)
@@ -44,6 +52,47 @@ export const CameraManager = {
   async hasCameras(): Promise<boolean> {
     const cameras = await this.getCameras()
     return cameras.length > 0
+  },
+
+  /**
+   * Abre la cámara para validar permisos y obtener el deviceId real.
+   * Único punto en toda la app que debe llamar getUserMedia.
+   */
+  async openCamera(preferRear: boolean): Promise<CameraInfo> {
+    const constraints = {
+      video: preferRear
+        ? { facingMode: "environment" }
+        : { facingMode: "user" }
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+    const tracks = stream.getVideoTracks()
+    if (tracks.length === 0) {
+      stream.getTracks().forEach(t => t.stop())
+      throw new Error("El stream no contiene pistas de video")
+    }
+
+    const track = tracks[0]
+    const settings = track.getSettings()
+
+    return {
+      stream,
+      deviceId: settings.deviceId || "",
+      label: track.label || "Cámara desconocida",
+      width: settings.width || 0,
+      height: settings.height || 0,
+    }
+  },
+
+  /**
+   * Cierra el stream liberando el hardware
+   */
+  closeCamera(stream: MediaStream): void {
+    if (!stream) return
+    stream.getTracks().forEach(t => {
+      t.stop()
+    })
   },
 
   /**

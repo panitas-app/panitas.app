@@ -201,9 +201,19 @@ function ScannerPage() {
         throw new Error("No se encontraron cámaras de video en este dispositivo.")
       }
       
+      logDiag("[CAMERA] Abriendo cámara para obtener deviceId...")
+      const camInfo = await CameraManager.openCamera(facingMode === "environment")
+      logDiag(`[CAMERA] Obtenida: ${camInfo.label} (${camInfo.deviceId})`)
+
       if (!transition("OPEN_CAMERA", "CAMERA_READY")) {
+        CameraManager.closeCamera(camInfo.stream)
         throw new Error("Transición inválida a CAMERA_READY")
       }
+      
+      logDiag("[CAMERA] Liberando cámara temporal...")
+      CameraManager.closeCamera(camInfo.stream)
+      // Espera para dar tiempo al OS de liberar el hardware antes de que Html5Qrcode lo tome
+      await new Promise(resolve => setTimeout(resolve, 150))
       
       if (!transition("CAMERA_READY", "CREATE_SCANNER")) {
         throw new Error("Transición inválida a CREATE_SCANNER")
@@ -238,8 +248,8 @@ function ScannerPage() {
         }
       }
 
-      logDiag(`[SCANNER] Ejecutando start(${facingMode})...`)
-      await ScannerEngine.start(scanner, facingMode, onScanSuccess)
+      logDiag(`[SCANNER] Ejecutando start con deviceId: ${camInfo.deviceId.slice(0,8)}...`)
+      await ScannerEngine.start(scanner, camInfo.deviceId, onScanSuccess)
       
       if (!transition("CREATE_SCANNER", "SCANNING")) {
         // If state changed while we were starting (e.g. user clicked stop)
