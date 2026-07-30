@@ -347,10 +347,15 @@ function ScannerPage() {
       {/* Camera Viewport (Always in DOM) */}
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
         
-        {/* Scanner Container */}
+        {/* Scanner Container — must NOT use display:none during init,
+            html5-qrcode needs real dimensions to size the video element */}
         <div 
           id="scanner-viewport" 
-          className={uiState === "SCANNING" ? "block w-full h-full" : "hidden"} 
+          className={
+            uiState === "SCANNING"
+              ? "w-full h-full opacity-100"
+              : "w-full h-full absolute inset-0 opacity-0 pointer-events-none -z-10"
+          } 
         />
 
         {uiState === "SCANNING" && (
