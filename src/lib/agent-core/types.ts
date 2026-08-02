@@ -109,6 +109,10 @@ export interface AgentRequest {
   toolInput?: Record<string, unknown>
   history?: Message[]
   metadata?: Record<string, unknown>
+  /** Contexto empresarial del negocio (FASE 3D): se inyecta al system prompt. */
+  businessContext?: string
+  /** Memoria relevante recuperada para este turno (FASE 3D): se inyecta al system prompt. */
+  memoryContext?: string
 }
 
 /**

@@ -65,6 +65,10 @@ export class ContextBuilder {
     if (businessName) lines.push(`\nNegocio: ${businessName}.`)
     lines.push(`\nPlan del usuario: ${request.plan ?? "business"} · Rol: ${request.role}.`)
 
+    // FASE 3D — Contexto empresarial y memoria relevante (solo si vienen del request).
+    if (request.businessContext) lines.push(`\n${request.businessContext}`)
+    if (request.memoryContext) lines.push(`\n${request.memoryContext}`)
+
     const tools = this.options.toolsProvider?.() ?? []
     if (tools.length > 0) {
       lines.push("\nHerramientas disponibles (usa sus datos como única fuente de verdad):")

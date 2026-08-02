@@ -48,6 +48,7 @@ model User {
   cashRegisterSessions CashRegisterSession[] // opened sessions
   scannerSessions ScannerSession[]
   conversations Conversation[]
+  memories BusinessMemory[]
 }
 
 model Plan {
@@ -120,6 +121,7 @@ model Negocio {
   planHistory NegocioPlanHistory[]
   scannerSessions ScannerSession[]
   conversations Conversation[]
+  memories BusinessMemory[]
 
   @@index([planEstado])
   @@index([planVencimiento])
@@ -316,6 +318,7 @@ model Store {
   cashRegisterSessions CashRegisterSession[]
   scannerSessions ScannerSession[]
   conversations Conversation[]
+  memories BusinessMemory[]
 }
 
 model StoreVisit {
@@ -1624,4 +1627,37 @@ model ConversationMessage {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// ── Panitas Business Context & Memory System (FASE 3D) ──────────────────────
+
+model BusinessMemory {
+  id           String   @id @default(cuid())
+  storeId      String
+  userId       String   // autor (auditoría)
+  negocioId    String?
+  scope        String   @default("store") // store | user
+  type         String   // short_term | long_term | business
+  kind         String   // fact | preference | business_setting | customer | product | event | custom
+  importance   String   // LOW | MEDIUM | HIGH | CRITICAL
+  key          String
+  value        String   // JSON serializado (cualquier valor JSON)
+  metadata     String?  // JSON serializado
+  source       String?  // user_message | assistant | tool | system
+  expiresAt    DateTime?
+  lastAccessAt DateTime?
+  accessCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  negocio Negocio? @relation(fields: [negocioId], references: [id], onDelete: SetNull)
+
+  @@unique([storeId, key])
+  @@index([storeId, scope, importance])
+  @@index([storeId, type])
+  @@index([storeId, updatedAt])
+  @@index([negocioId])
+  @@index([expiresAt])
 }

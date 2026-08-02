@@ -15,3 +15,11 @@ export type {
   ConversationRole,
   ConversationAction,
 } from "@/lib/agent/context/conversation.context"
+// FASE 3D — Business Context & Memory System.
+export { BusinessContextBuilder } from "@/lib/agent/context/business-context-builder"
+export type {
+  BusinessContextBundle,
+  BusinessContextBuilderOptions,
+  BusinessContextProviders,
+  AgentMemoryItem,
+} from "@/lib/agent/context/business-context-builder"

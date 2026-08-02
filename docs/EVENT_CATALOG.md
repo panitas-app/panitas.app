@@ -209,13 +209,28 @@ const off = eventService.on("inventory.low_stock", (p) => {
 
 ## 14. Conversaciones (FASE 3C)
 
-| Evento | Cuándo ocurre | Payload | Emisor |
+| Evento | Cuï¿½ndo ocurre | Payload | Emisor |
 |---|---|---|---|
-| `conversation.created` | Al crear una conversación de chat persistente | `{ conversationId, storeId, userId }` | `ConversationService.createConversation` |
-| `message.created` | Al guardar un mensaje (usuario o asistente) en una conversación | `{ conversationId, storeId, role }` | `ConversationService.saveMessage` |
-| `conversation.deleted` | Al eliminar una conversación | `{ conversationId, storeId, userId }` | `ConversationService.deleteConversation` |
+| `conversation.created` | Al crear una conversaciï¿½n de chat persistente | `{ conversationId, storeId, userId }` | `ConversationService.createConversation` |
+| `message.created` | Al guardar un mensaje (usuario o asistente) en una conversaciï¿½n | `{ conversationId, storeId, role }` | `ConversationService.saveMessage` |
+| `conversation.deleted` | Al eliminar una conversaciï¿½n | `{ conversationId, storeId, userId }` | `ConversationService.deleteConversation` |
 
 **Usos con IA**
-- Rebuild de contexto: recomponer el historial de una conversación reanudada.
-- Métricas de uso del asistente por tienda/usuario.
-- Detectar conversaciones abandonadas para reactivación.
+- Rebuild de contexto: recomponer el historial de una conversaciï¿½n reanudada.
+- Mï¿½tricas de uso del asistente por tienda/usuario.
+- Detectar conversaciones abandonadas para reactivaciï¿½n.
+
+---
+
+## 15. Memoria del negocio (FASE 3D)
+
+| Evento | CuÃ¡ndo ocurre | Payload | Emisor |
+|---|---|---|---|
+| `memory.created` | Al guardar un Ã­tem de memoria nuevo (upsert, no existÃ­a) | `{ storeId, userId, key, type, kind, importance }` | `MemoryManager.remember` |
+| `memory.updated` | Al reescribir un Ã­tem existente (misma `key` del negocio) | `{ storeId, userId, key, type, kind, importance }` | `MemoryManager.remember` |
+| `memory.deleted` | Al eliminar un Ã­tem de memoria del negocio | `{ storeId, userId, key }` | `MemoryManager.forget` |
+
+**Usos con IA**
+- Detectar cuÃ¡ndo cambia un dato clave del negocio (p. ej. un setting reescrito) y ajustar respuestas.
+- Auditar quÃ© hechos aprende el negocio a lo largo del tiempo.
+- Disparar limpiezas/caps proactivas cuando la memoria crece demasiado.

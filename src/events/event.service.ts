@@ -105,6 +105,27 @@ export type AppEvents = {
     storeId: string
     userId: string
   }
+  "memory.created": {
+    key: string
+    storeId: string
+    userId: string
+    type: string
+    kind: string
+    importance: string
+  }
+  "memory.updated": {
+    key: string
+    storeId: string
+    userId: string
+    type: string
+    kind: string
+    importance: string
+  }
+  "memory.deleted": {
+    key: string
+    storeId: string
+    userId: string
+  }
 }
 
 export type AppEventName = keyof AppEvents
