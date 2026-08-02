@@ -90,6 +90,21 @@ export type AppEvents = {
     totalSpent: number
     totalOrders: number
   }
+  "conversation.created": {
+    conversationId: string
+    storeId: string
+    userId: string
+  }
+  "message.created": {
+    conversationId: string
+    storeId: string
+    role: string
+  }
+  "conversation.deleted": {
+    conversationId: string
+    storeId: string
+    userId: string
+  }
 }
 
 export type AppEventName = keyof AppEvents

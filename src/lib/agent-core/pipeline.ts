@@ -31,11 +31,14 @@ export class RequestPipeline {
     const taskType = request.taskType ?? "chat"
     const opts = { sessionId: session.id, taskType }
 
-    // 1. Context Builder (base, sin tool results todavía)
+    // 1. Context Builder (base, sin tool results todavía).
+    //    Si el llamador provee historial persistido (FASE 3C) se usa ese; si no,
+    //    se cae al historial en memoria de la sesión (FASE 3A).
+    const history = request.history ?? session.messages
     const context = this.deps.contextBuilder.buildBase({
       request,
       sessionId: session.id,
-      history: session.messages,
+      history,
     })
 
     // 2. Permission Checker (acceso general al asistente)

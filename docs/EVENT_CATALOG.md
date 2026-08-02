@@ -205,3 +205,17 @@ const off = eventService.on("inventory.low_stock", (p) => {
 | `payment.received` | ConciliaciÃ³n y alertas de cobro |
 | `subscription.renewed` / `subscription.expiring` | RetenciÃ³n y cobro |
 | `agent.action_completed` | Feedback al usuario de acciones del agente |
+---
+
+## 14. Conversaciones (FASE 3C)
+
+| Evento | Cuándo ocurre | Payload | Emisor |
+|---|---|---|---|
+| `conversation.created` | Al crear una conversación de chat persistente | `{ conversationId, storeId, userId }` | `ConversationService.createConversation` |
+| `message.created` | Al guardar un mensaje (usuario o asistente) en una conversación | `{ conversationId, storeId, role }` | `ConversationService.saveMessage` |
+| `conversation.deleted` | Al eliminar una conversación | `{ conversationId, storeId, userId }` | `ConversationService.deleteConversation` |
+
+**Usos con IA**
+- Rebuild de contexto: recomponer el historial de una conversación reanudada.
+- Métricas de uso del asistente por tienda/usuario.
+- Detectar conversaciones abandonadas para reactivación.

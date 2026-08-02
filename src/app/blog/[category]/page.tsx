@@ -5,26 +5,26 @@ import { BLOG_CATEGORIES, getPostsByCategory } from "@/lib/blog/posts"
 import { BlogCard } from "@/components/blog/blog-card"
 
 export async function generateStaticParams() {
-  return BLOG_CATEGORIES.map((cat) => ({ slug: cat.slug }))
+  return BLOG_CATEGORIES.map((cat) => ({ category: cat.slug }))
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params
-  const cat = BLOG_CATEGORIES.find((c) => c.slug === slug)
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
+  const { category } = await params
+  const cat = BLOG_CATEGORIES.find((c) => c.slug === category)
   if (!cat) return { title: "Categoría no encontrada | Panitas" }
   return {
     title: `${cat.name} | Blog de Panitas`,
     description: `Artículos sobre ${cat.name.toLowerCase()} para tu negocio. Guías, consejos y tutoriales sobre software administrativo en Venezuela.`,
-    alternates: { canonical: `/blog/${slug}` },
+    alternates: { canonical: `/blog/${category}` },
   }
 }
 
-export default async function BlogCategoryPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const cat = BLOG_CATEGORIES.find((c) => c.slug === slug)
+export default async function BlogCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category } = await params
+  const cat = BLOG_CATEGORIES.find((c) => c.slug === category)
   if (!cat) notFound()
 
-  const posts = getPostsByCategory(slug)
+  const posts = getPostsByCategory(category)
 
   return (
     <main className="min-h-screen bg-white">

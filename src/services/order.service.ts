@@ -15,6 +15,8 @@ export type OrderListOptions = {
   take?: number
 }
 
+export const VALID_ORDER_STATUSES: readonly string[] = ["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"]
+
 type OrderItemInput = {
   productId: string
   quantity: number
@@ -92,6 +94,83 @@ export class OrderService {
   /** Pedidos pendientes de atender (futuro: feed del agente). */
   getPending(ctx: StoreServiceContext, take = 50) {
     return this.repo.pending(ctx.storeId, take)
+  }
+
+  /**
+   * Cambia el estado de un pedido (validado por negocio).
+   * Al cancelar: restaura stock, registra movimientos de retorno y deshace los
+   * totales del cliente. Emite eventos y audita. Solo vía repositorio, nunca Prisma.
+   */
+  async updateStatus(ctx: StoreServiceContext, id: string, status: string) {
+    if (!VALID_ORDER_STATUSES.includes(status)) {
+      throw serviceError(`Estado inválido: ${status}`, 400)
+    }
+
+    const order = await this.repo.findById(id)
+    if (!order) throw serviceError("Pedido no encontrado", 404)
+    if (order.storeId !== ctx.storeId) throw serviceError("No autorizado", 403)
+
+    const oldStatus = order.status
+    if (oldStatus === status) {
+      return order
+    }
+
+    if (status === "cancelled") {
+      await this.cancelOrder(ctx, order)
+    }
+
+    await this.repo.updateStatus(id, status)
+
+    await createAuditEntry({
+      action: "order.status_changed",
+      entity: "Order",
+      entityId: id,
+      metadata: { oldStatus, newStatus: status },
+      storeId: ctx.storeId,
+      userId: ctx.userId,
+    })
+
+    if (status === "cancelled") {
+      eventService.emit("sale.cancelled", {
+        orderId: id,
+        storeId: ctx.storeId,
+        orderNumber: order.orderNumber,
+        total: order.total,
+      })
+      eventService.emit("order.cancelled", {
+        orderId: id,
+        storeId: ctx.storeId,
+        orderNumber: order.orderNumber,
+        total: order.total,
+      })
+    }
+
+    return this.repo.findById(id)
+  }
+
+  /** Restaura stock y deshace totales del cliente al cancelar (una sola vez). */
+  private async cancelOrder(
+    ctx: StoreServiceContext,
+    order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>
+  ) {
+    if (order.status === "cancelled") return
+
+    for (const item of order.items) {
+      const restored = await this.repo.incrementStock(item.productId, item.quantity)
+      await this.repo.recordStockMovement({
+        type: "return",
+        quantity: item.quantity,
+        balance: restored.stock,
+        concept: `Cancelación #${order.orderNumber}`,
+        reference: order.id,
+        productId: item.productId,
+        storeId: ctx.storeId,
+      })
+    }
+
+    if (order.customerId) {
+      await this.customerService.updateTotals(ctx, order.customerId, -order.total, -1)
+    }
   }
 
   /** Pedidos de tienda online (no POS) en un rango, con resumen. */
