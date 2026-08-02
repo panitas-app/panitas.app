@@ -10,16 +10,18 @@
 ### Locales
 | Rama | HEAD | Último commit | Estado |
 |---|---|---|---|
-| `main` | `477b657` | scanner móvil | ✅ **Producción estable** (congelada) |
-| `develop-v2` | `4e5197b` | security(phase-1a) | ✅ **Desarrollo activo Panitas 2.0** |
-| `develop` | `9284fb3` | "chore: track MP4 with Git LFS" (13/07/2026) | ⚠️ **Obsoleta** |
+| `main` | `836792f` | scanner móvil | ✅ **Producción estable** (congelada) |
+| `develop-v2` | `22e8647` | docs(phase-1a) | ✅ **Desarrollo activo Panitas 2.0** |
+| `develop` | `e407e55` | "chore: track MP4 with Git LFS" (13/07/2026) | ⚠️ **Obsoleta** |
+
+> ⚠️ **Actualizado tras la purga de historial (02/08/2026):** todos los SHAs fueron reescritos (`git filter-repo`). Los SHAs de este documento corresponden a la historia reescrita (ver `HISTORY_PURGE_REPORT.md`).
 
 ### Remotas (`origin/`)
 | Rama | Estado |
 |---|---|
 | `origin/main` | ✅ Sincronizada con local `main` |
-| `origin/develop-v2` | 🟡 Atrás de local (falta push de FASE 1A) |
-| `origin/develop` | ⚠️ **Obsoleta** (misma `9284fb3`) |
+| `origin/develop-v2` | ✅ Sincronizada (HEAD = `22e8647`) |
+| `origin/develop` | ⚠️ **Obsoleta** (misma `e407e55`) |
 
 ---
 
@@ -44,7 +46,20 @@ git push origin --delete develop            # elimina la rama remota
 
 ---
 
-## 4. Riesgos asociados
+## 4. Ramas PostHog eliminadas (02/08/2026)
+
+Durante la purga del historial se detectaron **2 ramas remotas** de instrumentación automática de PostHog con historial **no reescrito** (conservaban `dev.db`):
+
+| Rama | PR | Acción |
+|---|---|---|
+| `posthog/instrumentation-3d96cc` | #1 | ✅ Eliminada + PR cerrado |
+| `posthog/instrumentation-ef9de2` | #2 | ✅ Eliminada + PR cerrado |
+
+> **Residual:** GitHub conserva `refs/pull/1/head` y `refs/pull/2/head` (PRs cerrados). Solo soporte de GitHub puede eliminarlos por completo (opcional).
+
+---
+
+## 5. Riesgos asociados
 
 - Si alguien tiene clones con `develop` en uso, el borrado remoto romperá su checkout → coordinar antes.
 - Verificar que ningún pipeline/hook apunte a `develop` (no existe CI todavía).
@@ -52,7 +67,7 @@ git push origin --delete develop            # elimina la rama remota
 
 ---
 
-## 5. Decisiones
+## 6. Decisiones
 
 | # | Decisión | Estado |
 |---|---|---|

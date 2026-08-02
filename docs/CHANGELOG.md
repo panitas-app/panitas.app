@@ -46,6 +46,12 @@
 - Unificación de variables de entorno (`docs/ENVIRONMENT_SETUP.md`)
 - Auditoría de ramas (`docs/BRANCH_CLEANUP.md`) y reporte de fase (`docs/PHASE_1A_REPORT.md`)
 
+### Purga de historial — `security` (2026-08-02)
+- `security`: reescritura del historial con `git filter-repo` — eliminados `.env.production` (`VERCEL_OIDC_TOKEN`) y `dev.db` de **todos** los commits (239 reescritos)
+- Nuevos SHAs: `main` `836792f`, `develop-v2` `22e8647`, `develop` `e407e55`; tags `v1.0-stable` y `v1.0.0` re-creados
+- Detectadas y eliminadas ramas `posthog/instrumentation-*` (PRs #1 y #2 cerrados) que conservaban `dev.db` sin purgar
+- ⚠️ **Cualquier clon anterior al 02/08/2026 es incompatible** — re-clonar (`docs/HISTORY_PURGE_REPORT.md`)
+
 ### Documentación y fundaciones (2026-08-02)
 - Añadidos `PANITAS_CURRENT_STATE.md`, `DEVELOPMENT_RULES.md` y documentación en `/docs`
 - Creada rama `develop-v2` para el desarrollo de Panitas 2.0

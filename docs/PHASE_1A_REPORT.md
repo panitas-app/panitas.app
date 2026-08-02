@@ -19,7 +19,7 @@
 | 7 | **CI/CD básico** | `.github/workflows/verify.yml` (lint + typecheck + build en PRs a `main`/`develop-v2`) + `docs/CI_CD.md` |
 | 8 | **Script `typecheck`** | Añadido `"typecheck": "tsc --noEmit"` a `package.json` (validado: pasa) |
 | 9 | **Auditoría de ramas** | `docs/BRANCH_CLEANUP.md` identifica `develop` como obsoleta (228 commits atrás, absorbida por `main`) |
-| 10 | **Purga de historial** | Plan documentado y **diferido** (requiere confirmación; no se ejecutó) |
+| 10 | **Purga de historial** | ✅ **Ejecutada el 02/08/2026** con `git filter-repo` (fueron +2 ramas PostHog detectadas). Ver `docs/HISTORY_PURGE_REPORT.md` |
 
 ---
 
@@ -34,6 +34,7 @@
 | `docs/CI_CD.md` | Documentación del flujo CI/CD |
 | `docs/ENVIRONMENT_SETUP.md` | Guía de configuración de entorno |
 | `docs/BRANCH_CLEANUP.md` | Auditoría de ramas |
+| `docs/HISTORY_PURGE_REPORT.md` | Reporte de la purga del historial (post-FASE 1A) |
 
 ### Modificados
 | Archivo | Cambio |
@@ -67,7 +68,7 @@
 
 | # | Riesgo | Severidad | Estado |
 |---|---|---|---|
-| 1 | **Secretos en el historial de Git** (`VERCEL_OIDC_TOKEN`, `dev.db` en commits `8985eaa`, `a746ab7`) | 🔴 Crítico | ⏳ **Purga diferida** (necesita confirmación + coordinación de force-push) |
+| 1 | **Secretos en el historial de Git** (`VERCEL_OIDC_TOKEN`, `dev.db` en commits `8985eaa`, `a746ab7`) | 🔴 Crítico | ✅ **RESUELTO** — purga con `filter-repo` el 02/08/2026 (`docs/HISTORY_PURGE_REPORT.md`) |
 | 2 | **Rotación de credenciales** (12 servicios) | 🔴 Crítico | ⏳ **Acción manual del dueño** (ver `SECURITY_ROTATION_CHECKLIST.md`) |
 | 3 | Token GitHub del remote | 🔴 Crítico | ⏳ **Acción manual**: revocar + reconfigurar remote |
 | 4 | Eliminación de rama `develop` (local + remota) | 🟠 Medio | ⏳ **Acción manual** con confirmación |
@@ -94,7 +95,7 @@
 
 1. **Ejecutar la rotación de credenciales** (ítems 1–8 de la checklist) como primera prioridad. Es la medida definitiva contra los secretos expuestos.
 2. **Reconfigurar el remote de GitHub** sin token embebido (`gh auth` o SSH).
-3. **Purgar el historial** (`git filter-repo`) en una ventana coordinada, recreando tags `v1.0.0`/`v1.0-stable` después.
+3. ✅ **Historial purgado** el 02/08/2026 (`git filter-repo` + force-push, tags recreados). Cualquier clon anterior debe re-clonarse.
 4. **Activar branch protection** en GitHub para `main` y `develop-v2` (requiere `verify.yml` verde).
 5. **Eliminar la rama `develop`** y consolidar los `.env` locales sobrantes.
 6. Recién entonces iniciar **FASE 1B** (arquitectura interna y preparación para el agente IA) sobre una base limpia y verificada.

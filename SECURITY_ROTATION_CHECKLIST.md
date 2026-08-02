@@ -13,7 +13,7 @@ La auditoría (`SECURITY_AUDIT.md`) encontró secretos que **estuvieron o están
 - `dev.db` (datos de desarrollo) → commit `a746ab7`
 - Token personal de GitHub embebido en la URL del remote (`.git/config`)
 
-Cualquier clon del repositorio puede contener estos valores. **La única forma de anular el riesgo es rotar (revocar y regenerar) las credenciales.** La purga del historial (diferida) eliminará los valores, pero la rotación es la medida definitiva.
+Cualquier clon del repositorio puede contener estos valores. **La única forma de anular el riesgo es rotar (revocar y regenerar) las credenciales.** La purga del historial (✅ ejecutada el 02/08/2026 — ver `docs/HISTORY_PURGE_REPORT.md`) eliminó los valores de futuros clones, pero la rotación sigue siendo la medida definitiva.
 
 ---
 

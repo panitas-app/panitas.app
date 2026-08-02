@@ -26,7 +26,7 @@ Se detectaron **2 secretos críticos** y **1 archivo de datos sensible** present
 | **Nivel de riesgo** | 🔴 **Crítico** |
 | **Impacto** | `VERCEL_OIDC_TOKEN` es una credencial de OpenID Connect de Vercel. Quien tenga acceso al repositorio (o un clon) puede autenticarse contra la cuenta de Vercel y **tomar control de los deployments**. `NEXTAUTH_URL` es información de infraestructura. |
 | **Exposición** | En el historial de `main` desde `8985eaa`. Persiste aunque se elimine el archivo, **hasta que se purgue el historial** o se rote el token. |
-| **Acción recomendada** | 1) `git rm --cached .env.production` (hecho en esta fase) → 2) **Rotar `VERCEL_OIDC_TOKEN`** → 3) Purgar historial (pendiente de confirmación) |
+| **Acción recomendada** | 1) `git rm --cached .env.production` (✅ hecho en FASE 1A) → 2) **Rotar `VERCEL_OIDC_TOKEN`** (⏳ pendiente) → 3) Purgar historial (✅ ejecutado el 02/08/2026, ver `docs/HISTORY_PURGE_REPORT.md`) |
 
 ### 🔴 CRÍTICO — H-02: Token GitHub embebido en la URL del remote
 
@@ -48,7 +48,7 @@ Se detectaron **2 secretos críticos** y **1 archivo de datos sensible** present
 | **Nivel de riesgo** | 🔴 **Alto** |
 | **Impacto** | Exposición de datos de desarrollo; aunque sea un entorno local, contiene PII y datos operativos. Además es un artefacto residual de la etapa SQLite (el sistema ya usa PostgreSQL). |
 | **Exposición** | En el historial de `main` desde `a746ab7`. |
-| **Acción recomendada** | 1) `git rm --cached dev.db` (hecho en esta fase) → 2) añadir `*.db`/`*.sqlite` a `.gitignore` → 3) purgar historial (pendiente de confirmación) |
+| **Acción recomendada** | 1) `git rm --cached dev.db` (✅ hecho en FASE 1A) → 2) añadir `*.db`/`*.sqlite` a `.gitignore` (✅ hecho) → 3) purgar historial (✅ ejecutado el 02/08/2026) |
 
 ### 🟠 MEDIO — H-04: Múltiples archivos `.env` con claves duplicadas
 
@@ -97,7 +97,7 @@ Se detectaron **2 secretos críticos** y **1 archivo de datos sensible** present
 
 - Aunque quitemos los archivos del tracking (sección 4), **cualquier clon del repositorio** seguirá teniendo los valores en su historial.
 - La **única** solución definitiva es **rotar los secretos** (invalida su uso) y **purgar el historial** con `git filter-repo` (elimina los valores de futuros clones).
-- Un rewrite de historial **cambia todos los SHAs posteriores** a los commits afectados → requiere force-push y re-crear tags. **No se ejecuta sin confirmación.**
+- Un rewrite de historial **cambia todos los SHAs posteriores** a los commits afectados → requiere force-push y re-crear tags. **Ejecutado el 02/08/2026** (ver `docs/HISTORY_PURGE_REPORT.md`).
 
 ---
 
@@ -119,11 +119,11 @@ Se detectaron **2 secretos críticos** y **1 archivo de datos sensible** present
 |---|---|---|---|
 | 1 | **Rotar `VERCEL_OIDC_TOKEN`** en Vercel | Dueño (manual) | Control de deployments por terceros |
 | 2 | **Revocar token GitHub** del remote y configurar URL limpia | Dueño (manual) | Push no autorizado |
-| 3 | **Purgar historial** (`git filter-repo` + force-push) | Equipo (requiere confirmación) | Secretos accesibles en clones |
+| 3 | ~~Purgar historial~~ | ✅ **Ejecutado 02/08/2026** (ver `docs/HISTORY_PURGE_REPORT.md`) | — |
 | 4 | **Rotar credenciales potencialmente expuestas**: `AUTH_SECRET`/`NEXTAUTH_SECRET`, `GOOGLE_CLIENT_SECRET`, `CLOUDINARY_URL`, `RESEND_API_KEY`, `TWILIO_*`, `OPENROUTER_API_KEY` | Dueño (ver checklist) | Uso indebido de servicios |
 
 ---
 
 ## 6. Conclusión
 
-El repositorio tiene **2 vulnerabilidades críticas** (H-01, H-02) y **1 alta** (H-03). El código en sí es limpio. La FASE 1A corrige la exposición presente (`git rm` + `.gitignore`), documenta el riesgo histórico y entrega la checklist de rotación. La purga del historial es el paso final y **no se ejecuta sin confirmación explícita**.
+El repositorio tiene **2 vulnerabilidades críticas** (H-01, H-02) y **1 alta** (H-03). El código en sí es limpio. La FASE 1A corrigió la exposición presente (`git rm` + `.gitignore`) y el **historial fue purgado el 02/08/2026** (`docs/HISTORY_PURGE_REPORT.md`). Pendiente: la rotación de credenciales (medida definitiva) y los pasos opcionales de higiene.
