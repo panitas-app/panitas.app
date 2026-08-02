@@ -36,6 +36,16 @@
 
 ## [Unreleased] — Panitas 2.0 (rama `develop-v2`)
 
+### Seguridad y saneamiento — FASE 1A (2026-08-02)
+- `security(phase-1a)`: sacar `.env.production` y `dev.db` del tracking de Git
+- `.gitignore` endurecido (`!.env.example`, `*.db`, `*.sqlite`)
+- `.env.example` versionado como plantilla pública completa
+- Auditoría de secretos (`SECURITY_AUDIT.md`) y checklist de rotación (`SECURITY_ROTATION_CHECKLIST.md`)
+- CI/CD: `.github/workflows/verify.yml` (lint + typecheck + build) + `docs/CI_CD.md`
+- Script `typecheck` añadido a `package.json`
+- Unificación de variables de entorno (`docs/ENVIRONMENT_SETUP.md`)
+- Auditoría de ramas (`docs/BRANCH_CLEANUP.md`) y reporte de fase (`docs/PHASE_1A_REPORT.md`)
+
 ### Documentación y fundaciones (2026-08-02)
 - Añadidos `PANITAS_CURRENT_STATE.md`, `DEVELOPMENT_RULES.md` y documentación en `/docs`
 - Creada rama `develop-v2` para el desarrollo de Panitas 2.0
