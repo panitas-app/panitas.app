@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { getCurrentStore, requireRole } from "@/lib/permissions"
 import { getPaginationParams, paginatedResponse } from "@/lib/pagination"
-import { safeStr, requireStr, safeFloat, safeInt, safeBool, safeImages, safeStringArray, LIMITS } from "@/lib/validate"
+import { csrfGuard } from "@/lib/csrf"
+import { rateLimit } from "@/lib/rate-limit"
+import { ProductService } from "@/services/product.service"
+import { toServiceResponse, createdResponse } from "@/services/http"
+import type { StoreServiceContext } from "@/services/context"
+
+const productService = new ProductService()
 
 export async function GET(request: NextRequest) {
   const current = await getCurrentStore()
@@ -13,46 +18,13 @@ export async function GET(request: NextRequest) {
   const q = (searchParams.get("q") || "").slice(0, 100)
   const category = searchParams.get("category") || ""
 
-  const where: any = { storeId: current.store.id }
-  if (q) {
-    where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { sku: { contains: q, mode: "insensitive" } },
-      { barcode: { contains: q, mode: "insensitive" } },
-    ]
-  }
-  if (category) where.categoryId = category
-
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take,
-    }),
-    prisma.product.count({ where }),
-  ])
+  const { products, total } = await productService.list(
+    { storeId: current.store.id, userId: current.userId },
+    { q, category, skip, take }
+  )
 
   return NextResponse.json(paginatedResponse(products, total, page, take))
 }
-
-function generateSku(name: string): string {
-  const prefix = name
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Z0-9]/g, "")
-    .substring(0, 4)
-  const random = Math.floor(1000 + Math.random() * 9000)
-  return prefix ? `${prefix}-${random}` : `PROD-${random}`
-}
-
-import { PLAN_LIMITS, resolvePlanLimitKey } from "@/lib/constants"
-import { csrfGuard } from "@/lib/csrf"
-import { createAuditEntry } from "@/lib/audit"
-import { rateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,139 +41,23 @@ export async function POST(request: NextRequest) {
 
     const current = await requireRole(["admin", "manager", "seller"])
 
-    const storePlan = resolvePlanLimitKey(current.store.plan || "free")
-    const limit = PLAN_LIMITS[storePlan]?.products ?? 30
-
-    if (limit !== -1) {
-      const existingCount = await prisma.product.count({ where: { storeId: current.store.id } })
-      if (existingCount >= limit) {
-        return NextResponse.json(
-          { error: `Has alcanzado el límite de ${limit} productos para tu plan actual (${storePlan.toUpperCase()}). Por favor, actualiza tu plan en Configuración.` },
-          { status: 403 }
-        )
-      }
-    }
-
     let body: any
-    try { body = await request.json() } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }) }
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: "JSON inválido" }, { status: 400 })
+    }
     if (!body || typeof body !== "object") return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 })
 
-    const name = requireStr(body.name, LIMITS.MAX_NAME, 1)
-    if (!name) return NextResponse.json({ error: "Nombre inválido o demasiado largo" }, { status: 400 })
-
-    const price = safeFloat(body.price, LIMITS.MAX_PRICE, 0)
-    if (price === null) return NextResponse.json({ error: "Precio inválido" }, { status: 400 })
-
-    const description = body.description !== undefined ? safeStr(body.description, LIMITS.MAX_DESCRIPTION) : null
-    if (body.description !== undefined && description === null) return NextResponse.json({ error: "Descripción inválida" }, { status: 400 })
-
-    const costPrice = body.costPrice !== undefined ? safeFloat(body.costPrice, LIMITS.MAX_PRICE) : null
-    if (body.costPrice !== undefined && costPrice === null) return NextResponse.json({ error: "Costo inválido" }, { status: 400 })
-
-    const stock = body.stock !== undefined ? safeInt(body.stock, LIMITS.MAX_STOCK) : 0
-    if (body.stock !== undefined && stock === null) return NextResponse.json({ error: "Stock inválido" }, { status: 400 })
-
-    const images = body.images !== undefined ? safeImages(body.images) : []
-    if (body.images !== undefined && images === null) return NextResponse.json({ error: "Imágenes inválidas" }, { status: 400 })
-
-    const skuInput = typeof body.sku === "string" ? body.sku.trim().toUpperCase().slice(0, 32) : ""
-    const finalSku = skuInput || generateSku(name)
-
-    const barcode = typeof body.barcode === "string" ? body.barcode.trim().slice(0, 32) : null
-
-  const isWholesale = safeBool(body.isWholesale)
-  const wholesaleLabel = isWholesale && typeof body.wholesaleLabel === "string" ? body.wholesaleLabel.slice(0, 100) : null
-  const wholesalePrice = isWholesale && body.wholesalePrice !== undefined ? safeFloat(body.wholesalePrice, LIMITS.MAX_PRICE) : null
-  const wholesaleScales = isWholesale && body.wholesaleScales !== undefined ? (() => {
-    const raw = body.wholesaleScales
-    if (typeof raw === "string") {
-      try { return JSON.parse(raw) } catch { return null }
-    }
-    if (!Array.isArray(raw) || raw.length > LIMITS.MAX_WHOLESCALE) return null
-    for (const item of raw) {
-      if (typeof item !== "object" || item === null) return null
-      if (typeof item.quantity !== "number" || typeof item.price !== "number") return null
-      if (item.quantity < 0 || item.price < 0) return null
-    }
-    return raw
-  })() : null
-  if (isWholesale && body.wholesaleScales !== undefined && wholesaleScales === null) {
-    return NextResponse.json({ error: "Escalas mayoristas inválidas" }, { status: 400 })
-  }
-
-  const hasSizes = safeBool(body.hasSizes)
-  const sizes = hasSizes && body.sizes !== undefined ? (() => {
-    if (typeof body.sizes === "string") {
-      try { return JSON.parse(body.sizes) } catch { return null }
-    }
-    if (!Array.isArray(body.sizes) || body.sizes.length > LIMITS.MAX_SIZES) return null
-    for (const item of body.sizes) {
-      if (typeof item !== "object" || item === null) return null
-      if (typeof item.size !== "string" || !item.size.trim()) return null
-      if (item.stock !== null && typeof item.stock !== "number") return null
-    }
-    return body.sizes
-  })() : null
-  if (hasSizes && body.sizes !== undefined && sizes === null) {
-    return NextResponse.json({ error: "Talles inválidos" }, { status: 400 })
-  }
-
-    const unidadBase = safeStr(body.unidadBase, 50) || "Unidad"
-
-    // Digital product fields
-    const productType = body.productType === "digital" ? "digital" : "physical"
-    let digitalProductData: any = undefined
-    if (productType === "digital" && body.digitalProduct) {
-      const dp = body.digitalProduct
-      if (typeof dp.fileUrl !== "string" || !dp.fileUrl.trim()) {
-        return NextResponse.json({ error: "La URL del archivo digital es requerida" }, { status: 400 })
-      }
-      digitalProductData = {
-        fileUrl: dp.fileUrl.slice(0, 2048),
-        fileType: typeof dp.fileType === "string" ? dp.fileType.slice(0, 20) : null,
-        downloadLimit: typeof dp.downloadLimit === "number" ? Math.max(0, dp.downloadLimit) : 5,
-        expirationDays: typeof dp.expirationDays === "number" ? Math.max(0, dp.expirationDays) : 30,
-        instructions: typeof dp.instructions === "string" ? dp.instructions.slice(0, 2000) : null,
-        purchaseMessage: typeof dp.purchaseMessage === "string" ? dp.purchaseMessage.slice(0, 2000) : null,
-      }
+    const ctx: StoreServiceContext = {
+      storeId: current.store.id,
+      userId: current.userId,
+      plan: current.store.plan,
     }
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        description: description || null,
-        price: price!,
-        costPrice,
-        sku: finalSku,
-        barcode,
-        stock: productType === "digital" ? 999999 : (stock ?? 0),
-        unidadBase,
-        productType,
-        images: JSON.stringify(images || []),
-        isActive: body.isActive !== false,
-        categoryId: typeof body.categoryId === "string" ? body.categoryId.slice(0, 64) : null,
-        isWholesale: productType === "physical" ? isWholesale : false,
-        wholesaleLabel: productType === "physical" ? wholesaleLabel : null,
-        wholesalePrice: productType === "physical" ? wholesalePrice : null,
-        wholesaleScales: productType === "physical" && wholesaleScales ? JSON.stringify(wholesaleScales) : null,
-        hasSizes: productType === "physical" ? hasSizes : false,
-        sizes: productType === "physical" && sizes ? JSON.stringify(sizes) : null,
-        storeId: current.store.id,
-        ...(digitalProductData ? { digitalProduct: { create: digitalProductData } } : {}),
-      },
-    })
-
-    const productWithCategory = await prisma.product.findUnique({
-      where: { id: product.id },
-      include: { category: true },
-    })
-
-    await createAuditEntry({ action: "product.created", entity: "Product", entityId: product.id, storeId: current.store.id, userId: current.userId })
-
-    return NextResponse.json(productWithCategory, { status: 201 })
+    const product = await productService.create(ctx, body)
+    return createdResponse(product)
   } catch (err) {
-    console.error("[Product Create Error]", err)
-    const message = err instanceof Error ? err.message : "Error desconocido"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return toServiceResponse(err)
   }
 }

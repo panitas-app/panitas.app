@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { getCurrentStore } from "@/lib/permissions"
 import { getPaginationParams, paginatedResponse } from "@/lib/pagination"
+import { CustomerService } from "@/services/customer.service"
+
+const customerService = new CustomerService()
 
 export async function GET(req: Request) {
   try {
@@ -14,27 +16,10 @@ export async function GET(req: Request) {
     const sort = searchParams.get("sort") || "name"
     const order = searchParams.get("order") || "asc"
 
-    const where: any = { storeId: current.store.id }
-    if (q) {
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { phone: { contains: q } },
-        { email: { contains: q, mode: "insensitive" } },
-        { documentId: { contains: q, mode: "insensitive" } },
-      ]
-    }
-
-    const orderBy: any = {}
-    if (sort === "name") orderBy.name = order
-    else if (sort === "totalSpent") orderBy.totalSpent = order
-    else if (sort === "totalOrders") orderBy.totalOrders = order
-    else if (sort === "lastPurchaseAt") orderBy.lastPurchaseAt = order
-    else orderBy.name = "asc"
-
-    const [customers, total] = await Promise.all([
-      prisma.customer.findMany({ where, orderBy, skip, take }),
-      prisma.customer.count({ where }),
-    ])
+    const { customers, total } = await customerService.list(
+      { storeId: current.store.id, userId: current.userId },
+      { q, sort, order, skip, take }
+    )
 
     return NextResponse.json(paginatedResponse(customers, total, page, take))
   } catch {

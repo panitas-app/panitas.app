@@ -45,6 +45,10 @@
 - **`app/`** — rutas y páginas (App Router). UI + Server Components + API handlers.
 - **`components/`** — 125 componentes React (ui, store, dashboard, admin, scanner, booking).
 - **`lib/`** — lógica de negocio y servicios: `prisma.ts`, `auth.ts`, `ai.ts`, `bcv.ts`, `email.ts`, `twilio.ts`, `pusher.ts`, `csrf.ts`, `rate-limit.ts`, `permissions.ts`, `import-engine.ts`, `data-cache.ts`, `orders.ts`, `plans.ts`.
+- **`services/`** — *(FASE 1B)* capa de servicios de negocio sobre repositorios. `errors.ts`, `context.ts`, `http.ts`, `product.service.ts`, `inventory.service.ts`, `customer.service.ts`, `agenda.service.ts`, `order.service.ts`.
+- **`repositories/`** — *(FASE 1B)* acceso a datos puro (Prisma), sin lógica de negocio: `product`, `customer`, `inventory`, `agenda`, `order`, `sales`, `payment`.
+- **`events/`** — *(FASE 1B)* bus de eventos tipado: `event.service.ts` (eventos `sale.created`, `product.low_stock`, `appointment.created`, `customer.created`).
+- **`lib/agent/`** — *(FASE 1B)* esqueleto del agente: `types`, `registry`, `router`, `context`, `memory`, `permissions` + tools de ejemplo.
 - **`types/`** — tipos compartidos entre tienda y template.
 - **`hooks/`** — hooks de cliente.
 
@@ -61,6 +65,20 @@
 ---
 
 ## 2. Arquitectura destino (Panitas 2.0)
+
+### 2.0. FASE 1B — Capa Service/Repository (en curso)
+
+La migración de los route handlers "gordos" hacia una capa de servicios es progresiva y quirúrgica: se migran rutas preservando exactamente códigos de estado, mensajes y validaciones. Las rutas migradas hoy delegan en los servicios y pierden lógica inline.
+
+**Flujo de una petición migrada:**
+
+```
+Route handler (thin) → auth/csrf/rate-limit/parseo → Service (validación + lógica + eventos)
+                                                     → Repository (solo Prisma)
+                                                     → AuditLog + EventService
+```
+
+**Rutas migradas en FASE 1B:** `GET/POST /api/products`, `GET/PUT/DELETE /api/products/[id]`, `GET/POST /api/products/stock`, `GET /api/customers`, `GET/POST /api/appointments`, `GET/POST /api/orders`. El resto de handlers (~155) conservan acceso directo a Prisma hasta su migración incremental.
 
 ### 2.1 Visión: Agente Empresarial
 
