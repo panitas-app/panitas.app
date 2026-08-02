@@ -64,6 +64,30 @@
 
 ---
 
+## FASE 3E — Auditoría, limpieza y estabilización (2026-08-02, `develop-v2`)
+
+> Sin nuevas features ni capacidades IA. Base `4484b01` (FASE 3D). Reporte completo: `docs/PHASE_3E_STABILIZATION_REPORT.md`.
+
+### Seguridad
+- `security(orders)`: `OrderService.create` rechaza `403 "No autorizado"` si `body.storeId` difiere del contexto autenticado; `storeId` se deriva siempre del contexto
+- `security(repository)`: `ProductRepository.findByIds(ids, storeId?)` filtra por `storeId`; `OrderService` lo usa con el storeId autenticado
+- `security(agent)`: gate `requireFeature(plan, "basic_ai")` en `POST /api/agent/chat` → `403` si el plan no lo incluye (red de seguridad)
+
+### Limpieza
+- `chore(dead-code)`: eliminados 56 archivos trackeados (logs dev, `test-api.cjs`, `posthog-setup-report.md`, `instrumentation-client.ts`, imágenes/archivos de cliente, `temp-sources/*.mp4`, `temp-vp9/*.webm`, `data/*`)
+
+### Rendimiento
+- `perf(schema)`: 11 índices en 5 modelos (`Product`, `OrderItem`, `OrderPayment`, `Expense`, `Collection`) aplicados vía `db:push` con backup previo
+
+### Calidad
+- `test(agent)`: `tests/agent-core/wiring.test.ts` (4) — el Tool System 3B funciona cuando se cablea; `tests/features/chat-gate.test.ts` (3) — gate de plan en chat API; `test(orders)`: scope de `findByIds` al storeId autenticado
+- Verificación final: lint limpio en tocados · `tsc --noEmit` OK · 273 tests verdes · `next build` OK
+
+### Docs
+- `docs/PHASE_3E_FULL_AUDIT.md`, `docs/DEAD_CODE_REPORT.md`, `docs/SECURITY_AUDIT_REPORT.md`, `docs/AI_ARCHITECTURE_REVIEW.md`, `docs/DATABASE_OPTIMIZATION.md`, `docs/PANITAS_CURRENT_STATE.md`, `docs/PHASE_3E_STABILIZATION_REPORT.md`
+
+---
+
 ## Historial previo (resumen)
 
 > Registro informal reconstruido desde `git log` de la rama `main`.

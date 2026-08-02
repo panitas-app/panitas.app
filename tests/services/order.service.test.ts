@@ -82,12 +82,21 @@ describe("OrderService.create", () => {
     vi.clearAllMocks()
   })
 
-  it("rejects unknown storeId with 404", async () => {
-    const deps = makeDeps({ repo: { findStoreById: vi.fn().mockResolvedValue(null) } })
+  it("rejects a storeId that differs from the authenticated context with 403", async () => {
+    const deps = makeDeps()
     const service = serviceWith(deps)
     await expect(
       service.create(ctx, { storeId: "s-other", items: [{ productId: "p1", quantity: 1 }] })
-    ).rejects.toMatchObject({ message: "Tienda no encontrada", status: 404 })
+    ).rejects.toMatchObject({ message: "No autorizado", status: 403 })
+    expect(deps.repo.create).not.toHaveBeenCalled()
+  })
+
+  it("scopes product lookup and order creation to the authenticated storeId", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await service.create(ctx, { items: [{ productId: "p1", quantity: 1 }] })
+    expect(deps.productRepo.findByIds).toHaveBeenCalledWith(["p1"], "store-1")
+    expect(deps.repo.create.mock.calls[0][0].storeId).toBe("store-1")
   })
 
   it("rejects missing products with 400", async () => {

@@ -34,9 +34,9 @@ export class ProductRepository {
     })
   }
 
-  findByIds(ids: string[]): Promise<ProductPricing[]> {
+  findByIds(ids: string[], storeId?: string): Promise<ProductPricing[]> {
     return this.db.product.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, ...(storeId ? { storeId } : {}) },
       select: {
         id: true,
         stock: true,

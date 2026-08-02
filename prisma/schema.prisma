@@ -375,6 +375,8 @@ model Collection {
   store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   products Product[]
+
+  @@index([storeId])
 }
 
 model Product {
@@ -419,6 +421,11 @@ model Product {
   orderItems OrderItem[]
   presentations ProductPresentation[]
   stockMovements StockMovement[]
+
+  @@index([storeId])
+  @@index([storeId, isActive])
+  @@index([sku])
+  @@index([barcode])
 }
 
 model PaymentAccount {
@@ -588,6 +595,8 @@ model OrderItem {
   digitalDeliveries DigitalDelivery[]
 
   @@index([employeeId])
+  @@index([orderId])
+  @@index([productId])
 }
 
 model OrderPayment {
@@ -607,6 +616,9 @@ model OrderPayment {
 
   paymentAccountId String?
   paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([paymentAccountId])
 }
 
 // POS — Cuotas / Crédito
@@ -719,6 +731,9 @@ model Expense {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([storeId, date])
 }
 
 model ExpenseBudget {

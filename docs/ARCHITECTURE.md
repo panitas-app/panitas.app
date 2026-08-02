@@ -111,6 +111,24 @@ Route handler (thin) → auth/csrf/rate-limit/parseo → Service (validación + 
 4. El agente respeta **permisos y roles** (`permissions.ts`, `roles.ts`).
 5. Los crones de `vercel.json` migran a "tareas del agente" sin perder las garantías actuales.
 
+### 2.3 Estado de la transición IA (FASE 3A–3E)
+
+Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITECTURE_REVIEW.md`:
+
+```
+┌─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
+├─ src/lib/agent/tools/  (3B)  Tool System — 7 dominios, registry, executor, bridge       [C+]
+├─ src/lib/conversation/ (3C)  Conversation Engine — chat con contexto y tools            [A−]
+├─ src/lib/agent/memory/ (3D)  Memory — extracción, clasificación, retención de contexto  [B+]
+├─ src/lib/agent/profile/(3D)  Business Context Profile — análisis de negocio             [A−]
+└─ src/lib/agent/        (1C)  Legado — registry/router/types (parcialmente usado)       [D]
+```
+
+- **Estado de cableado**: el Tool System 3B está construido y testeado pero **inerte** — `setupAgentTools()` nunca se invoca y el `ToolResolver` (3A) se crea sin `toolsProvider`, por lo que la capa de tools no se conecta al runtime. Decisión de la FASE 3E: **documentar, no cablear**. El puente `toLegacyAgentTool` (3B→1C) y `buildToolRegistry` quedan verificados por `tests/agent-core/wiring.test.ts` para una fase futura.
+- **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
+- **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
+- **Memoria**: capa 3D con `MemoryManager` + `ProfileService`, sin wiring al pipeline de chat aún.
+
 ---
 
 ## 3. Decisiones arquitectónicas clave

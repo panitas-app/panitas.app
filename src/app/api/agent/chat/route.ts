@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireRole } from "@/lib/permissions"
+import { requireFeature } from "@/lib/features"
 import { csrfGuard } from "@/lib/csrf"
 import { rateLimit } from "@/lib/rate-limit"
 import { toServiceResponse } from "@/services/http"
@@ -39,6 +40,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const current = await requireRole(["admin", "manager", "seller", "viewer"])
+
+    const gate = requireFeature(current.store.plan, "basic_ai")
+    if (!gate.allowed) {
+      return NextResponse.json({ error: gate.error }, { status: 403 })
+    }
 
     const body = await request.json()
     const message = typeof body?.message === "string" ? body.message.trim() : ""

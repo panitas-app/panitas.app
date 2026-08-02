@@ -194,19 +194,16 @@ export class OrderService {
   async create(ctx: StoreServiceContext, body: OrderCreateInput) {
     const isPosOrder = body.source === "pos"
 
-    let storeId = body.storeId
-    if (!storeId) {
-      storeId = ctx.storeId
-    } else {
-      const storeExists = await this.repo.findStoreById(storeId)
-      if (!storeExists) {
-        throw serviceError("Tienda no encontrada", 404)
-      }
+    // Aislamiento multi-tenant: la tienda siempre se deriva del contexto autenticado.
+    // Un `storeId` distinto en el body es un intento de cruzar de negocio.
+    const storeId = ctx.storeId
+    if (body.storeId && body.storeId !== ctx.storeId) {
+      throw serviceError("No autorizado", 403)
     }
 
     // ─── Products: fetch real prices from DB ───
     const productIds = body.items!.map((i) => i.productId)
-    const products = await this.productRepo.findByIds(productIds)
+    const products = await this.productRepo.findByIds(productIds, storeId)
     const productMap = new Map(products.map((p) => [p.id, p]))
 
     // Check missing
