@@ -79,4 +79,48 @@ export class CustomerRepository {
       data: { lastPurchaseAt: date },
     })
   }
+
+  /** Métricas de la cartera: totales, nuevos, recurrentes, inactivos y valor medio. */
+  async metrics(storeId: string, inactiveDays = 60) {
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+
+    const inactiveCutoff = new Date()
+    inactiveCutoff.setDate(inactiveCutoff.getDate() - inactiveDays)
+
+    const [total, newThisMonth, recurrent, inactive, spent] = await Promise.all([
+      this.db.customer.count({ where: { storeId, isActive: true } }),
+      this.db.customer.count({ where: { storeId, createdAt: { gte: monthStart } } }),
+      this.db.customer.count({ where: { storeId, totalOrders: { gt: 1 } } }),
+      this.db.customer.count({
+        where: {
+          storeId,
+          isActive: true,
+          OR: [{ lastPurchaseAt: null }, { lastPurchaseAt: { lt: inactiveCutoff } }],
+        },
+      }),
+      this.db.customer.aggregate({ where: { storeId }, _sum: { totalSpent: true } }),
+    ])
+
+    return {
+      total,
+      newThisMonth,
+      recurrent,
+      inactive,
+      inactiveDays,
+      averageCustomerValue: total > 0 ? (spent._sum.totalSpent ?? 0) / total : 0,
+      totalSpent: spent._sum.totalSpent ?? 0,
+    }
+  }
+
+  /** Historial de pedidos de un cliente. */
+  ordersByCustomer(storeId: string, customerId: string, take = 20) {
+    return this.db.order.findMany({
+      where: { storeId, customerId },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { items: true },
+    })
+  }
 }

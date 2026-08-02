@@ -123,8 +123,39 @@ export class OrderRepository {
     })
   }
 
+  incrementStock(productId: string, quantity: number) {
+    return this.db.product.update({
+      where: { id: productId },
+      data: { stock: { increment: quantity } },
+    })
+  }
+
   recordStockMovement(data: Prisma.StockMovementUncheckedCreateInput) {
     return this.db.stockMovement.create({ data })
+  }
+
+  /** Pedidos pendientes de atender. */
+  pending(storeId: string, take = 50) {
+    return this.db.order.findMany({
+      where: { storeId, status: "pending" },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { items: { include: { product: true } }, payments: true },
+    })
+  }
+
+  /** Pedidos de tienda online (no POS) en un rango. */
+  online(storeId: string, from?: Date, to?: Date) {
+    return this.db.order.findMany({
+      where: {
+        storeId,
+        posPin: false,
+        status: { not: "cancelled" },
+        createdAt: from || to ? { gte: from, lte: to ?? undefined } : undefined,
+      },
+      orderBy: { createdAt: "desc" },
+      include: { items: { include: { product: true } }, payments: true },
+    })
   }
 
   updateCouponUsedCount(id: string) {

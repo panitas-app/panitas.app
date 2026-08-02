@@ -5,6 +5,7 @@ import { sendEmail, enviarLinkDescargaDigital } from "@/lib/email"
 import { templateOrderPaymentVerified } from "@/lib/email-templates"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
+import { eventService } from "@/events/event.service"
 
 export async function POST(
   request: NextRequest,
@@ -66,6 +67,21 @@ export async function POST(
     }
 
     await createAuditEntry({ action: "payment.verified", entity: "OrderPayment", entityId: paymentId, storeId: current.store.id, userId: current.userId })
+
+    // ─── Events: sale/order completed ───
+    eventService.emit("sale.completed", {
+      orderId: id,
+      storeId: current.store.id,
+      orderNumber: updated.orderNumber,
+      total: updated.total,
+    })
+    eventService.emit("order.completed", {
+      orderId: id,
+      storeId: current.store.id,
+      orderNumber: updated.orderNumber,
+      total: updated.total,
+      paymentStatus: updated.paymentStatus,
+    })
 
     // ─── Digital delivery: generate tokens and send download email ───
     const digitalItems = updated.items.filter(
@@ -138,13 +154,14 @@ export async function POST(
     }
 
     return NextResponse.json(updated)
-  } catch (error: any) {
-    if (error?.message?.includes("No tienes")) {
-      return NextResponse.json({ error: error.message }, { status: 403 })
+  } catch (error) {
+    const err = error as { message?: string }
+    if (err?.message?.includes("No tienes")) {
+      return NextResponse.json({ error: err.message }, { status: 403 })
     }
     console.error("Verify payment error:", error)
     return NextResponse.json(
-      { error: error?.message || "Error al verificar el pago" },
+      { error: err?.message || "Error al verificar el pago" },
       { status: 500 }
     )
   }

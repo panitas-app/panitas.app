@@ -46,4 +46,46 @@ export class SalesRepository {
       include: { items: true },
     })
   }
+
+  /** Productos vendidos (por cantidad) en un rango, excluyendo canceladas. */
+  topProducts(storeId: string, from?: Date, to?: Date, take = 10) {
+    return this.db.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        order: {
+          storeId,
+          status: { not: "cancelled" },
+          createdAt: from || to ? { gte: from, lte: to ?? undefined } : undefined,
+        },
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take,
+    })
+  }
+
+  /** Clientes con más compras en un rango (con total gastado). */
+  frequentCustomers(storeId: string, from?: Date, to?: Date, take = 10) {
+    return this.db.order.groupBy({
+      by: ["customerId"],
+      where: {
+        storeId,
+        customerId: { not: null },
+        status: { not: "cancelled" },
+        createdAt: from || to ? { gte: from, lte: to ?? undefined } : undefined,
+      },
+      _count: { _all: true },
+      _sum: { total: true },
+      orderBy: { _sum: { total: "desc" } },
+      take,
+    })
+  }
+
+  productsByIds(ids: string[]) {
+    return this.db.product.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+  }
+
+  customersByIds(ids: string[]) {
+    return this.db.customer.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, phone: true } })
+  }
 }

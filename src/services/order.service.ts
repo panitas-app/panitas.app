@@ -89,6 +89,29 @@ export class OrderService {
     return order
   }
 
+  /** Pedidos pendientes de atender (futuro: feed del agente). */
+  getPending(ctx: StoreServiceContext, take = 50) {
+    return this.repo.pending(ctx.storeId, take)
+  }
+
+  /** Pedidos de tienda online (no POS) en un rango, con resumen. */
+  async onlineSales(ctx: StoreServiceContext, from?: string, to?: string) {
+    const orders = await this.repo.online(
+      ctx.storeId,
+      from ? new Date(from) : undefined,
+      to ? new Date(to) : undefined
+    )
+    const revenue = orders.reduce((sum, o) => sum + o.total, 0)
+    const totalItems = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
+    return {
+      orders,
+      count: orders.length,
+      revenue,
+      totalItems,
+      averageTicket: orders.length > 0 ? revenue / orders.length : 0,
+    }
+  }
+
   async create(ctx: StoreServiceContext, body: OrderCreateInput) {
     const isPosOrder = body.source === "pos"
 

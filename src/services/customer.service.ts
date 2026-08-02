@@ -21,6 +21,16 @@ export type CustomerFindOrCreateInput = {
   state?: string | null
 }
 
+export type CustomerMetrics = {
+  total: number
+  newThisMonth: number
+  recurrent: number
+  inactive: number
+  inactiveDays: number
+  averageCustomerValue: number
+  totalSpent: number
+}
+
 export class CustomerService {
   constructor(private readonly repo = new CustomerRepository()) {}
 
@@ -62,6 +72,40 @@ export class CustomerService {
     const customer = await this.repo.findById(customerId)
     if (!customer) throw serviceError("Cliente no encontrado", 404)
     if (customer.storeId !== ctx.storeId) throw serviceError("No autorizado", 403)
-    return this.repo.updateTotals(customerId, totalSpentInc, totalOrdersInc)
+    const updated = await this.repo.updateTotals(customerId, totalSpentInc, totalOrdersInc)
+
+    eventService.emit("customer.updated", {
+      customerId,
+      storeId: ctx.storeId,
+      name: customer.name,
+      totalSpent: updated.totalSpent,
+      totalOrders: updated.totalOrders,
+    })
+
+    return updated
+  }
+
+  /** Métricas de la cartera de clientes de la tienda. */
+  metrics(ctx: StoreServiceContext, inactiveDays = 60): Promise<CustomerMetrics> {
+    return this.repo.metrics(ctx.storeId, inactiveDays)
+  }
+
+  /** Historial de compras de un cliente (con items). */
+  async getHistory(ctx: StoreServiceContext, customerId: string, take = 20) {
+    const customer = await this.repo.findById(customerId)
+    if (!customer) throw serviceError("Cliente no encontrado", 404)
+    if (customer.storeId !== ctx.storeId) throw serviceError("No autorizado", 403)
+    const orders = await this.repo.ordersByCustomer(ctx.storeId, customerId, take)
+    return {
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        totalSpent: customer.totalSpent,
+        totalOrders: customer.totalOrders,
+        lastPurchaseAt: customer.lastPurchaseAt,
+      },
+      orders,
+    }
   }
 }

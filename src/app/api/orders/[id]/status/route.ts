@@ -5,6 +5,7 @@ import { csrfGuard } from "@/lib/csrf"
 import { sendEmail } from "@/lib/email"
 import { templateOrderShipped } from "@/lib/email-templates"
 import { createAuditEntry } from "@/lib/audit"
+import { eventService } from "@/events/event.service"
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
@@ -29,13 +30,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (status === "cancelled") {
       const order = await prisma.order.findUnique({
         where: { id },
-        select: { status: true, total: true, customerId: true, items: { select: { productId: true, quantity: true } } },
+        select: { status: true, total: true, customerId: true, orderNumber: true, items: { select: { productId: true, quantity: true } } },
       })
       if (order && order.status !== "cancelled") {
         for (const item of order.items) {
-          await prisma.product.update({
+          const restored = await prisma.product.update({
             where: { id: item.productId },
             data: { stock: { increment: item.quantity } },
+          })
+          await prisma.stockMovement.create({
+            data: {
+              type: "return",
+              quantity: item.quantity,
+              balance: restored.stock,
+              concept: `Cancelación #${order.orderNumber}`,
+              reference: id,
+              productId: item.productId,
+              storeId: store.id,
+            },
           })
         }
         if (order.customerId) {
@@ -72,6 +84,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     await createAuditEntry({ action: "order.status_changed", entity: "Order", entityId: id, metadata: { oldStatus: existing.status, newStatus: status }, storeId: store.id, userId })
+
+    // ─── Events: sale/order cancelled ───
+    if (status === "cancelled" && existing.status !== "cancelled") {
+      eventService.emit("sale.cancelled", {
+        orderId: id,
+        storeId: store.id,
+        orderNumber: updated.orderNumber,
+        total: updated.total,
+      })
+      eventService.emit("order.cancelled", {
+        orderId: id,
+        storeId: store.id,
+        orderNumber: updated.orderNumber,
+        total: updated.total,
+      })
+
+      if (updated.customerId) {
+        const customer = await prisma.customer.findUnique({
+          where: { id: updated.customerId },
+          select: { name: true, totalSpent: true, totalOrders: true },
+        })
+        if (customer) {
+          eventService.emit("customer.updated", {
+            customerId: updated.customerId,
+            storeId: store.id,
+            name: customer.name,
+            totalSpent: customer.totalSpent,
+            totalOrders: customer.totalOrders,
+          })
+        }
+      }
+    }
 
     // Send "dispatched" email to customer when status changes to shipped
     if (status === "shipped" && updated.customerEmail) {

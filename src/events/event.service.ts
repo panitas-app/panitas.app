@@ -5,12 +5,37 @@ export type AppEvents = {
     total: number
     orderNumber: string
   }
+  "sale.completed": {
+    orderId: string
+    storeId: string
+    total: number
+    orderNumber: string
+  }
+  "sale.cancelled": {
+    orderId: string
+    storeId: string
+    total: number
+    orderNumber: string
+  }
   "order.created": {
     orderId: string
     storeId: string
     orderNumber: string
     total: number
     paymentStatus: string
+  }
+  "order.completed": {
+    orderId: string
+    storeId: string
+    orderNumber: string
+    total: number
+    paymentStatus: string
+  }
+  "order.cancelled": {
+    orderId: string
+    storeId: string
+    orderNumber: string
+    total: number
   }
   "product.created": {
     productId: string
@@ -23,6 +48,23 @@ export type AppEvents = {
     storeId: string
     name: string
     sku: string
+  }
+  "inventory.created": {
+    productId: string
+    storeId: string
+    productName: string
+    sku: string
+    stock: number
+  }
+  "inventory.updated": {
+    productId: string
+    storeId: string
+    productName: string
+    stock: number
+    /** Variación de stock aplicada (positiva = entrada, negativa = salida). */
+    delta: number
+    /** Razón del movimiento: sale, purchase, adjustment, product_edit... */
+    reason: string
   }
   "inventory.low_stock": {
     productId: string
@@ -40,6 +82,13 @@ export type AppEvents = {
     customerId: string
     storeId: string
     name: string
+  }
+  "customer.updated": {
+    customerId: string
+    storeId: string
+    name: string
+    totalSpent: number
+    totalOrders: number
   }
 }
 

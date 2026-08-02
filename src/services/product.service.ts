@@ -198,6 +198,14 @@ export class ProductService {
       sku: productWithCategory?.sku ?? finalSku,
     })
 
+    eventService.emit("inventory.created", {
+      productId: product.id,
+      storeId: ctx.storeId,
+      productName: productWithCategory?.name ?? name,
+      sku: productWithCategory?.sku ?? finalSku,
+      stock: product.stock,
+    })
+
     return productWithCategory
   }
 
@@ -356,6 +364,17 @@ export class ProductService {
       name: updated?.name ?? product.name,
       sku: updated?.sku ?? product.sku ?? "",
     })
+
+    if (body.stock !== undefined && updated) {
+      eventService.emit("inventory.updated", {
+        productId: id,
+        storeId: ctx.storeId,
+        productName: updated.name,
+        stock: updated.stock,
+        delta: updated.stock - product.stock,
+        reason: "product_edit",
+      })
+    }
 
     return updated
   }

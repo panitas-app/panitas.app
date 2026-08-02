@@ -2,6 +2,7 @@
 
 > Fuente de verdad: `src/events/event.service.ts` (`AppEvents`).
 > Emitidos por los servicios (no por las rutas). El agente IA podrá suscribirse para actuar de forma proactiva.
+> Actualizado en FASE 2C: nuevos eventos de negocio en `sale.*`, `order.*`, `inventory.*` y `customer.updated`.
 
 ---
 
@@ -124,11 +125,82 @@ const off = eventService.on("inventory.low_stock", (p) => {
 
 ---
 
-## 8. Eventos planificados (futuro)
+## 8. `inventory.created`
+
+| Atributo | Valor |
+|---|---|
+| **Cuándo ocurre** | Al crear un producto nuevo (stock inicial) en `ProductService.create`. |
+| **Payload** | `{ productId, storeId, productName, stock }` |
+| **Emisor** | `ProductService.create` |
+
+**Futuros usos con IA**
+- Notificar alta de SKU en el inventario.
+- Validar si el stock inicial coincide con una compra planificada.
+
+---
+
+## 9. `inventory.updated`
+
+| Atributo | Valor |
+|---|---|
+| **Cuándo ocurre** | En cada movimiento de stock: `InventoryService.applyMovement` (increase/decrease/adjustment) y en cambios de stock vía `ProductService`. |
+| **Payload** | `{ productId, storeId, productName, stock, delta, reason }` (reason = `"increase"` \| `"decrease"` \| `"adjustment"` \| `"sale"` \| `"return"` ...) |
+| **Emisor** | `InventoryService.applyMovement`, `ProductService` |
+
+**Futuros usos con IA**
+- Mantener una visión de inventario en tiempo real.
+- Detectar caídas bruscas de stock para sugerir compras.
+- Conciliar devoluciones/cancelaciones con el flujo de stock.
+
+---
+
+## 10. `sale.completed` / `order.completed`
+
+| Atributo | Valor |
+|---|---|
+| **Cuándo ocurre** | Al verificar el pago de una orden (`verify-payment`), el pedido pasa a pagado. |
+| **Payload** | `sale.completed`: `{ orderId, storeId, orderNumber, total }` · `order.completed`: `{ orderId, storeId, orderNumber, total, paymentStatus }` |
+| **Emisor** | Ruta `POST /api/orders/[id]/verify-payment` |
+
+**Futuros usos con IA**
+- Confirmar cobro al dueño y marcar venta como cerrada.
+- Disparar reportes diarios de cobros verificados.
+
+---
+
+## 11. `sale.cancelled` / `order.cancelled`
+
+| Atributo | Valor |
+|---|---|
+| **Cuándo ocurre** | Al cancelar una orden (cambio de estado a `cancelled`): se restaura stock (movimiento `return`) y se descuentan totales del cliente. |
+| **Payload** | `{ orderId, storeId, orderNumber, total }` |
+| **Emisor** | Ruta `PATCH /api/orders/[id]/status` |
+
+**Futuros usos con IA**
+- Ajustar métricas de ventas (ventas netas sin canceladas).
+- Conciliar devoluciones y avisar sobre reposición de stock.
+
+---
+
+## 12. `customer.updated`
+
+| Atributo | Valor |
+|---|---|
+| **Cuándo ocurre** | Al actualizar totales/órdenes de un cliente (`updateTotals`) o al cancelar una orden que lo afectaba. |
+| **Payload** | `{ customerId, storeId, name, totalSpent, totalOrders }` |
+| **Emisor** | `CustomerService.updateTotals`, ruta `PATCH /api/orders/[id]/status` |
+
+**Futuros usos con IA**
+- Recalcular segmentación por gasto (vip, frecuente, nuevo).
+- Detectar caídas de actividad para campañas de reactivación.
+
+---
+
+## 13. Eventos planificados (futuro)
 
 | Evento | Propósito IA |
 |---|---|
-| `order.status_changed` | Seguimiento y notificaciones de estado |
+| `order.status_changed` | Seguimiento granular por cada transición de estado |
 | `appointment.cancelled` | Liberar huecos y ofrecer re-agenda |
 | `payment.received` | Conciliación y alertas de cobro |
 | `subscription.renewed` / `subscription.expiring` | Retención y cobro |
