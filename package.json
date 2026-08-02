@@ -12,6 +12,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "admin": "node scripts/admin-cli.mjs",
     "db:backup": "node scripts/backup-db.js",
     "db:restore": "node scripts/restore-db.js",
