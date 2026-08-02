@@ -2,9 +2,9 @@ import { getCurrentStore } from "@/lib/permissions"
 import { redirect } from "next/navigation"
 import { MessageCircle } from "lucide-react"
 
-import { FeatureLockCard } from "@/components/ui/feature-lock-card"
+import { FeatureLockScreen } from "@/components/ui/feature-lock-screen"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { isPlusPlan } from "@/lib/feature-flags"
+import { hasFeature } from "@/lib/features"
 
 export const metadata = {
   title: "Conversaciones — Panitas",
@@ -14,10 +14,10 @@ export default async function ConversacionesPage() {
   const current = await getCurrentStore()
   if (!current) redirect("/choose-plan")
 
-  const planIdOrType = current.store.plan || current.store.planType || "tienda"
-  const isPlus = isPlusPlan(planIdOrType)
+  const planRef = { plan: current.store.plan, planType: current.store.planType }
+  const canUseChat = hasFeature(planRef, "unified_chat")
 
-  if (!isPlus) {
+  if (!canUseChat) {
     return (
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
@@ -26,7 +26,7 @@ export default async function ConversacionesPage() {
             Centraliza el chat con tus clientes desde un solo lugar.
           </p>
         </div>
-        <FeatureLockCard feature="conversaciones" />
+        <FeatureLockScreen feature="unified_chat" />
       </div>
     )
   }

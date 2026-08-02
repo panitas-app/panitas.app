@@ -1,3 +1,6 @@
+import { hasFeature as hasFeatureInPlan, isBusinessPlus } from "@/lib/features"
+import type { FeatureKey } from "@/lib/features"
+
 export type PanitasPlan = "negocios" | "negocios_plus"
 
 export type PanitasFeature =
@@ -31,26 +34,22 @@ export const PANITAS_FEATURE_DESCRIPTIONS: Record<PanitasFeature, string> = {
   recomendaciones_comerciales: "Sugerencias de productos y precios para cada cliente.",
 }
 
-/** Características exclusivas del plan Plus */
-const PLUS_FEATURES: PanitasFeature[] = [
-  "conversaciones",
-  "asistente_ia",
-  "sugerencias_ia",
-  "intencion_cliente",
-  "clientes_interesados",
-  "recomendaciones_comerciales",
-]
+/** Mapeo de features de FASE 2A a las features canónicas de la capa central. */
+const FEATURE_TO_KEY: Record<PanitasFeature, FeatureKey> = {
+  conversaciones: "unified_chat",
+  asistente_ia: "basic_ai",
+  sugerencias_ia: "ai_reply_suggestions",
+  intencion_cliente: "customer_analysis",
+  clientes_interesados: "customer_analysis",
+  recomendaciones_comerciales: "sales_opportunities",
+}
 
+/**
+ * Compatibilidad con FASE 2A: delega en la capa central `src/lib/features/`.
+ * `asistente_ia` ya no es Plus: es `basic_ai`, incluido en Panitas Negocios.
+ */
 export function isPlusPlan(planIdOrType: string | null | undefined): boolean {
-  if (!planIdOrType) return false
-  const p = planIdOrType.toLowerCase()
-  return (
-    p === "negocios_plus" ||
-    p === "plus" ||
-    p === "mayorista" ||
-    p === "empresa" ||
-    p === "empresarial"
-  )
+  return isBusinessPlus(planIdOrType)
 }
 
 export function getPanitasPlan(planIdOrType: string | null | undefined): PanitasPlan {
@@ -61,6 +60,5 @@ export function canUseFeature(
   planIdOrType: string | null | undefined,
   feature: PanitasFeature,
 ): boolean {
-  if (!PLUS_FEATURES.includes(feature)) return true
-  return isPlusPlan(planIdOrType)
+  return hasFeatureInPlan(planIdOrType, FEATURE_TO_KEY[feature])
 }

@@ -7,13 +7,16 @@ import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PANITAS_FEATURE_DESCRIPTIONS, PANITAS_FEATURE_LABELS, type PanitasFeature } from "@/lib/feature-flags"
+import { featureDescription, featureLabel, type FeatureKey } from "@/lib/features"
+import type { PanitasFeature } from "@/lib/feature-flags"
+
+type LockFeature = FeatureKey | PanitasFeature
 
 export function FeatureLockCard({
   feature,
   className,
 }: {
-  feature: PanitasFeature
+  feature: LockFeature
   className?: string
 }) {
   return (
@@ -30,18 +33,18 @@ export function FeatureLockCard({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-foreground">{PANITAS_FEATURE_LABELS[feature]}</p>
+            <p className="text-sm font-bold text-foreground">{featureLabel(feature)}</p>
             <Badge className="rounded-full border-transparent bg-brand px-1.5 py-0 text-[9px] font-extrabold uppercase tracking-wider text-black">
               Plus
             </Badge>
           </div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            {PANITAS_FEATURE_DESCRIPTIONS[feature]}
+            {featureDescription(feature)}
           </p>
-          <Link href="/pricing" className="mt-3 inline-flex">
+          <Link href="/planes" className="mt-3 inline-flex">
             <Button variant="secondary" size="sm" className="gap-1.5 rounded-xl">
               <Sparkles className="size-3.5" />
-              Desbloquear con Plus
+              Actualizar a Panitas Plus
             </Button>
           </Link>
         </div>
