@@ -11,6 +11,9 @@ import { DashboardTourHandler } from "@/components/dashboard/dashboard-tour-hand
 import { BcvRateProvider } from "@/lib/bcv-context"
 import { InstallmentOverdueBanner } from "@/components/dashboard/installment-overdue-banner"
 import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
+import { AssistantProvider } from "@/components/assistant/assistant-provider"
+import { AssistantPanel } from "@/components/assistant/assistant-panel"
+import { AssistantFab } from "@/components/assistant/assistant-fab"
 
 function isRedirectError(error: any): boolean {
   return (
@@ -94,45 +97,49 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
     : (!!current.store.description && !!current.store.name)
 
   return (
-    <DashboardTourHandler planType={planType}>
-      <BcvRateProvider initialRate={bcvRate} initialShowBolivares={current.store.showBolivares ?? true}>
-        <SetupWizardProvider
-          storeId={current.store.id}
-          negocioId={current.store.negocioId}
-          planId={negocio?.planId || "comercio"}
-          planType={planType}
-          storeSetupComplete={storeSetupComplete}
-        >
-          <div className="flex min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
-            <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
-            <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
-              <DashboardTopbar
-              store={current.store}
-              user={user}
-              role={current.role}
-              planEstado={negocio?.planEstado || "pendiente"}
-              planId={negocio?.planId || "comercio"}
-              planVencimiento={negocio?.planVencimiento?.toISOString() || null}
-              latestSubscription={latestSubscription ? {
-                status: latestSubscription.status,
-                endDate: latestSubscription.endDate?.toISOString() || null,
-                paymentMode: latestSubscription.paymentMode || "single",
-                secondPaymentDue: latestSubscription.secondPaymentDue?.toISOString() || null,
-                secondPaymentPaid: latestSubscription.secondPaymentPaid,
-                period: latestSubscription.period || "monthly",
-              } : null}
-            />
-              <main className="flex-1 min-w-0 overflow-hidden p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
-                {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
-                <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
-                  {children}
-                </UpgradeBannerWrapper>
-              </main>
+    <AssistantProvider>
+      <DashboardTourHandler planType={planType}>
+        <BcvRateProvider initialRate={bcvRate} initialShowBolivares={current.store.showBolivares ?? true}>
+          <SetupWizardProvider
+            storeId={current.store.id}
+            negocioId={current.store.negocioId}
+            planId={negocio?.planId || "comercio"}
+            planType={planType}
+            storeSetupComplete={storeSetupComplete}
+          >
+            <div className="flex min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
+              <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
+              <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
+                <DashboardTopbar
+                store={current.store}
+                user={user}
+                role={current.role}
+                planEstado={negocio?.planEstado || "pendiente"}
+                planId={negocio?.planId || "comercio"}
+                planVencimiento={negocio?.planVencimiento?.toISOString() || null}
+                latestSubscription={latestSubscription ? {
+                  status: latestSubscription.status,
+                  endDate: latestSubscription.endDate?.toISOString() || null,
+                  paymentMode: latestSubscription.paymentMode || "single",
+                  secondPaymentDue: latestSubscription.secondPaymentDue?.toISOString() || null,
+                  secondPaymentPaid: latestSubscription.secondPaymentPaid,
+                  period: latestSubscription.period || "monthly",
+                } : null}
+              />
+                <main className="flex-1 min-w-0 overflow-hidden p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
+                  {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
+                  <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
+                    {children}
+                  </UpgradeBannerWrapper>
+                </main>
+              </div>
+              <BottomNav planType={planType} />
+              <AssistantFab />
+              <AssistantPanel />
             </div>
-            <BottomNav planType={planType} />
-          </div>
-        </SetupWizardProvider>
-      </BcvRateProvider>
-    </DashboardTourHandler>
+          </SetupWizardProvider>
+        </BcvRateProvider>
+      </DashboardTourHandler>
+    </AssistantProvider>
   )
 }

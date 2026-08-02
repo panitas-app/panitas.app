@@ -3,10 +3,12 @@ import { redirect } from "next/navigation"
 import { getEffectiveRate } from "@/lib/bcv"
 import { hasModule } from "@/lib/plans"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { DashboardTienda } from "@/components/dashboard/dashboard-tienda"
 import { DashboardAgenda } from "@/components/dashboard/dashboard-agenda"
 import { DashboardNegocio } from "@/components/dashboard/dashboard-negocio"
 import { DashboardEmpresa } from "@/components/dashboard/dashboard-empresa"
+import { ControlCenter } from "@/components/dashboard/control-center"
 import { applyPlanSelection } from "@/lib/actions/plan-selection"
 
 export default async function DashboardPage(props: { searchParams?: Promise<{ plan?: string }> }) {
@@ -148,6 +150,29 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     } catch (e) { console.error("[dashboard getNewCustomers]", e); return 0 }
   }
 
+  async function getProductsSoldToday() {
+    if (!modules.hasSales) return 0
+    try {
+      const agg = await prisma.orderItem.aggregate({
+        where: { order: { storeId, createdAt: { gte: today } } },
+        _sum: { quantity: true },
+      })
+      return agg._sum.quantity || 0
+    } catch (e) { console.error("[dashboard getProductsSoldToday]", e); return 0 }
+  }
+
+  async function getLowStockCount() {
+    try {
+      return await prisma.product.count({ where: { storeId, isActive: true, stock: { gt: 0, lte: 5 } } })
+    } catch (e) { console.error("[dashboard getLowStockCount]", e); return 0 }
+  }
+
+  async function getPendingOrders() {
+    try {
+      return await prisma.order.count({ where: { storeId, status: "pending" } })
+    } catch (e) { console.error("[dashboard getPendingOrders]", e); return 0 }
+  }
+
   async function getPendingCommissions() {
     if (planType !== "empresa" && planType !== "empresarial") return 0
     try { return await prisma.sellerCommission.count({ where: { status: "pending", order: { storeId } } }) } catch (e) { console.error("[dashboard getPendingCommissions]", e); return 0 }
@@ -197,7 +222,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     } catch (e) { console.error("[dashboard getServiceStats]", e); return null }
   }
 
-  const [salesData, appointmentData, crmData, visitorData, categoryStats, serviceStats, employeeCount, newCustomers, recentActivity, pendingCommissions] = await Promise.all([
+  const [salesData, appointmentData, crmData, visitorData, categoryStats, serviceStats, employeeCount, newCustomers, recentActivity, pendingCommissions, productsSoldToday, lowStockCount, pendingOrdersCount, sessionUser] = await Promise.all([
     getSalesData(),
     getAppointmentData(),
     getCrmData(),
@@ -208,6 +233,10 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     getNewCustomers(),
     getRecentActivity(),
     getPendingCommissions(),
+    getProductsSoldToday(),
+    getLowStockCount(),
+    getPendingOrders(),
+    auth(),
   ])
 
   const orders = salesData?.orders || []
@@ -215,16 +244,51 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   const defaultSales = { orders: [], totalRevenue: 0, todayOrders: [], weekOrders: [], productCount: 0, totalOrders: 0, todayRevenue: 0, weekRevenue: 0 }
   const cp = { store: current.store, rate, planType, visitorData: visitorData || defaultVisitor }
 
+  const control = {
+    storeName: current.store.name,
+    slug: current.store.slug,
+    userName: sessionUser?.user?.name ?? null,
+    rate,
+    todayRevenue: salesData?.todayRevenue || 0,
+    productsSold: productsSoldToday,
+    newCustomers,
+    lowStockCount,
+    pendingOrders: pendingOrdersCount,
+    productCount: salesData?.productCount || 0,
+    todayOrders: salesData?.todayOrders.length || 0,
+    hasSales: modules.hasSales,
+  }
+
   if (planType === "agenda") {
     if (!appointmentData) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Error al cargar datos</div>
-    return <DashboardAgenda {...cp} data={appointmentData} orders={orders} serviceStats={serviceStats || []} />
+    return (
+      <div className="space-y-8">
+        <ControlCenter {...control} />
+        <DashboardAgenda {...cp} data={appointmentData} orders={orders} serviceStats={serviceStats || []} />
+      </div>
+    )
   }
   const defaultAppt = { appointments: [] as any[], todayApps: [] as any[], pending: 0, confirmed: 0, completed: 0, cancelled: 0, serviceCount: 0 }
   if (planType === "negocio") {
-    return <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
+    return (
+      <div className="space-y-8">
+        <ControlCenter {...control} />
+        <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
+      </div>
+    )
   }
   if (planType === "empresa" || planType === "empresarial") {
-    return <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
+    return (
+      <div className="space-y-8">
+        <ControlCenter {...control} />
+        <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
+      </div>
+    )
   }
-  return <DashboardTienda {...cp} data={salesData || defaultSales} orders={orders} categoryStats={categoryStats || []} />
+  return (
+    <div className="space-y-8">
+      <ControlCenter {...control} />
+      <DashboardTienda {...cp} data={salesData || defaultSales} orders={orders} categoryStats={categoryStats || []} />
+    </div>
+  )
 }

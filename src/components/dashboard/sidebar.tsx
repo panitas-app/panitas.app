@@ -40,109 +40,126 @@ import {
 import type { Store as PrismaStore } from "@prisma/client"
 import type { Role } from "@/lib/roles"
 import { PLAN_DEFINITIONS } from "@/lib/plans"
+import { isPlusPlan } from "@/lib/feature-flags"
 
 interface SidebarItem {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: boolean
+  plusBadge?: boolean
   roles?: Role[]
+  group: string
 }
 
 function getNavItems(planType: string): SidebarItem[] {
   const isEnterprise = planType === "empresa" || planType === "empresarial"
-  const baseItems: SidebarItem[] = [
-    { href: "/dashboard", label: "Inicio", icon: LayoutDashboard, roles: ["admin", "manager", "seller", "viewer"] },
-  ]
+  const isAgenda = planType === "agenda" || planType === "reservas"
+  const items: SidebarItem[] = []
 
-  if (planType === "agenda" || planType === "reservas") {
-    baseItems.push(
-      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: ["admin", "manager", "seller", "viewer"] },
-      { href: "/dashboard/agenda/nueva", label: "Nueva cita", icon: CalendarPlus, roles: ["admin", "manager"] },
-      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
-      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
+  // Principal
+  items.push({
+    href: "/dashboard",
+    label: "Inicio",
+    icon: LayoutDashboard,
+    roles: ["admin", "manager", "seller", "viewer"],
+    group: "Principal",
+  })
+
+  // Operación
+  if (isAgenda) {
+    items.push(
+      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: ["admin", "manager", "seller", "viewer"], group: "Operación" },
+      { href: "/dashboard/agenda/nueva", label: "Nueva cita", icon: CalendarPlus, roles: ["admin", "manager"], group: "Operación" },
+      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"], group: "Operación" },
+      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"], group: "Operación" },
     )
   } else {
-    baseItems.push(
-      { href: "/dashboard/products", label: "Productos", icon: Package, roles: ["admin", "manager", "seller", "viewer"] },
+    items.push(
+      { href: "/dashboard/products", label: "Productos", icon: Package, roles: ["admin", "manager", "seller", "viewer"], group: "Operación" },
     )
     if (planType !== "emprendedor" && planType !== "tienda" && !isEnterprise) {
-      baseItems.push(
-        { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: ["admin", "manager", "seller", "viewer"] },
-        { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
-        { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
+      items.push(
+        { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: ["admin", "manager", "seller", "viewer"], group: "Operación" },
+        { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"], group: "Operación" },
+        { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"], group: "Operación" },
       )
     }
   }
 
-  if (planType !== "agenda" && planType !== "reservas") {
-    baseItems.push(
-      { href: "/dashboard/orders", label: "Pedidos", icon: ShoppingCart, badge: true, roles: ["admin", "manager", "seller", "viewer"] },
+  if (!isAgenda) {
+    items.push(
+      { href: "/dashboard/orders", label: "Pedidos", icon: ShoppingCart, badge: true, roles: ["admin", "manager", "seller", "viewer"], group: "Operación" },
     )
   }
 
-  baseItems.push(
-    { href: "/dashboard/customers", label: "Clientes", icon: Users, roles: ["admin", "manager", "seller", "viewer"] },
-  )
-
-  if (planType === "negocio") {
-    baseItems.push(
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
-      { href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] },
-    )
-  }
-
-  if (planType === "empresa" || planType === "empresarial") {
-    baseItems.push(
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
-      { href: "/dashboard/sellers", label: "Vendedores", icon: Users, roles: ["admin", "manager"] },
-      { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"] },
+  if (planType === "negocio" || isEnterprise) {
+    items.push(
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"], group: "Operación" },
     )
   }
 
   if (planType === "emprendedor" || planType === "tienda") {
-    baseItems.push(
-      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"] },
-      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] },
-      { href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] },
+    items.push(
+      { href: "/dashboard/pos", label: "Caja", icon: Banknote, roles: ["admin", "manager", "seller"], group: "Operación" },
+      { href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"], group: "Operación" },
     )
   }
 
-  baseItems.push(
-    { href: "/dashboard/analytics", label: "Reportes", icon: FileBarChart, roles: ["admin", "manager", "viewer", "accountant"] },
+  // Clientes
+  items.push(
+    { href: "/dashboard/customers", label: "Clientes", icon: Users, roles: ["admin", "manager", "seller", "viewer"], group: "Clientes" },
+  )
+  if (planType === "negocio") {
+    items.push(
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"], group: "Clientes" },
+      { href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"], group: "Clientes" },
+    )
+  }
+  if (isEnterprise) {
+    items.push(
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"], group: "Clientes" },
+      { href: "/dashboard/sellers", label: "Vendedores", icon: Users, roles: ["admin", "manager"], group: "Clientes" },
+      { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"], group: "Clientes" },
+    )
+  }
+  if (planType === "emprendedor" || planType === "tienda") {
+    items.push(
+      { href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"], group: "Clientes" },
+    )
+  }
+
+  // Crecimiento
+  items.push(
+    { href: "/dashboard/analytics", label: "Reportes", icon: FileBarChart, roles: ["admin", "manager", "viewer", "accountant"], group: "Crecimiento" },
+  )
+  if (planType === "negocio" || isEnterprise) {
+    items.push(
+      { href: "/dashboard/finanzas", label: "Finanzas", icon: DollarSign, roles: ["admin", "manager", "accountant"], group: "Crecimiento" },
+    )
+  }
+
+  // Panitas IA
+  items.push(
+    { href: "/dashboard/conversaciones", label: "Conversaciones", icon: MessageCircle, plusBadge: true, roles: ["admin", "manager"], group: "Panitas IA" },
   )
 
-  if (planType === "negocio" || planType === "empresa" || planType === "empresarial") {
-    baseItems.push(
-      { href: "/dashboard/finanzas", label: "Finanzas", icon: DollarSign, roles: ["admin", "manager", "accountant"] },
+  // Ajustes
+  if (!isEnterprise) {
+    items.push(
+      { href: "/dashboard/edit-profile", label: isAgenda ? "Editar perfil" : "Editar tienda", icon: isAgenda ? UserCircle : Palette, roles: ["admin", "manager"], group: "Ajustes" },
     )
   }
-
-  if (!isEnterprise) {
-    if (planType === "agenda" || planType === "reservas") {
-      baseItems.push(
-        { href: "/dashboard/edit-profile", label: "Editar perfil", icon: UserCircle, roles: ["admin", "manager"] },
-      )
-    } else {
-      baseItems.push(
-        { href: "/dashboard/edit-profile", label: "Editar tienda", icon: Palette, roles: ["admin", "manager"] },
-      )
-    }
-  }
-
-  baseItems.push(
-    { href: "/dashboard/settings", label: "Configuración", icon: Settings, roles: ["admin", "manager", "viewer"] },
+  items.push(
+    { href: "/dashboard/settings", label: "Configuración", icon: Settings, roles: ["admin", "manager", "viewer"], group: "Ajustes" },
   )
-
   if (!isEnterprise) {
-    baseItems.push(
-      { href: "/pricing", label: "Ver Planes", icon: Crown, roles: ["admin"] },
+    items.push(
+      { href: "/pricing", label: "Ver Planes", icon: Crown, roles: ["admin"], group: "Ajustes" },
     )
   }
 
-  return baseItems
+  return items
 }
 
 interface SidebarContentProps {
@@ -231,6 +248,18 @@ const SidebarContent = memo(function SidebarContent({ store, role, planId, modal
     [navItems, role],
   )
 
+  const isPlus = isPlusPlan(planId || legacyPlanType)
+
+  const groupedItems = useMemo(() => {
+    const groups: { title: string; items: SidebarItem[] }[] = []
+    for (const item of visibleItems) {
+      const g = groups.find((x) => x.title === item.group)
+      if (g) g.items.push(item)
+      else groups.push({ title: item.group, items: [item] })
+    }
+    return groups
+  }, [visibleItems])
+
   return (
     <div className="flex h-full flex-col glass-dark sidebar-solid text-foreground">
       <div className="px-4 pt-4 pb-0 shrink-0">
@@ -251,39 +280,52 @@ const SidebarContent = memo(function SidebarContent({ store, role, planId, modal
       </div>
 
       <nav className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-1">
-        {visibleItems.map((item) => {
-          const Icon = item.icon
-          const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === item.href || pathname.startsWith(item.href + "/") || pathname.startsWith(item.href + "?")
-          return (
-            <Link key={item.href} href={item.href} onClick={onNavClick} className="relative block" data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "relative w-full justify-start gap-3 rounded-xl min-h-[44px] text-foreground/70 hover:text-foreground hover:bg-accent transition-all duration-200",
-                  isActive && "text-accent hover:text-accent font-bold"
-                )}
-              >
-                {isActive && (
-                  <div
-                    className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/10"
-                  />
-                )}
-                <Icon className={cn("size-4.5 z-10 icon-hover-bounce shrink-0", isActive ? "text-accent" : "text-muted-foreground")} />
-                <span className="z-10 truncate">{item.label}</span>
-                {item.badge && pendingCount > 0 && (
-                  <span
-                    className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm shrink-0"
+        {groupedItems.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <p className="px-2 pt-3 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/70">
+              {group.title}
+            </p>
+            {group.items.map((item) => {
+              const Icon = item.icon
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname === item.href || pathname.startsWith(item.href + "/") || pathname.startsWith(item.href + "?")
+              return (
+                <Link key={item.href} href={item.href} onClick={onNavClick} className="relative block" data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "relative w-full justify-start gap-3 rounded-xl min-h-[44px] text-foreground/70 hover:text-foreground hover:bg-accent transition-all duration-200",
+                      isActive && "text-accent hover:text-accent font-bold"
+                    )}
                   >
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
-          )
-        })}
+                    {isActive && (
+                      <div
+                        className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/10"
+                      />
+                    )}
+                    <Icon className={cn("size-4.5 z-10 icon-hover-bounce shrink-0", isActive ? "text-accent" : "text-muted-foreground")} />
+                    <span className="z-10 truncate">{item.label}</span>
+                    {item.badge && pendingCount > 0 && (
+                      <span
+                        className="z-10 ml-auto flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-foreground shadow-sm shrink-0"
+                      >
+                        {pendingCount > 99 ? "99+" : pendingCount}
+                      </span>
+                    )}
+                    {item.plusBadge && !isPlus && (
+                      <span className="z-10 ml-auto inline-flex items-center gap-0.5 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-black shrink-0">
+                        <Zap className="size-2.5" />
+                        Plus
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              )
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="mt-auto shrink-0 px-4 pb-4 safe-bottom">

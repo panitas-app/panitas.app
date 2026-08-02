@@ -24,17 +24,17 @@ function getBottomNavItems(planType: string): BottomNavItem[] {
     return [
       { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
       { href: "/dashboard/agenda", label: "Agenda", icon: Calendar },
-      { href: "/dashboard/customers", label: "Clientes", icon: Users },
       { href: "/dashboard/servicios", label: "Servicios", icon: Package },
-      { href: "/dashboard/settings", label: "Ajustes", icon: Settings },
+      { href: "/dashboard/customers", label: "Clientes", icon: Users },
+      { href: "/dashboard/settings", label: "Más", icon: Settings },
     ]
   }
   return [
     { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
+    { href: "/dashboard/pos", label: "Ventas", icon: ShoppingCart },
     { href: "/dashboard/products", label: "Productos", icon: Package },
-    { href: "/dashboard/orders", label: "Pedidos", icon: ShoppingCart },
     { href: "/dashboard/customers", label: "Clientes", icon: Users },
-    { href: "/dashboard/settings", label: "Ajustes", icon: Settings },
+    { href: "/dashboard/settings", label: "Más", icon: Settings },
   ]
 }
 

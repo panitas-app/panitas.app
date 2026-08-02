@@ -66,7 +66,7 @@ export default function RegisterContent({ session, plan: selectedPlan, paymentMo
   const getTargetUrl = () => {
     if (selectedPlan && paymentMode) return `/subscribe?plan=${selectedPlan}&paymentMode=${paymentMode}`
     if (selectedPlan) return `/choose-plan?plan=${selectedPlan}`
-    return "/choose-plan"
+    return "/onboarding/negocio"
   }
 
   useEffect(() => {
@@ -99,12 +99,12 @@ export default function RegisterContent({ session, plan: selectedPlan, paymentMo
         email,
         password,
         redirect: false,
-        callbackUrl: "/choose-plan",
+        callbackUrl: getTargetUrl(),
       })
       if (signInResult?.error) {
         toast.error("Cuenta creada, pero no se pudo iniciar sesión. Intenta manualmente.")
       }
-      window.location.href = "/choose-plan"
+      window.location.href = getTargetUrl()
     } catch {
       toast.error("Error de conexión")
     } finally {

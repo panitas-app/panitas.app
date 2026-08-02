@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { signOut } from "@/lib/auth-client"
-import { LogOut, User, Share2, QrCode, Sparkles, Zap, Clock, CheckCircle, RefreshCw } from "lucide-react"
+import { LogOut, User, Share2, QrCode, Sparkles, Zap, Clock, CheckCircle, RefreshCw, Bot } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import type { Store, User as UserType } from "@prisma/client"
@@ -20,6 +20,7 @@ import type { Role } from "@/lib/roles"
 import { roleLabels, roleColors } from "@/lib/roles"
 import { cn } from "@/lib/utils"
 import { useBcvRate } from "@/lib/bcv-context"
+import { useAssistant } from "@/components/assistant/assistant-provider"
 
 interface PlanStatusButton {
   label: string
@@ -130,6 +131,7 @@ export function DashboardTopbar({
 }) {
   const [qrOpen, setQrOpen] = useState(false)
   const { rate: bcvRate, showBolivares } = useBcvRate()
+  const { openAssistant } = useAssistant()
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -173,6 +175,15 @@ export function DashboardTopbar({
         </div>
 
         <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
+          {/* Panitas IA button */}
+          <button
+            onClick={openAssistant}
+            className="hidden items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-bold text-primary transition-all hover:bg-primary/10 sm:flex"
+          >
+            <Bot className="size-3.5" />
+            Panitas IA
+          </button>
+
           {/* Plan status button */}
           <Link
             href={planButton.href}

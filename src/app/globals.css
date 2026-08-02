@@ -50,6 +50,7 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -84,6 +85,7 @@
   --popover-foreground: #050505;
   --primary: #0066FF;
   --primary-foreground: #FFFFFF;
+  --brand: #FFB92E;
   --secondary: #F0F4FF;
   --secondary-foreground: #050505;
   --muted: #F5F5F5;
