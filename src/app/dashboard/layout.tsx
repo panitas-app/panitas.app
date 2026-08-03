@@ -1,9 +1,6 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
-import { DashboardSidebar } from "@/components/dashboard/sidebar"
-import { DashboardTopbar } from "@/components/dashboard/topbar"
-import { BottomNav } from "@/components/dashboard/bottom-nav"
 import { getCurrentStore } from "@/lib/permissions"
 import { UpgradeBannerWrapper } from "@/components/dashboard/upgrade-banner-wrapper"
 import { getEffectiveRate } from "@/lib/bcv"
@@ -13,6 +10,7 @@ import { InstallmentOverdueBanner } from "@/components/dashboard/installment-ove
 import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
 import { AssistantProvider } from "@/components/assistant/assistant-provider"
 import { AssistantDashboardChrome } from "@/components/assistant/assistant-dashboard-chrome"
+import { DashboardShell } from "@/components/layout/dashboard-shell"
 
 function isRedirectError(error: any): boolean {
   return (
@@ -106,16 +104,16 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
             planType={planType}
             storeSetupComplete={storeSetupComplete}
           >
-            <div className="flex min-h-[100dvh] bg-gradient-to-br from-slate-50 via-white to-blue-50/30 text-[#050505]">
-              <DashboardSidebar store={current.store} role={current.role} planId={negocio?.planId || "comercio"} modalidad={negocio?.modalidad || null} />
-              <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
-                <DashboardTopbar
+            <div className="flex min-h-[100dvh] bg-[#F7F7F8] text-foreground">
+              <DashboardShell
                 store={current.store}
                 user={user}
                 role={current.role}
-                planEstado={negocio?.planEstado || "pendiente"}
+                planType={planType}
                 planId={negocio?.planId || "comercio"}
+                planEstado={negocio?.planEstado || "pendiente"}
                 planVencimiento={negocio?.planVencimiento?.toISOString() || null}
+                modalidad={negocio?.modalidad || null}
                 latestSubscription={latestSubscription ? {
                   status: latestSubscription.status,
                   endDate: latestSubscription.endDate?.toISOString() || null,
@@ -124,15 +122,12 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                   secondPaymentPaid: latestSubscription.secondPaymentPaid,
                   period: latestSubscription.period || "monthly",
                 } : null}
-              />
-                <main className="flex-1 min-w-0 overflow-hidden p-3 pb-24 sm:p-4 md:p-6 lg:pb-6">
-                  {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
-                  <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
-                    {children}
-                  </UpgradeBannerWrapper>
-                </main>
-              </div>
-              <BottomNav planType={planType} />
+              >
+                {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
+                <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
+                  {children}
+                </UpgradeBannerWrapper>
+              </DashboardShell>
               <AssistantDashboardChrome />
             </div>
           </SetupWizardProvider>

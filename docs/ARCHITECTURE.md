@@ -164,6 +164,19 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
   `recommendations.list`, la API `GET/PATCH /api/agent/recommendations` y los
   componentes UI en `src/components/recommendations/` (dashboard + asistente).
   Documentación: `docs/RECOMMENDATION_ENGINE.md`, `docs/PHASE_4D_REPORT.md`.
+- **UX Redesign / Panitas Home (FASE 4F)**: el dashboard deja de ser
+  "software administrativo con IA agregada" y pasa a ser "asistente
+  empresarial IA con herramientas administrativas". Shell nuevo en
+  `src/components/layout/` (`Sidebar` colapsable, `MobileSidebar`, `Topbar`,
+  `BottomNav`, `DashboardShell`, `PageContainer`) con design system en
+  `globals.css` (variables `--brand-primary` naranja #F97316, `--surface`,
+  `--line`, `--text`, utilidades `surface-card`/`surface-soft`/`brand-gradient`;
+  el `--brand` amarillo heredado se conserva). El `/dashboard` renderiza
+  `AssistantHero` → `BusinessOverview` → `InsightPreview` (Recomendaciones 4D,
+  limit 3) → `QuickActions` y debajo las vistas administrativas legacy intactas.
+  El chat usa el `AssistantProvider` 4C (`openAssistant(prefill)`). Sin
+  funcionalidades nuevas: solo reorganización de experiencia.
+  Documentación: `docs/PHASE_4F_UX_REDESIGN.md`.
 - **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
 - **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
 - **Memoria**: capa 3D con `MemoryManager` + `ProfileService`; el contexto/memoria se inyecta al request y la capa 4A la incluye en la síntesis (`engine.ts:72-82`).

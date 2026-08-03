@@ -8,9 +8,43 @@ import { DashboardTienda } from "@/components/dashboard/dashboard-tienda"
 import { DashboardAgenda } from "@/components/dashboard/dashboard-agenda"
 import { DashboardNegocio } from "@/components/dashboard/dashboard-negocio"
 import { DashboardEmpresa } from "@/components/dashboard/dashboard-empresa"
-import { ControlCenter } from "@/components/dashboard/control-center"
-import { RecommendationsSection } from "@/components/recommendations/recommendations-section"
 import { applyPlanSelection } from "@/lib/actions/plan-selection"
+import { PageContainer } from "@/components/layout/page-container"
+import { AssistantHero } from "@/components/dashboard/assistant-hero"
+import { BusinessOverview } from "@/components/dashboard/business-overview"
+import { InsightPreview } from "@/components/dashboard/insight-preview"
+import { QuickActions } from "@/components/dashboard/quick-actions"
+
+function formatTimeAgo(date: Date) {
+  const diff = Date.now() - new Date(date).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "Ahora"
+  if (mins < 60) return `hace ${mins} min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `hace ${hrs}h`
+  const days = Math.floor(hrs / 24)
+  return `hace ${days}d`
+}
+
+interface AppointmentStats {
+  appointments: Array<{ id: string }>
+  todayApps: Array<{ id: string }>
+  pending: number
+  confirmed: number
+  completed: number
+  cancelled: number
+  serviceCount: number
+}
+
+const EMPTY_APPOINTMENTS: AppointmentStats = {
+  appointments: [],
+  todayApps: [],
+  pending: 0,
+  confirmed: 0,
+  completed: 0,
+  cancelled: 0,
+  serviceCount: 0,
+}
 
 export default async function DashboardPage(props: { searchParams?: Promise<{ plan?: string }> }) {
   const searchParams = await props?.searchParams
@@ -68,7 +102,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     } catch (e) { console.error("[dashboard getSalesData]", e); return null }
   }
 
-  async function getAppointmentData() {
+  async function getAppointmentData(): Promise<AppointmentStats | null> {
     if (!modules.hasAppointments || !negocioId) return null
     try {
       const appointments = await prisma.appointment.findMany({ where: { negocioId } })
@@ -151,17 +185,6 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     } catch (e) { console.error("[dashboard getNewCustomers]", e); return 0 }
   }
 
-  async function getProductsSoldToday() {
-    if (!modules.hasSales) return 0
-    try {
-      const agg = await prisma.orderItem.aggregate({
-        where: { order: { storeId, createdAt: { gte: today } } },
-        _sum: { quantity: true },
-      })
-      return agg._sum.quantity || 0
-    } catch (e) { console.error("[dashboard getProductsSoldToday]", e); return 0 }
-  }
-
   async function getLowStockCount() {
     try {
       return await prisma.product.count({ where: { storeId, isActive: true, stock: { gt: 0, lte: 5 } } })
@@ -197,19 +220,11 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
         }
       }
       activity.sort((a, b) => b.sortKey - a.sortKey)
-      return activity.slice(0, 10).map(({ sortKey, ...rest }) => rest)
+      return activity.slice(0, 10).map(({ sortKey, ...rest }) => {
+        void sortKey
+        return rest
+      })
     } catch (e) { console.error("[dashboard getRecentActivity]", e); return [] }
-  }
-
-  function formatTimeAgo(date: Date) {
-    const diff = Date.now() - new Date(date).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1) return "Ahora"
-    if (mins < 60) return `hace ${mins} min`
-    const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `hace ${hrs}h`
-    const days = Math.floor(hrs / 24)
-    return `hace ${days}d`
   }
 
   async function getServiceStats() {
@@ -223,7 +238,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     } catch (e) { console.error("[dashboard getServiceStats]", e); return null }
   }
 
-  const [salesData, appointmentData, crmData, visitorData, categoryStats, serviceStats, employeeCount, newCustomers, recentActivity, pendingCommissions, productsSoldToday, lowStockCount, pendingOrdersCount, sessionUser] = await Promise.all([
+  const [salesData, appointmentData, crmData, visitorData, categoryStats, serviceStats, employeeCount, newCustomers, recentActivity, pendingCommissions, lowStockCount, pendingOrdersCount, sessionUser] = await Promise.all([
     getSalesData(),
     getAppointmentData(),
     getCrmData(),
@@ -234,7 +249,6 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     getNewCustomers(),
     getRecentActivity(),
     getPendingCommissions(),
-    getProductsSoldToday(),
     getLowStockCount(),
     getPendingOrders(),
     auth(),
@@ -245,54 +259,56 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   const defaultSales = { orders: [], totalRevenue: 0, todayOrders: [], weekOrders: [], productCount: 0, totalOrders: 0, todayRevenue: 0, weekRevenue: 0 }
   const cp = { store: current.store, rate, planType, visitorData: visitorData || defaultVisitor }
 
-  const control = {
-    storeName: current.store.name,
-    slug: current.store.slug,
-    userName: sessionUser?.user?.name ?? null,
-    rate,
-    todayRevenue: salesData?.todayRevenue || 0,
-    productsSold: productsSoldToday,
-    newCustomers,
-    lowStockCount,
-    pendingOrders: pendingOrdersCount,
-    productCount: salesData?.productCount || 0,
-    todayOrders: salesData?.todayOrders.length || 0,
-    hasSales: modules.hasSales,
-  }
+  const isAgendaPlan = planType === "agenda" || planType === "reservas"
+  const homeSections = (
+    <PageContainer className="space-y-5">
+      <AssistantHero storeName={current.store.name} userName={sessionUser?.user?.name} />
+      <BusinessOverview
+        mode={isAgendaPlan ? "agenda" : "sales"}
+        todayRevenue={salesData?.todayRevenue || 0}
+        rate={rate}
+        todayOrders={salesData?.todayOrders.length || 0}
+        productCount={salesData?.productCount || 0}
+        lowStockCount={lowStockCount}
+        newCustomers={newCustomers}
+        pendingOrders={pendingOrdersCount}
+        todayAppointments={appointmentData?.todayApps.length || 0}
+        pendingAppointments={appointmentData?.pending || 0}
+        serviceCount={appointmentData?.serviceCount || 0}
+      />
+      <InsightPreview />
+      <QuickActions isAgenda={isAgendaPlan} hasSales={modules.hasSales} slug={current.store.slug} />
+    </PageContainer>
+  )
 
   if (planType === "agenda") {
     if (!appointmentData) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Error al cargar datos</div>
     return (
       <div className="space-y-8">
-        <ControlCenter {...control} />
-        <RecommendationsSection />
+        {homeSections}
         <DashboardAgenda {...cp} data={appointmentData} orders={orders} serviceStats={serviceStats || []} />
       </div>
     )
   }
-  const defaultAppt = { appointments: [] as any[], todayApps: [] as any[], pending: 0, confirmed: 0, completed: 0, cancelled: 0, serviceCount: 0 }
   if (planType === "negocio") {
     return (
       <div className="space-y-8">
-        <ControlCenter {...control} />
-        <RecommendationsSection />
-        <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
+        {homeSections}
+        <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || EMPTY_APPOINTMENTS} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
       </div>
     )
   }
   if (planType === "empresa" || planType === "empresarial") {
     return (
       <div className="space-y-8">
-        <ControlCenter {...control} />
-        <RecommendationsSection />
-        <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
+        {homeSections}
+        <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || EMPTY_APPOINTMENTS} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
       </div>
     )
   }
   return (
     <div className="space-y-8">
-      <ControlCenter {...control} />
-      <RecommendationsSection />
+      {homeSections}
       <DashboardTienda {...cp} data={salesData || defaultSales} orders={orders} categoryStats={categoryStats || []} />
     </div>
   )

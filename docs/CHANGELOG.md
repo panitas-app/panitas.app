@@ -99,6 +99,34 @@
 
 ---
 
+## FASE 4F — UX Redesign: Panitas Home y Shell del Dashboard (2026-08-03, `develop-v2`)
+
+> Base `dfc5577` (FASE 4D). Reporte completo: `docs/PHASE_4F_UX_REDESIGN.md`.
+
+### Design system 4F (`src/app/globals.css`)
+- `feat(ux)`: variables de color `brand-primary` (#F97316 naranja Panitas), `brand-secondary`, `brand-soft`, `surface`, `text`, `text-muted`, `line` vía `@theme inline` (Tailwind v4 CSS-first); el brand heredado `--brand` (#FFB92E) se conserva intacto para componentes legacy
+- `feat(ux)`: utilidades `surface-card`, `surface-soft`, `brand-gradient`; amarillo SOLO como acento (recomendaciones/estados)
+
+### Shell de navegación (`src/components/layout/`)
+- `feat(ux)`: `Sidebar` de escritorio colapsable (`w-64` ↔ `w-[76px]`, toggle `-right-3`, estado en localStorage `panitas:sidebar:collapsed`), secciones por plan/rol (Inicio / Panitas IA / módulos / Configuración) y badge de pedidos pendientes (`useOrdersBadge` → `/api/orders/count?status=pending&excludePos=true` + sonido + `panitas:lastViewed:{storeId}`)
+- `feat(ux)`: `MobileSidebar` (drawer vía `MobileSheet` legacy), `DashboardTopbar` (pill BCV rate + botón "Panitas IA" + estado de plan + QR/Compartir), `BottomNav` móvil con ítem central "Panitas" destacado, `PageContainer`, `DashboardShell`
+- `feat(ux)`: `src/app/dashboard/layout.tsx` integra `DashboardShell` (sidebar + drawer + topbar + bottom-nav); banners y `AssistantDashboardChrome` conservados
+
+### Panitas Home (`src/app/dashboard/page.tsx`)
+- `feat(ux)`: nuevo `/dashboard` — `AssistantHero` (saludo por hora + input chat + chips, envía vía `openAssistant(prefill)`) → `BusinessOverview` (4 tiles sales/agenda con links a módulos) → `InsightPreview` (RecommendationsSection `limit={3}`, "Insights de Panitas") → `QuickActions`; las vistas administrativas legacy por plan quedan debajo intactas
+- `feat(ux)`: `RecommendationsSection` (4D) extendida con props `limit`/`title`; `Sparkles` en brand-primary
+- `refactor(ux)`: eliminados del render `ControlCenter`, `productsSoldToday`, `pendingCommissions` y el bloque de actividad reciente de Home
+
+### Calidad
+- `refactor(ux)`: lint limpio en archivos 4F — corregidos `productsSoldToday`/`sortKey` unused, prop `modalidad` no usada, setState en efectos (requestAnimationFrame/setTimeout) e import sin uso en `bottom-nav`
+- Verificación final: `tsc --noEmit` OK · lint 4F limpio · **421 tests verdes** (66 archivos) · `next build` OK · smoke HTTP `/` y `/dashboard` 200, badge API 200
+- Nota: `src/app/dashboard/layout.tsx` conserva 4 errores de lint PRE-EXISTENTES (`any` 15/32, `<a>` 47/50) documentados y NO corregidos; componentes legacy `components/dashboard/{sidebar,topbar,bottom-nav,control-center,metric-card,ask-panitas}.tsx` quedan sin referencias y se conservan documentados
+
+### Docs
+- `docs/PHASE_4F_UX_REDESIGN.md` (nuevo) · `docs/CHANGELOG.md` · `docs/ARCHITECTURE.md` actualizados
+
+---
+
 ## FASE 4C — Panitas Main Assistant Interface (2026-08-03, `develop-v2`)
 
 > Base `dd9f804` (FASE 4B). Reporte completo: `docs/PHASE_4C_REPORT.md`.
