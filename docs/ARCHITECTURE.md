@@ -116,7 +116,8 @@ Route handler (thin) → auth/csrf/rate-limit/parseo → Service (validación + 
 Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITECTURE_REVIEW.md`:
 
 ```
-┌─ src/lib/agent-intel/   (4A)  Intelligence Layer — intención, plan, orquestación, confirmación, síntesis, traza
+┌─ src/lib/business-intelligence/ (4B)  Business Monitor — salud, analizadores, insights, resumen     [N]
+├─ src/lib/agent-intel/   (4A)  Intelligence Layer — intención, plan, orquestación, confirmación, síntesis, traza
 ├─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
 ├─ src/lib/agent/tools/  (3B)  Tool System — 7 dominios, registry, executor, bridge       [C+]
 ├─ src/lib/conversation/ (3C)  Conversation Engine — chat con contexto y tools            [A−]
@@ -133,6 +134,14 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
   evidencia consolidada al LLM (una sola llamada). El `ToolResolver` 3A legacy
   sigue existiendo, ahora con guard anti doble-ejecución
   (`src/lib/agent-core/tool-resolver.ts`).
+- **Business Monitor (FASE 4B)**: la capa `src/lib/business-intelligence/`
+  responde "¿cómo está mi negocio?" con datos reales y sin predicciones.
+  Flujo de capas obligatorio: **Agente → Intelligence → Business Monitor →
+  Services → Repositories**. Se consume vía la tool `analytics.businessMonitor`
+  (planificada por el `TaskPlanner` cuando se menciona el negocio), la API
+  `GET /api/agent/business-summary` y componentes UI puros
+  (`src/components/business/`). Los analizadores usan solo servicios 1B;
+  el `storeId` siempre proviene del contexto autenticado.
 - **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
 - **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
 - **Memoria**: capa 3D con `MemoryManager` + `ProfileService`; el contexto/memoria se inyecta al request y la capa 4A la incluye en la síntesis (`engine.ts:72-82`).

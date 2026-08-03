@@ -21,6 +21,7 @@
 import { ToolExecutor, toolRegistry } from "@/lib/agent/tools"
 import type { ToolExecutionContext } from "@/lib/agent/tools/types"
 import type { BusinessAlert } from "@/lib/agent/tools/domains"
+import type { BusinessSummary } from "@/lib/business-intelligence"
 import type { AgentRequest } from "@/lib/agent-core/types"
 import { IntentEngine } from "./intent-engine"
 import { TaskPlanner } from "./task-planner"
@@ -163,10 +164,20 @@ export class IntelligenceLayer {
   private collectExplanations(results: StepExecutionResult[]): string[] {
     const explanations: string[] = []
     for (const result of results) {
-      if (result.status !== "ok" || result.tool !== "analytics.businessAlerts") continue
-      const data = result.output?.data
-      if (!Array.isArray(data)) continue
-      explanations.push(...this.explanation.explainAlerts(data as BusinessAlert[]))
+      if (result.status !== "ok") continue
+
+      if (result.tool === "analytics.businessAlerts") {
+        const data = result.output?.data
+        if (!Array.isArray(data)) continue
+        explanations.push(...this.explanation.explainAlerts(data as BusinessAlert[]))
+        continue
+      }
+
+      if (result.tool === "analytics.businessMonitor") {
+        const data = result.output?.data as BusinessSummary | undefined
+        if (!data || !Array.isArray(data.insights)) continue
+        explanations.push(...this.explanation.explainSummary(data))
+      }
     }
     return explanations
   }

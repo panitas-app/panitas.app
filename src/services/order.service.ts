@@ -96,6 +96,11 @@ export class OrderService {
     return this.repo.pending(ctx.storeId, take)
   }
 
+  /** Cantidad de clientes con saldo pendiente (créditos/cuotas por cobrar). */
+  creditOutstanding(ctx: StoreServiceContext) {
+    return this.repo.creditOutstanding(ctx.storeId)
+  }
+
   /**
    * Cambia el estado de un pedido (validado por negocio).
    * Al cancelar: restaura stock, registra movimientos de retorno y deshace los

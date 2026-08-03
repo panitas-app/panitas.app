@@ -11,6 +11,7 @@
  *    un 30% en los últimos 7 días, insuficiente para mantener ese ritmo."
  */
 import type { BusinessAlert } from "@/lib/agent/tools/domains"
+import type { BusinessSummary, Insight } from "@/lib/business-intelligence"
 
 /** Evidencia de bajo stock con contexto de tendencia de ventas. */
 export interface StockEvidence {
@@ -71,6 +72,16 @@ export class ExplanationEngine {
   /** Explica cada alerta de negocio con su causa implícita. */
   explainAlerts(alerts: BusinessAlert[]): string[] {
     return alerts.map((alert) => this.explainAlert(alert))
+  }
+
+  /** Explica cada insight del monitor de negocio (FASE 4B). */
+  explainSummary(summary: BusinessSummary): string[] {
+    return summary.insights.map((insight) => this.explainInsight(insight))
+  }
+
+  explainInsight(insight: Insight): string {
+    const base = `${insight.title}: ${insight.description}`
+    return insight.action ? `${base} Acción sugerida: ${insight.action}` : base
   }
 
   explainAlert(alert: BusinessAlert): string {

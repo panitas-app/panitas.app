@@ -20,6 +20,7 @@ const CATALOG = [
   { name: "reports.sales", domain: "reports", description: "", requiredPermissions: [], inputSchema: { type: "object", properties: {} } },
   { name: "analytics.businessSummary", domain: "analytics", description: "", requiredPermissions: [], inputSchema: { type: "object", properties: {} } },
   { name: "analytics.businessAlerts", domain: "analytics", description: "", requiredPermissions: [], inputSchema: { type: "object", properties: {} } },
+  { name: "analytics.businessMonitor", domain: "analytics", description: "", requiredPermissions: [], inputSchema: { type: "object", properties: {} } },
 ] as const
 
 function classify(message: string): IntentClassification {
@@ -48,6 +49,19 @@ describe("TaskPlanner", () => {
     expect(tools).toContain("analytics.businessAlerts")
     expect(tools).toContain("inventory.getLowStock")
     expect(plan.steps.every((s) => s.parallel)).toBe(true)
+  })
+
+  it("planifica '¿cómo está mi negocio?' hacia el monitor operativo", () => {
+    const plan = planner.plan(classify("¿cómo está mi negocio?"))
+    expect(plan.steps).toHaveLength(1)
+    expect(plan.steps[0].tool).toBe("analytics.businessMonitor")
+  })
+
+  it("planifica un análisis del negocio con el monitor, sin duplicar métricas", () => {
+    const plan = planner.plan(classify("analiza el estado de mi negocio"))
+    expect(plan.steps).toHaveLength(1)
+    expect(plan.steps[0].tool).toBe("analytics.businessMonitor")
+    expect(plan.steps[0].parallel).toBe(true)
   })
 
   it("planifica un reporte de ventas", () => {

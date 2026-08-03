@@ -30,6 +30,21 @@ export class TaskPlanner {
     return this.catalog.some((t) => t.name === name)
   }
 
+  /** True si el mensaje pregunta por el estado general del negocio/empresa. */
+  private mentionsBusiness(intent: IntentClassification): boolean {
+    return ["negocio", "negocios", "empresa"].some((keyword) => intent.message.includes(keyword))
+  }
+
+  private planBusinessMonitor(): PlannedStep[] {
+    if (!this.hasTool("analytics.businessMonitor")) return []
+    return [
+      this.step("step-1", "analytics.businessMonitor", "analytics", {}, {
+        parallel: true,
+        rationale: "Monitor operativo del estado general del negocio.",
+      }),
+    ]
+  }
+
   private step(
     id: string,
     tool: string,
@@ -97,6 +112,10 @@ export class TaskPlanner {
     const steps: PlannedStep[] = []
     const domain = intent.domains[0] ?? "inventory"
 
+    if (this.mentionsBusiness(intent)) {
+      return this.planBusinessMonitor()
+    }
+
     if (intent.message.includes("bajo") && intent.domains.includes("inventory")) {
       if (this.hasTool("inventory.getLowStock")) {
         steps.push(
@@ -156,6 +175,10 @@ export class TaskPlanner {
   }
 
   private planAnalysis(intent: IntentClassification): PlannedStep[] {
+    if (this.mentionsBusiness(intent)) {
+      return this.planBusinessMonitor()
+    }
+
     const steps: PlannedStep[] = []
     if (this.hasTool("analytics.businessSummary")) {
       steps.push(

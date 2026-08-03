@@ -19,6 +19,7 @@ const DOMAIN_SIGNALS: Record<string, string[]> = {
   agenda: ["cita", "citas", "agenda", "reserva", "horario", "turno"],
   reports: ["reporte", "resumen", "informe", "balance"],
   analytics: ["analiza", "analisis", "tendencia", "rendimiento", "comparar", "recomend", "crecimiento"],
+  business: ["negocio", "negocios", "empresa", "como esta", "como va", "como van", "estado del negocio", "salud del negocio"],
 }
 
 const ACTION_SIGNALS = [
@@ -30,6 +31,7 @@ const QUERY_SIGNALS = [
   "cuanto", "cuanta", "cual", "que hay", "tengo", "existe", "consulta", "buscar", "dame",
   "muestrame", "listar", "listame", "quiero ver", "cuantos", "cuantas", "hay stock", "a cuanto",
   "que productos", "que clientes", "stock bajo", "agotado", "tienen", "hay",
+  "como esta", "como va", "como van", "estado del negocio",
 ]
 const ANALYSIS_SIGNALS = [
   "analiza", "analizar", "analisis", "tendencia", "rendimiento", "por que", "comparar",

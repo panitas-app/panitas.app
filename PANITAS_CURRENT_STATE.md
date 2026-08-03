@@ -2,6 +2,11 @@
 
 > Documento generado el **02/08/2026** como parte de la preparación para la transición **Panitas 1.0 → Panitas 2.0**.
 > Este snapshot describe el estado del sistema ANTES de cualquier trabajo de Panitas 2.0.
+>
+> **Actualización 03/08/2026**: la rama `develop-v2` ya contiene las fases IA
+> 3A–4B (ver `docs/PHASE_4B_REPORT.md`, `docs/PHASE_4A_REPORT.md` y `docs/ARCHITECTURE.md`).
+> Este documento conserva el snapshot original; la línea de tiempo de Panitas 2.0
+> se registra en `docs/CHANGELOG.md`.
 
 ---
 
@@ -163,7 +168,7 @@ Proyecto protegido con **wrapper `scripts/safe-prisma.js`**: bloquea `prisma mig
 | **Reportes** | ✅ | Analytics, finanzas, breakeven, cierres, daily |
 | **Suscripciones/Planes** | ✅ | Planes, suscripciones, expiración, pagos manuales (comprobante) |
 | **Admin interno** | ✅ | Users, stores, prospects (ventas), soporte, auditoría, BCV |
-| **IA (parcial)** | 🟡 | Solo `parseInventoryWithAI()` en `src/lib/ai.ts` (OpenRouter, modelo free) para importar inventario |
+| **IA (parcial)** | 🟡 | Snapshot 02/08: solo `parseInventoryWithAI()`. En `develop-v2` ya existen las fases 3A–4B (Agent Core, Tool System, Conversation Engine, Memory, Agent Intelligence, Business Monitor 4B) — ver `docs/ARCHITECTURE.md` |
 
 ### Métricas del código
 - 161 API route handlers

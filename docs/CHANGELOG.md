@@ -64,6 +64,39 @@
 
 ---
 
+## FASE 4B — Business Monitor & Operational Intelligence (2026-08-03, `develop-v2`)
+
+> Base `11fbbd8` (FASE 4A). Reporte completo: `docs/PHASE_4B_REPORT.md` · arquitectura: `docs/BUSINESS_MONITOR_ARCHITECTURE.md` · `docs/INSIGHT_ENGINE.md` · `docs/OPERATIONAL_INTELLIGENCE.md`.
+
+### Nueva capa `src/lib/business-intelligence/`
+- `feat(bi)`: `BusinessHealthMonitor` — orquesta 5 analizadores en paralelo (inventario, ventas, pedidos, clientes, actividad), arma `ActivitySnapshot` y 10 métricas planas para la UI
+- `feat(bi)`: analizadores deterministas sobre servicios 1B — `InventoryAnalyzer` (agotados/stock bajo/sin movimiento/más vendidos), `SalesAnalyzer` (hoy/semana/mes + comparación ≥10% con período anterior), `OrderAnalyzer` (pendientes + posible demora >3 días), `CustomerAnalyzer` (solo por grupos: activos, nuevos, saldo pendiente, inactivos), `ActivityAnalyzer` (síntesis sin consultas)
+- `feat(bi)`: `InsightEngine` + `prioritization` — observaciones → insights priorizados (important > warning > info; orders > inventory > sales > customers > activity > general), dedupe por categoría+título, máx. 12
+- `feat(bi)`: `BusinessSummaryGenerator` — resumen final con saludo por hora, salud (estable/atención/revisión), insights, métricas y recomendaciones de revisión (sin decisiones)
+- `feat(bi)`: catálogo declarativo de 15 reglas (`rules/`), factories, barrel e `index.ts`
+
+### Reglas del cliente
+- Sin predicciones ("se agotarán en 4 días"), sin decisiones por el usuario, sin marketing/estrategia, sin severidad "critical"
+- Customer Analyzer **solo por grupos**; nunca insights individuales de clientes salvo solicitud explícita
+
+### Integración
+- `feat(tools)`: tool `analytics.businessMonitor` (permisos `report.read`) + dep `businessMonitor` inyectable en `ToolDeps`
+- `feat(intel)`: `TaskPlanner.mentionsBusiness` → `planBusinessMonitor`; `IntentEngine` reconoce dominio `business` ("cómo está/va el negocio", "negocio/empresa"); `ExplanationEngine` y `agent-intelligence` incluyen el monitor en la evidencia
+- `feat(services)`: nueva consulta 1B `OrderRepository.creditOutstanding` + `OrderService.creditOutstanding` (clientes con saldo credit/partial)
+- `feat(api)`: `GET /api/agent/business-summary` (rate limit 30/60s, roles admin|manager|seller|viewer, gate `basic_ai`)
+- `feat(ui)`: componentes puros en `src/components/business/` (BusinessSummary, BusinessHealthCard, InsightList, InsightCard)
+
+### Calidad
+- `fix(bi)`: `format.pct` convertía 1.0 → "1%" en lugar de "100%" (ratio→porcentaje)
+- `fix(bi)`: `buildOverview` propagaba `counts.info: 0` hardcodeado
+- `test(bi)`: 38 tests nuevos (analizadores 13, insight-engine 8, monitor 4, summary 5, tool 5, creditOutstanding 1, task-planner 2)
+- Verificación final: lint limpio en tocados · `tsc --noEmit` OK · **368 tests verdes** (59 archivos) · `next build` OK
+
+### Docs
+- `docs/PHASE_4B_REPORT.md` · `docs/BUSINESS_MONITOR_ARCHITECTURE.md` · `docs/INSIGHT_ENGINE.md` · `docs/OPERATIONAL_INTELLIGENCE.md` · `docs/ARCHITECTURE.md` · `docs/CHANGELOG.md` · `PANITAS_CURRENT_STATE.md` actualizados
+
+---
+
 ## FASE 4A — Agent Intelligence Layer (2026-08-03, `develop-v2`)
 
 > Base `f7cddf4` (FASE 3E). Reporte completo: `docs/PHASE_4A_REPORT.md` · auditoría: `docs/PHASE_4A_AUDIT.md`.

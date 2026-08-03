@@ -1,13 +1,16 @@
 /**
- * Tools de analítica de negocio (FASE 3B).
+ * Tools de analítica de negocio (FASE 3B + FASE 4B).
  *
- * Componen métricas de ventas, inventario y clientes (capa FASE 2C) más pedidos
- * pendientes. Solo lectura.
+ * Componen métricas de ventas, inventario y clientes (capa FASE 2C) más
+ * pedidos pendientes. Solo lectura. La FASE 4B añade `analytics.businessMonitor`,
+ * el monitor operativo que responde "¿cómo está mi negocio?".
  */
 import { getSalesMetrics } from "@/lib/analytics"
 import { getInventoryHealth } from "@/lib/analytics"
 import { getCustomerMetrics } from "@/lib/analytics"
 import { OrderService } from "@/services/order.service"
+import { createBusinessSummaryGenerator } from "@/lib/business-intelligence"
+import type { BusinessSummaryGenerator } from "@/lib/business-intelligence"
 import type { AgentTool, ToolExecutionContext, ToolResponse } from "../types"
 import { buildServiceContext } from "../context"
 import { toolOk } from "../response"
@@ -21,6 +24,7 @@ export type BusinessAlert = {
 
 export function createAnalyticsTools(deps: ToolDeps = {}): AgentTool[] {
   const orderService = deps.orderService ?? new OrderService()
+  const businessMonitor: BusinessSummaryGenerator = deps.businessMonitor ?? createBusinessSummaryGenerator()
 
   const businessSummary: AgentTool = {
     name: "analytics.businessSummary",
@@ -101,5 +105,22 @@ export function createAnalyticsTools(deps: ToolDeps = {}): AgentTool[] {
     },
   }
 
-  return [businessSummary, businessAlerts]
+  const monitorTool: AgentTool = {
+    name: "analytics.businessMonitor",
+    domain: "analytics",
+    description:
+      "Monitor operativo del negocio: resumen de salud con métricas (ventas hoy/semana/mes, pedidos, stock, clientes), insights priorizados y recomendaciones de revisión. Úsala para responder cómo está el negocio.",
+    requiredPermissions: ["report.read"],
+    inputSchema: { type: "object", properties: {} },
+    async execute(ctx: ToolExecutionContext): Promise<ToolResponse> {
+      const summary = await businessMonitor.generate({
+        ctx: buildServiceContext(ctx),
+        storeName: typeof ctx.metadata?.storeName === "string" ? ctx.metadata.storeName : undefined,
+        userName: typeof ctx.metadata?.userName === "string" ? ctx.metadata.userName : undefined,
+      })
+      return toolOk(summary)
+    },
+  }
+
+  return [businessSummary, businessAlerts, monitorTool]
 }

@@ -101,6 +101,7 @@ describe("Tool System: registro completo", () => {
       "reports.today",
       "analytics.businessSummary",
       "analytics.businessAlerts",
+      "analytics.businessMonitor",
     ]) {
       expect(names).toContain(expected)
     }

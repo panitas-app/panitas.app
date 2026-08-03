@@ -170,3 +170,19 @@ describe("OrderService.create", () => {
     expect(deps.repo.recordStockMovement).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("OrderService.creditOutstanding (FASE 4B)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("delega en el repositorio con el storeId del contexto autenticado", async () => {
+    const deps = makeDeps({
+      repo: { creditOutstanding: vi.fn().mockResolvedValue(3) },
+    })
+    const service = serviceWith(deps)
+    const count = await service.creditOutstanding(ctx)
+    expect(count).toBe(3)
+    expect(deps.repo.creditOutstanding).toHaveBeenCalledWith("store-1")
+  })
+})

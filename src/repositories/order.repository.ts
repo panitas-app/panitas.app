@@ -144,6 +144,20 @@ export class OrderRepository {
     })
   }
 
+  /** Cantidad de clientes con saldo pendiente (créditos/cuotas por cobrar), excluye canceladas. */
+  async creditOutstanding(storeId: string) {
+    const groups = await this.db.order.groupBy({
+      by: ["customerId"],
+      where: {
+        storeId,
+        customerId: { not: null },
+        status: { not: "cancelled" },
+        paymentStatus: { in: ["credit", "partial"] },
+      },
+    })
+    return groups.length
+  }
+
   /** Pedidos de tienda online (no POS) en un rango. */
   online(storeId: string, from?: Date, to?: Date) {
     return this.db.order.findMany({
