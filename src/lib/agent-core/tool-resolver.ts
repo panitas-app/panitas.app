@@ -57,6 +57,10 @@ export class ToolResolver {
 
   /** Ejecuta la herramienta detectada (si existe) y normaliza el resultado. */
   async resolveAndExecute(request: AgentRequest, checker: PermissionChecker): Promise<ResolvedToolCall[]> {
+    // FASE 4A: si la Intelligence Layer ya ejecutó las herramientas de este turno,
+    // el resolver legacy no vuelve a ejecutarlas (evita doble ejecución y costo de tokens).
+    if (request.metadata?.intelligence === true) return []
+
     const name = this.detectIntent(request)
     if (!name) return []
 

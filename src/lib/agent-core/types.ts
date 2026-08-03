@@ -113,6 +113,8 @@ export interface AgentRequest {
   businessContext?: string
   /** Memoria relevante recuperada para este turno (FASE 3D): se inyecta al system prompt. */
   memoryContext?: string
+  /** Contexto sintetizado por la Intelligence Layer (FASE 4A): intención + plan + resultados. */
+  intelligenceContext?: string
 }
 
 /**

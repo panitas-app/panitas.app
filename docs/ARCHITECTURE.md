@@ -116,7 +116,8 @@ Route handler (thin) → auth/csrf/rate-limit/parseo → Service (validación + 
 Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITECTURE_REVIEW.md`:
 
 ```
-┌─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
+┌─ src/lib/agent-intel/   (4A)  Intelligence Layer — intención, plan, orquestación, confirmación, síntesis, traza
+├─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
 ├─ src/lib/agent/tools/  (3B)  Tool System — 7 dominios, registry, executor, bridge       [C+]
 ├─ src/lib/conversation/ (3C)  Conversation Engine — chat con contexto y tools            [A−]
 ├─ src/lib/agent/memory/ (3D)  Memory — extracción, clasificación, retención de contexto  [B+]
@@ -124,10 +125,17 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
 └─ src/lib/agent/        (1C)  Legado — registry/router/types (parcialmente usado)       [D]
 ```
 
-- **Estado de cableado**: el Tool System 3B está construido y testeado pero **inerte** — `setupAgentTools()` nunca se invoca y el `ToolResolver` (3A) se crea sin `toolsProvider`, por lo que la capa de tools no se conecta al runtime. Decisión de la FASE 3E: **documentar, no cablear**. El puente `toLegacyAgentTool` (3B→1C) y `buildToolRegistry` quedan verificados por `tests/agent-core/wiring.test.ts` para una fase futura.
+- **Estado de cableado (FASE 4A)**: la Intelligence Layer consume por primera vez el
+  Tool System 3B (`toolRegistry.metadata()` para planificar y `ToolExecutor` para
+  ejecutar). Se integra en el `ConversationEngine` entre el Context Builder y
+  `agent.handle`: clasifica intención, planifica, ejecuta varias tools en
+  paralelo/orden, exige confirmación para acciones destructivas y entrega la
+  evidencia consolidada al LLM (una sola llamada). El `ToolResolver` 3A legacy
+  sigue existiendo, ahora con guard anti doble-ejecución
+  (`src/lib/agent-core/tool-resolver.ts`).
 - **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
 - **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
-- **Memoria**: capa 3D con `MemoryManager` + `ProfileService`, sin wiring al pipeline de chat aún.
+- **Memoria**: capa 3D con `MemoryManager` + `ProfileService`; el contexto/memoria se inyecta al request y la capa 4A la incluye en la síntesis (`engine.ts:72-82`).
 
 ---
 

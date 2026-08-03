@@ -64,6 +64,33 @@
 
 ---
 
+## FASE 4A — Agent Intelligence Layer (2026-08-03, `develop-v2`)
+
+> Base `f7cddf4` (FASE 3E). Reporte completo: `docs/PHASE_4A_REPORT.md` · auditoría: `docs/PHASE_4A_AUDIT.md`.
+
+### Nueva capa de razonamiento (`src/lib/agent-intel/`)
+- `feat(intel)`: `IntentEngine` — clasifica la solicitud en 7 intenciones (consulta, acción, análisis, configuración, conversación, ayuda, reporte) con confianza, dominios y entidades; determinista sin LLM
+- `feat(intel)`: `TaskPlanner` — convierte la intención en un plan de tools del Tool System 3B (orden, paralelismo, confirmación, rationale) usando `toolRegistry.metadata()`
+- `feat(intel)`: `ExecutionPlanner` — orquesta varias tools (secuencial/paralelo) con dependencias, reintentos y errores parciales; NUNCA ejecuta pasos sin confirmación
+- `feat(intel)`: `ConfirmationSystem` — reglas declarativas de confirmación (`products.delete`, `orders.updateStatus`=cancelled, `inventory.updateStock`=decrease/adjustment) y flujo `confirm:<stepId>`
+- `feat(intel)`: `ResponseSynthesizer` + `ExplanationEngine` — sintetizan la evidencia para la respuesta final del LLM (una sola llamada) y explican hallazgos en español
+- `feat(intel)`: `DefaultTraceRecorder` — observabilidad del turno (intención, plan, steps, tiempos, errores) con auditoría best-effort (`agent.trace`)
+- `feat(intel)`: `IntelligenceLayer` — orquestador del flujo intención→plan→confirmación/ejecución→síntesis→traza
+
+### Integración
+- `feat(conversation)`: `ConversationEngine` invoca la capa 4A antes de `agent.handle`; `confirmation_required` responde SIN LLM; contexto sintetizado se inyecta vía `request.intelligenceContext`; fallback determinista sin LLM cuando no hay resultados
+- `feat(agent-core)`: guard anti doble-ejecución en `ToolResolver` (si `metadata.intelligence`, no vuelve a ejecutar tools legacy)
+- `feat(agent-core)`: `AgentRequest.intelligenceContext` inyectado al system prompt por el Context Builder
+
+### Calidad
+- `test(intel)`: 57 tests nuevos (intent-engine 14, task-planner 10, execution-planner 9, confirmation-system 7, response-synthesizer 7, intelligence-layer 6, conversation-intelligence 4)
+- Verificación final: lint limpio en tocados · `tsc --noEmit` OK · **330 tests verdes** (51 archivos) · `next build` OK
+
+### Docs
+- `docs/PHASE_4A_AUDIT.md` (auditoría previa) · `docs/PHASE_4A_REPORT.md` · `docs/INTENT_ENGINE.md` · `docs/TASK_PLANNER.md` · `docs/TOOL_ORCHESTRATION.md` · `docs/CONFIRMATION_SYSTEM.md` · `docs/RESPONSE_SYNTHESIZER.md` · `ARCHITECTURE.md` · `PANITAS_CURRENT_STATE.md` actualizados
+
+---
+
 ## FASE 3E — Auditoría, limpieza y estabilización (2026-08-02, `develop-v2`)
 
 > Sin nuevas features ni capacidades IA. Base `4484b01` (FASE 3D). Reporte completo: `docs/PHASE_3E_STABILIZATION_REPORT.md`.

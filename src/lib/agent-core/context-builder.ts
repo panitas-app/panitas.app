@@ -68,6 +68,8 @@ export class ContextBuilder {
     // FASE 3D — Contexto empresarial y memoria relevante (solo si vienen del request).
     if (request.businessContext) lines.push(`\n${request.businessContext}`)
     if (request.memoryContext) lines.push(`\n${request.memoryContext}`)
+    // FASE 4A — Contexto sintetizado por la Intelligence Layer (intención + plan + resultados).
+    if (request.intelligenceContext) lines.push(`\n${request.intelligenceContext}`)
 
     const tools = this.options.toolsProvider?.() ?? []
     if (tools.length > 0) {

@@ -6,6 +6,7 @@
  * los tests inyectan dependencias mockeadas directamente.
  */
 import { createDefaultAgentCore } from "@/lib/agent-core"
+import { createIntelligenceLayer } from "@/lib/agent-intel"
 import { ConversationService } from "@/services/conversation.service"
 import { MemoryManager } from "@/lib/agent/memory"
 import { BusinessProfileBuilder } from "@/lib/agent/profile"
@@ -24,5 +25,6 @@ export function createConversationEngine(): ConversationEngine {
     conversations: new ConversationService(),
     memory,
     context,
+    intelligence: createIntelligenceLayer(),
   })
 }
