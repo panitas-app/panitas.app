@@ -182,7 +182,9 @@ describe("Tool System: layering (no Prisma, no repositorios)", () => {
       const source = readFileSync(join(domainsDir, file), "utf8")
       expect(source, `${file} must not import @/lib/prisma`).not.toContain("@/lib/prisma")
       expect(source, `${file} must not import @/repositories`).not.toContain("@/repositories")
-      expect(source, `${file} must import services or analytics`).toMatch(/@\/services\/|@\/lib\/analytics/)
+      expect(source, `${file} must import services, analytics or recommendations`).toMatch(
+        /@\/services\/|@\/lib\/analytics|@\/lib\/recommendations/
+      )
     }
   })
 

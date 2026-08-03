@@ -156,3 +156,52 @@ CREATE POLICY "Usuarios pueden ver citas de su agenda"
       AND auth.puede_acceder_modulo('agenda')
     )
   );
+
+-- ============================================================
+-- Políticas para Recommendation (FASE 4D, scope por storeId)
+-- ============================================================
+ALTER TABLE "Recommendation" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Usuarios pueden ver recomendaciones de su tienda"
+  ON "Recommendation"
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM "Store" s
+      JOIN auth.user_negocio() n ON n.id = s.negocio_id
+      WHERE s.id = store_id
+      AND auth.puede_acceder_modulo('tienda')
+    )
+  );
+
+CREATE POLICY "Sistema puede crear recomendaciones"
+  ON "Recommendation"
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM "Store" s
+      JOIN auth.user_negocio() n ON n.id = s.negocio_id
+      WHERE s.id = store_id
+      AND auth.puede_acceder_modulo('tienda')
+    )
+  );
+
+CREATE POLICY "Usuarios pueden actualizar recomendaciones de su tienda"
+  ON "Recommendation"
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM "Store" s
+      JOIN auth.user_negocio() n ON n.id = s.negocio_id
+      WHERE s.id = store_id
+      AND auth.puede_acceder_modulo('tienda')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM "Store" s
+      JOIN auth.user_negocio() n ON n.id = s.negocio_id
+      WHERE s.id = store_id
+      AND auth.puede_acceder_modulo('tienda')
+    )
+  );

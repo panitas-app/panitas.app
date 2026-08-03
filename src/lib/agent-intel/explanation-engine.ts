@@ -12,6 +12,7 @@
  */
 import type { BusinessAlert } from "@/lib/agent/tools/domains"
 import type { BusinessSummary, Insight } from "@/lib/business-intelligence"
+import type { Recommendation } from "@/lib/recommendations"
 
 /** Evidencia de bajo stock con contexto de tendencia de ventas. */
 export interface StockEvidence {
@@ -77,6 +78,14 @@ export class ExplanationEngine {
   /** Explica cada insight del monitor de negocio (FASE 4B). */
   explainSummary(summary: BusinessSummary): string[] {
     return summary.insights.map((insight) => this.explainInsight(insight))
+  }
+
+  /** Explica cada recomendación operativa (FASE 4D). */
+  explainRecommendations(recommendations: Recommendation[]): string[] {
+    if (recommendations.length === 0) return []
+    return recommendations.map(
+      (rec) => `${rec.title}: ${rec.description} Acción sugerida: ${rec.suggestedAction}`
+    )
   }
 
   explainInsight(insight: Insight): string {

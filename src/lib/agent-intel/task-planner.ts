@@ -45,6 +45,17 @@ export class TaskPlanner {
     ]
   }
 
+  /** FASE 4D: recomendaciones operativas basadas en datos (con cooldown anti-spam). */
+  private planRecommendations(): PlannedStep[] {
+    if (!this.hasTool("recommendations.list")) return []
+    return [
+      this.step("step-1", "recommendations.list", "recommendations", {}, {
+        parallel: true,
+        rationale: "Recomendaciones operativas del negocio a partir de sus datos.",
+      }),
+    ]
+  }
+
   private step(
     id: string,
     tool: string,
@@ -116,6 +127,10 @@ export class TaskPlanner {
       return this.planBusinessMonitor()
     }
 
+    if (intent.domains.includes("recommendations")) {
+      return this.planRecommendations()
+    }
+
     if (intent.message.includes("bajo") && intent.domains.includes("inventory")) {
       if (this.hasTool("inventory.getLowStock")) {
         steps.push(
@@ -177,6 +192,10 @@ export class TaskPlanner {
   private planAnalysis(intent: IntentClassification): PlannedStep[] {
     if (this.mentionsBusiness(intent)) {
       return this.planBusinessMonitor()
+    }
+
+    if (intent.domains.includes("recommendations")) {
+      return this.planRecommendations()
     }
 
     const steps: PlannedStep[] = []

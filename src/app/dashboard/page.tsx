@@ -9,6 +9,7 @@ import { DashboardAgenda } from "@/components/dashboard/dashboard-agenda"
 import { DashboardNegocio } from "@/components/dashboard/dashboard-negocio"
 import { DashboardEmpresa } from "@/components/dashboard/dashboard-empresa"
 import { ControlCenter } from "@/components/dashboard/control-center"
+import { RecommendationsSection } from "@/components/recommendations/recommendations-section"
 import { applyPlanSelection } from "@/lib/actions/plan-selection"
 
 export default async function DashboardPage(props: { searchParams?: Promise<{ plan?: string }> }) {
@@ -264,6 +265,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     return (
       <div className="space-y-8">
         <ControlCenter {...control} />
+        <RecommendationsSection />
         <DashboardAgenda {...cp} data={appointmentData} orders={orders} serviceStats={serviceStats || []} />
       </div>
     )
@@ -273,6 +275,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     return (
       <div className="space-y-8">
         <ControlCenter {...control} />
+        <RecommendationsSection />
         <DashboardNegocio {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} employeeCount={employeeCount} newCustomers={newCustomers} recentActivity={recentActivity} />
       </div>
     )
@@ -281,6 +284,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
     return (
       <div className="space-y-8">
         <ControlCenter {...control} />
+        <RecommendationsSection />
         <DashboardEmpresa {...cp} sales={salesData || defaultSales} appointments={appointmentData || defaultAppt} crm={crmData || { totalCustomers: 0, customersWithOrders: 0, followUps: 0 }} orders={orders} categoryStats={categoryStats || []} serviceStats={serviceStats || []} pendingCommissions={pendingCommissions} />
       </div>
     )
@@ -288,6 +292,7 @@ export default async function DashboardPage(props: { searchParams?: Promise<{ pl
   return (
     <div className="space-y-8">
       <ControlCenter {...control} />
+      <RecommendationsSection />
       <DashboardTienda {...cp} data={salesData || defaultSales} orders={orders} categoryStats={categoryStats || []} />
     </div>
   )

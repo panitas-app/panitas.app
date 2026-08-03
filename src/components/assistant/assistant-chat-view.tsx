@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Send, Sparkles, TrendingUp, Package, Clock, LineChart } from "lucide-react"
+import { Send, Sparkles, TrendingUp, Package, Clock, LineChart, Lightbulb } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ const SUGGESTIONS = [
   { icon: Package, label: "¿Qué producto se agotará pronto?" },
   { icon: Clock, label: "Resumen de mi semana" },
   { icon: LineChart, label: "¿Cómo está mi negocio?" },
+  { icon: Lightbulb, label: "¿Qué me recomiendas revisar?" },
 ]
 
 export function AssistantChatView({ chat }: { chat: AssistantChat }) {

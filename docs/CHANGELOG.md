@@ -64,6 +64,41 @@
 
 ---
 
+## FASE 4D — Recommendation Engine (2026-08-03, `develop-v2`)
+
+> Base `26dd1e5` (FASE 4C). Reporte completo: `docs/PHASE_4D_REPORT.md` · motor: `docs/RECOMMENDATION_ENGINE.md`.
+
+### Nueva capa `src/lib/recommendations/`
+- `feat(recommendations)`: `RecommendationEngine` — consume SOLO el `MonitorReport` del `BusinessHealthMonitor` (4B) y produce candidatos deterministas (dedupe por regla, priorización HIGH→MEDIUM→LOW y OPERATIONS→…→PRICING, límite 3-5)
+- `feat(recommendations)`: catálogo declarativo de **12 reglas** (inventario, ventas, clientes, operaciones, precios) con prioridad, acción de revisión, razón basada en datos y **cooldown anti-spam** por regla
+- `feat(recommendations)`: 5 analizadores que mapean observaciones 4B → candidatos (`mapper.ts`); PRICING se deriva de la alta rotación
+- `feat(recommendations)`: `RecommendationService` (1B) — `refresh` (cooldown + supersession de activas previas), `listActive`, `countActive`, `markStatus` (view/dismiss, 404 si no pertenece a la tienda), `summarize`
+- `feat(recommendations)`: `RecommendationSummaryGenerator` — texto determinista en español sin alarmismo + `promptContext` para el LLM ("podría ser conveniente revisar", nunca "debes")
+- `feat(recommendations)`: `RecommendationRepository` con `storeId` obligatorio en TODA query (aislamiento)
+
+### Reglas del cliente
+- Sin predicciones, sin decisiones automáticas, sin sugerir subir/bajar precios (solo "revisar"), sin palabras urgentes ("urgente", "crítico", "debes", "inmediatamente"), máximo 3-5 recomendaciones
+
+### DB y API
+- `feat(db)`: modelo Prisma `Recommendation` (storeId, ruleId, category, priority, status, title, description, reason, dataSource, suggestedAction, entityId, metadata, timestamps + viewedAt/dismissedAt) con índices `[storeId,status,createdAt]`, `[storeId,ruleId,createdAt]`, `[storeId,createdAt]`; relación `Store.recommendations`; `npm run db:push` aplicado + RLS en `prisma/rls-policies.sql` scoped por `negocio_id`
+- `feat(api)`: `GET /api/agent/recommendations` (refresh con cooldown + lista activa) y `PATCH` (view/dismiss) — rate limit, roles admin|manager|seller|viewer, gate `basic_ai`
+
+### Integración agente y UI
+- `feat(tools)`: tool `recommendations.list` (dominio `recommendations`, permiso `report.read`, sin storeId en schema) + dep `recommendationService` en `ToolDeps` y `setup.ts`
+- `feat(intel)`: `IntentEngine` reconoce el dominio `recommendations` (recomend/a, recomendación, consejo, que revisar, que debería/puedo revisar, que me aconsejas, tips); `TaskPlanner.planRecommendations`; `ExplanationEngine.explainRecommendations`; evidencia en `agent-intelligence`
+- `feat(ui)`: componentes en `src/components/recommendations/` (Card, List, Badge, Detail, RecommendationsSection) integrados en el **dashboard** (sección bajo el ControlCenter en los 4 planes) y sugerencia del asistente "¿Qué me recomiendas revisar?"
+
+### Calidad
+- `test(recommendations)`: 50 tests nuevos (rules 8, engine 9, analyzers 9, service 8, summary-generator 5, tool 6, agent-intel 5)
+- Ajuste: `domain-tools.test.ts` acepta `@/lib/recommendations` como capa permitida en las tools de dominio (guard de capas)
+- Verificación final: lint limpio en archivos nuevos/4D · `tsc --noEmit` OK · **421 tests verdes** (66 archivos) · `next build` OK (solo warning Edge preexistente de `bcv/fetcher.ts`)
+- Nota: `src/app/dashboard/page.tsx` conserva errores de lint pre-existentes (react-hooks/purity `Date.now`, `any`) ajenos a 4D
+
+### Docs
+- `docs/PHASE_4D_REPORT.md` · `docs/RECOMMENDATION_ENGINE.md` (nuevos) · `docs/ARCHITECTURE.md` · `docs/CHANGELOG.md` actualizados
+
+---
+
 ## FASE 4C — Panitas Main Assistant Interface (2026-08-03, `develop-v2`)
 
 > Base `dd9f804` (FASE 4B). Reporte completo: `docs/PHASE_4C_REPORT.md`.

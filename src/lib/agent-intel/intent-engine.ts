@@ -18,7 +18,9 @@ const DOMAIN_SIGNALS: Record<string, string[]> = {
   orders: ["pedido", "pedidos", "orden", "ordenes", "cancelar", "pendiente"],
   agenda: ["cita", "citas", "agenda", "reserva", "horario", "turno"],
   reports: ["reporte", "resumen", "informe", "balance"],
-  analytics: ["analiza", "analisis", "tendencia", "rendimiento", "comparar", "recomend", "crecimiento"],
+  analytics: ["analiza", "analisis", "tendencia", "rendimiento", "comparar", "crecimiento"],
+  // FASE 4D: consultas de recomendaciones operativas.
+  recommendations: ["recomend", "recomienda", "recomiendas", "recomendacion", "recomendaciones", "sugeren", "consejo", "que revisar", "que deberia revisar", "que puedo revisar", "que me aconsejas", "tips"],
   business: ["negocio", "negocios", "empresa", "como esta", "como va", "como van", "estado del negocio", "salud del negocio"],
 }
 
@@ -35,7 +37,9 @@ const QUERY_SIGNALS = [
 ]
 const ANALYSIS_SIGNALS = [
   "analiza", "analizar", "analisis", "tendencia", "rendimiento", "por que", "comparar",
-  "recomienda", "optimiz", "crecimiento", "mejor producto", "mas vendido", "menos vendido",
+  "recomienda", "recomendar", "recomendacion", "recomendaciones", "que revisar",
+  "que deberia revisar", "que puedo revisar", "optimiz", "crecimiento", "mejor producto",
+  "mas vendido", "menos vendido",
 ]
 const REPORT_SIGNALS = ["reporte", "reporte de", "resumen del", "resumen de", "informe", "cierre", "balance", "ventas del mes"]
 const CONFIG_SIGNALS = [

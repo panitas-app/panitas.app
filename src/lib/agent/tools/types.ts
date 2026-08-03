@@ -21,6 +21,7 @@ export type ToolDomain =
   | "reports"
   | "analytics"
   | "business"
+  | "recommendations"
 
 /** Contexto autenticado con el que se ejecuta una Tool (nunca construido desde input del usuario). */
 export interface ToolExecutionContext {

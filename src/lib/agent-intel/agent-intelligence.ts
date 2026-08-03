@@ -22,6 +22,7 @@ import { ToolExecutor, toolRegistry } from "@/lib/agent/tools"
 import type { ToolExecutionContext } from "@/lib/agent/tools/types"
 import type { BusinessAlert } from "@/lib/agent/tools/domains"
 import type { BusinessSummary } from "@/lib/business-intelligence"
+import type { Recommendation } from "@/lib/recommendations"
 import type { AgentRequest } from "@/lib/agent-core/types"
 import { IntentEngine } from "./intent-engine"
 import { TaskPlanner } from "./task-planner"
@@ -177,6 +178,12 @@ export class IntelligenceLayer {
         const data = result.output?.data as BusinessSummary | undefined
         if (!data || !Array.isArray(data.insights)) continue
         explanations.push(...this.explanation.explainSummary(data))
+      }
+
+      if (result.tool === "recommendations.list") {
+        const data = result.output?.data as { recommendations?: Recommendation[] } | null | undefined
+        if (!data || !Array.isArray(data.recommendations)) continue
+        explanations.push(...this.explanation.explainRecommendations(data.recommendations))
       }
     }
     return explanations

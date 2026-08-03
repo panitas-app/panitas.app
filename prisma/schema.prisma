@@ -319,6 +319,7 @@ model Store {
   scannerSessions ScannerSession[]
   conversations Conversation[]
   memories BusinessMemory[]
+  recommendations Recommendation[]
 }
 
 model StoreVisit {
@@ -1675,4 +1676,33 @@ model BusinessMemory {
   @@index([storeId, updatedAt])
   @@index([negocioId])
   @@index([expiresAt])
+}
+
+// ── Panitas Recommendation Engine (FASE 4D) ──────────────────────────────────
+
+model Recommendation {
+  id              String   @id @default(cuid())
+  storeId         String
+  userId          String?  // autor/generador (auditoría)
+  ruleId          String
+  category        String // INVENTORY | SALES | CUSTOMERS | OPERATIONS | PRICING
+  priority        String // LOW | MEDIUM | HIGH
+  status          String   @default("active") // active | viewed | dismissed
+  title           String
+  description     String
+  reason          String?
+  dataSource      String?
+  suggestedAction String?
+  entityId        String?
+  metadata        String? // JSON serializado
+  createdAt       DateTime @default(now())
+  viewedAt        DateTime?
+  dismissedAt     DateTime?
+  updatedAt       DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status, createdAt])
+  @@index([storeId, ruleId, createdAt])
+  @@index([storeId, createdAt])
 }

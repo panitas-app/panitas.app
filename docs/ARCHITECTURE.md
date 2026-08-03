@@ -118,9 +118,10 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
 ```
 ├─ src/components/assistant/ + src/hooks/use-assistant-chat.ts (4C)  Main Assistant UI — Sheet + página dedicada [N]
 └─ src/lib/business-intelligence/ (4B)  Business Monitor — salud, analizadores, insights, resumen     [N]
+├─ src/lib/recommendations/ (4D)  Recommendation Engine — catálogo, analizadores, servicio, resumen   [N]
 ├─ src/lib/agent-intel/   (4A)  Intelligence Layer — intención, plan, orquestación, confirmación, síntesis, traza
 ├─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
-├─ src/lib/agent/tools/  (3B)  Tool System — 7 dominios, registry, executor, bridge       [C+]
+├─ src/lib/agent/tools/  (3B)  Tool System — 8 dominios, registry, executor, bridge       [C+]
 ├─ src/lib/conversation/ (3C)  Conversation Engine — chat con contexto y tools            [A−]
 ├─ src/lib/agent/memory/ (3D)  Memory — extracción, clasificación, retención de contexto  [B+]
 ├─ src/lib/agent/profile/(3D)  Business Context Profile — análisis de negocio             [A−]
@@ -151,6 +152,18 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
   flujo de confirmación de 4A (las tarjetas "Confirmar/Cancelar" reenvían el
   turno con los pasos aprobados). `AskPanitas` hace prefill del texto tipeado al
   abrir el asistente. Reporte: `docs/PHASE_4C_REPORT.md`.
+- **Recommendation Engine (FASE 4D)**: la capa `src/lib/recommendations/`
+  responde "¿qué me recomiendas revisar?" con puntos operativos basados en
+  datos, deterministas y sin predicciones. Flujo de capas obligatorio:
+  **Agente → Intelligence → Recommendation Engine → Business Monitor →
+  Services → Repositories**. El engine consume SOLO el reporte del monitor 4B
+  (`BusinessHealthMonitor.monitor`), los analizadores 4D mapean observaciones →
+  candidatos vía el catálogo de reglas, y el `RecommendationService` (1B)
+  persiste el historial con anti-spam (cooldown por regla + estado
+  active/viewed/dismissed + supersession). Se consume vía la tool
+  `recommendations.list`, la API `GET/PATCH /api/agent/recommendations` y los
+  componentes UI en `src/components/recommendations/` (dashboard + asistente).
+  Documentación: `docs/RECOMMENDATION_ENGINE.md`, `docs/PHASE_4D_REPORT.md`.
 - **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
 - **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
 - **Memoria**: capa 3D con `MemoryManager` + `ProfileService`; el contexto/memoria se inyecta al request y la capa 4A la incluye en la síntesis (`engine.ts:72-82`).

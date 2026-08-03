@@ -10,6 +10,7 @@ import type { SalesService } from "@/services/sales.service"
 import type { CustomerService } from "@/services/customer.service"
 import type { OrderService } from "@/services/order.service"
 import type { BusinessSummaryGenerator } from "@/lib/business-intelligence"
+import type { RecommendationService } from "@/lib/recommendations"
 
 export interface ToolDeps {
   productService?: ProductService
@@ -19,4 +20,6 @@ export interface ToolDeps {
   orderService?: OrderService
   /** Generador de resumen del negocio (FASE 4B), inyectable en tests. */
   businessMonitor?: BusinessSummaryGenerator
+  /** Servicio de recomendaciones operativas (FASE 4D), inyectable en tests. */
+  recommendationService?: RecommendationService
 }
