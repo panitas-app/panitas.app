@@ -10,7 +10,7 @@ export function AskPanitas() {
   const [value, setValue] = useState("")
 
   function handleSubmit() {
-    openAssistant()
+    openAssistant(value)
     setValue("")
   }
 

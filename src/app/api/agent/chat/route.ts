@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const message = typeof body?.message === "string" ? body.message.trim() : ""
     const conversationId = typeof body?.conversationId === "string" ? body.conversationId : undefined
+    // FASE 4C: segunda vuelta de confirmación — IDs de pasos aprobados por el usuario.
+    const confirmedStepIds = Array.isArray(body?.confirmedStepIds)
+      ? body.confirmedStepIds.filter((id: unknown): id is string => typeof id === "string" && id.trim().length > 0)
+      : undefined
 
     if (!message) {
       return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 })
@@ -56,9 +60,12 @@ export async function POST(request: NextRequest) {
     if (message.length > 4000) {
       return NextResponse.json({ error: "El mensaje es demasiado largo (máximo 4000 caracteres)" }, { status: 400 })
     }
+    if (confirmedStepIds && confirmedStepIds.length > 10) {
+      return NextResponse.json({ error: "Demasiadas confirmaciones en la solicitud" }, { status: 400 })
+    }
 
     const ctx = ctxFrom(current)
-    const result = await getEngine().chat(ctx, { conversationId, message })
+    const result = await getEngine().chat(ctx, { conversationId, message, confirmedStepIds })
 
     createAuditEntry({
       action: result.response.ok ? "agent.completed" : "agent.failed",

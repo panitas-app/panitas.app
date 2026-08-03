@@ -12,8 +12,7 @@ import { BcvRateProvider } from "@/lib/bcv-context"
 import { InstallmentOverdueBanner } from "@/components/dashboard/installment-overdue-banner"
 import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
 import { AssistantProvider } from "@/components/assistant/assistant-provider"
-import { AssistantPanel } from "@/components/assistant/assistant-panel"
-import { AssistantFab } from "@/components/assistant/assistant-fab"
+import { AssistantDashboardChrome } from "@/components/assistant/assistant-dashboard-chrome"
 
 function isRedirectError(error: any): boolean {
   return (
@@ -134,8 +133,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                 </main>
               </div>
               <BottomNav planType={planType} />
-              <AssistantFab />
-              <AssistantPanel />
+              <AssistantDashboardChrome />
             </div>
           </SetupWizardProvider>
         </BcvRateProvider>

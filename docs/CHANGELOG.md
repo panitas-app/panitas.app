@@ -64,6 +64,32 @@
 
 ---
 
+## FASE 4C — Panitas Main Assistant Interface (2026-08-03, `develop-v2`)
+
+> Base `dd9f804` (FASE 4B). Reporte completo: `docs/PHASE_4C_REPORT.md`.
+
+### API de chat — flujo de confirmación completado
+- `feat(api)`: `POST /api/agent/chat` acepta `confirmedStepIds` (array de strings, máx. 10) y lo reenvía al engine (`ChatTurnInput` ya lo soportaba desde 4A)
+- `feat(api)`: en `confirmation_required` la respuesta ahora expone `confirmation.actions` (stepId, tool, description, impact) — la UI puede renderizar la confirmación por acción sin adivinar IDs
+
+### Main Assistant UI
+- `feat(assistant)`: hook compartido `src/hooks/use-assistant-chat.ts` (mensajes, confirmación, resumen de negocio, conversaciones) que alimenta el Sheet y la página dedicada
+- `feat(assistant)`: tarjeta de confirmación "Confirmar/Cancelar" (`assistant-confirmation.tsx`) — confirmar reenvía el turno con `confirmedStepIds`; cancelar no ejecuta nada
+- `feat(assistant)`: resumen de negocio inline — `BusinessSummaryView` (4B) como mensaje del chat + sugerencia "¿Cómo está mi negocio?"
+- `feat(assistant)`: página dedicada `/dashboard/assistant` — chat a ancho completo + monitor de negocio 4B lateral (`business-monitor-panel.tsx`); FAB/Sheet se ocultan en esta ruta (`assistant-dashboard-chrome.tsx`)
+- `feat(assistant)`: prefill — `openAssistant(message?)` auto-envía el texto tipeado en "Pregúntale a Panitas…" al abrir el asistente
+- `feat(nav)`: ítem "Asistente IA" en el sidebar (grupo Panitas IA)
+
+### Calidad
+- `test(api)`: `chat-gate.test.ts` (2 nuevos: reenvío y validación/filtrado de `confirmedStepIds`) · `conversation-intelligence.test.ts` (1 nuevo: exposición de `confirmation` y reenvío a la capa de inteligencia)
+- Verificación final: lint limpio en archivos nuevos/4C · `tsc --noEmit` OK · **371 tests verdes** (59 archivos) · `next build` OK (219 páginas, solo warning Edge preexistente de `bcv/fetcher.ts`)
+- Nota: `sidebar.tsx`, `topbar.tsx` y `layout.tsx` conservan errores de lint pre-existentes (react-hooks/refs, `any`, `<a>`) ajenos a 4C
+
+### Docs
+- `docs/PHASE_4C_REPORT.md` (nuevo) · `docs/ARCHITECTURE.md` · `docs/CHAT_API_REFERENCE.md` · `docs/CHANGELOG.md` actualizados
+
+---
+
 ## FASE 4B — Business Monitor & Operational Intelligence (2026-08-03, `develop-v2`)
 
 > Base `11fbbd8` (FASE 4A). Reporte completo: `docs/PHASE_4B_REPORT.md` · arquitectura: `docs/BUSINESS_MONITOR_ARCHITECTURE.md` · `docs/INSIGHT_ENGINE.md` · `docs/OPERATIONAL_INTELLIGENCE.md`.

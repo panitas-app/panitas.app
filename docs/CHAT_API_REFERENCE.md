@@ -1,4 +1,4 @@
-# Chat API — Referencia (FASE 3C)
+# Chat API — Referencia (FASE 3C · actualizada en FASE 4C)
 
 **Estado:** Implementado · autenticación requerida (NextAuth) · base: `/api`
 
@@ -11,12 +11,13 @@ Envía un mensaje a Panitas IA. Crea la conversación si no existe o reutiliza l
 ### Request
 ```json
 {
-  "conversationId": "cm...",   // opcional; si se omite, se crea una conversación nueva
-  "message": "¿Cuánto stock queda de Producto A?"
+  "conversationId": "cm...",            // opcional; si se omite, se crea una conversación nueva
+  "message": "¿Cuánto stock queda de Producto A?",
+  "confirmedStepIds": ["step-1"]        // FASE 4C: opcional; segunda vuelta de confirmación
 }
 ```
 
-### Response `200`
+### Response `200` — turno completado
 ```json
 {
   "conversationId": "cm...",
@@ -41,10 +42,40 @@ Envía un mensaje a Panitas IA. Crea la conversación si no existe o reutiliza l
 }
 ```
 
+### Response `200` — `confirmation_required` (FASE 4A/4C)
+Cuando la solicitud implica una acción destructiva, no se ejecuta nada y se
+devuelve la solicitud de confirmación **sin llamar al LLM**:
+
+```json
+{
+  "conversationId": "cm...",
+  "response": {
+    "reply": "Necesito tu confirmación antes de continuar:\n- Eliminar el producto permanentemente. El producto dejará de estar disponible...",
+    "provider": "intelligence",
+    "model": "confirmation",
+    "toolCalls": [{ "name": "products.delete", "ok": false, "error": "awaiting_confirmation" }],
+    "ok": true
+  },
+  "metadata": { "status": "confirmation_required", "intent": "accion" },
+  "confirmation": {
+    "actions": [
+      { "stepId": "step-1", "tool": "products.delete", "description": "Eliminar el producto permanentemente", "impact": "El producto dejará de estar disponible y no se podrá recuperar." }
+    ],
+    "confirmCodes": ["confirm:step-1"],
+    "message": "Necesito tu confirmación antes de continuar:...",
+    "requestedAt": "2026-08-03T10:00:00.000Z"
+  }
+}
+```
+
+Para proceder, el cliente reenvía el **mismo `message`** con
+`confirmedStepIds` = los `stepId` de las acciones a aprobar. Los pasos NO
+confirmados nunca se ejecutan (`ConfirmationSystem.isFullyConfirmed`).
+
 ### Errores
 | Código | Caso |
 |---|---|
-| `400` | `message` vacío o mayor a 4000 caracteres |
+| `400` | `message` vacío o mayor a 4000 caracteres · `confirmedStepIds` con más de 10 IDs |
 | `401` | Sin sesión |
 | `403` | Sin permisos / plan pendiente de pago |
 | `429` | Rate limit (30 req/min) |

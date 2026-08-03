@@ -177,7 +177,7 @@ export function DashboardTopbar({
         <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
           {/* Panitas IA button */}
           <button
-            onClick={openAssistant}
+            onClick={() => openAssistant()}
             className="hidden items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-bold text-primary transition-all hover:bg-primary/10 sm:flex"
           >
             <Bot className="size-3.5" />

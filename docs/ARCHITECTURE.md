@@ -116,7 +116,8 @@ Route handler (thin) → auth/csrf/rate-limit/parseo → Service (validación + 
 Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITECTURE_REVIEW.md`:
 
 ```
-┌─ src/lib/business-intelligence/ (4B)  Business Monitor — salud, analizadores, insights, resumen     [N]
+├─ src/components/assistant/ + src/hooks/use-assistant-chat.ts (4C)  Main Assistant UI — Sheet + página dedicada [N]
+└─ src/lib/business-intelligence/ (4B)  Business Monitor — salud, analizadores, insights, resumen     [N]
 ├─ src/lib/agent-intel/   (4A)  Intelligence Layer — intención, plan, orquestación, confirmación, síntesis, traza
 ├─ src/lib/agent-core/   (3A)  Agent Core — pipeline, tool-resolver, router, permissions  [B]
 ├─ src/lib/agent/tools/  (3B)  Tool System — 7 dominios, registry, executor, bridge       [C+]
@@ -142,6 +143,14 @@ Capas IA construidas sobre el legado 1.0, con calificación de `docs/AI_ARCHITEC
   `GET /api/agent/business-summary` y componentes UI puros
   (`src/components/business/`). Los analizadores usan solo servicios 1B;
   el `storeId` siempre proviene del contexto autenticado.
+- **Main Assistant Interface (FASE 4C)**: un solo hook de chat
+  (`src/hooks/use-assistant-chat.ts`) alimenta dos superficies: el **Sheet**
+  flotante del dashboard y la **página dedicada `/dashboard/assistant`** (chat
+  a ancho completo + monitor de negocio 4B lateral). La API `POST /api/agent/chat`
+  ahora acepta `confirmedStepIds` y expone `confirmation.actions`, cerrando el
+  flujo de confirmación de 4A (las tarjetas "Confirmar/Cancelar" reenvían el
+  turno con los pasos aprobados). `AskPanitas` hace prefill del texto tipeado al
+  abrir el asistente. Reporte: `docs/PHASE_4C_REPORT.md`.
 - **Aislamiento de negocio**: la capa de servicios valida que el `storeId` provenga siempre del contexto autenticado. `OrderService.create` y `ProductRepository.findByIds` fueron corregidos en 3E (`docs/SECURITY_AUDIT_REPORT.md`).
 - **Gate de planes**: las rutas de IA validaan `requireFeature(plan, feature)` antes de operar (`basic_ai` en `POST /api/agent/chat`).
 - **Memoria**: capa 3D con `MemoryManager` + `ProfileService`; el contexto/memoria se inyecta al request y la capa 4A la incluye en la síntesis (`engine.ts:72-82`).

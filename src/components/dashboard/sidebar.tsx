@@ -35,6 +35,7 @@ import {
   Receipt,
   CalendarCheck,
   Banknote,
+  Bot,
   X,
 } from "lucide-react"
 import type { Store as PrismaStore } from "@prisma/client"
@@ -141,6 +142,7 @@ function getNavItems(planType: string): SidebarItem[] {
 
   // Panitas IA
   items.push(
+    { href: "/dashboard/assistant", label: "Asistente IA", icon: Bot, roles: ["admin", "manager", "seller", "viewer"], group: "Panitas IA" },
     { href: "/dashboard/conversaciones", label: "Conversaciones", icon: MessageCircle, plusBadge: true, roles: ["admin", "manager"], group: "Panitas IA" },
   )
 

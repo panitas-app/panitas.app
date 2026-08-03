@@ -87,7 +87,35 @@ describe("ConversationEngine.chat con Intelligence Layer", () => {
     expect(result).toMatchObject({
       response: { provider: "intelligence", model: "confirmation", ok: true },
       metadata: { status: "confirmation_required", intent: "accion" },
+      confirmation: {
+        actions: [{ stepId: "step-1", tool: "products.delete", description: "Eliminar", impact: "No recuperable" }],
+        confirmCodes: ["confirm:step-1"],
+        message: "Necesito tu confirmación.",
+      },
     })
+  })
+
+  it("reenvía confirmedStepIds a la capa de inteligencia en la segunda vuelta", async () => {
+    const conversations = makeConversations()
+    const agent = makeAgent()
+    const intelligence = buildIntelligence({
+      result: {
+        status: "no_tools",
+        intent: { type: "conversacion", confidence: 0.5, domains: [], message: "x", entities: {}, destructive: false, needsTools: false, signals: [] },
+        plan: null,
+        toolResults: [],
+        trace: TRACE,
+      },
+    })
+    const engine = new ConversationEngine({
+      conversations: conversations as unknown as ConversationService,
+      agent: agent as unknown as PanitasAgent,
+      intelligence: intelligence as unknown as IntelligenceLayer,
+    })
+
+    await engine.chat(ctx, { message: "elimina el producto", confirmedStepIds: ["step-1"] })
+
+    expect(intelligence.run).toHaveBeenCalledWith(expect.objectContaining({ confirmedStepIds: ["step-1"] }))
   })
 
   it("inyecta el contexto sintetizado al agente y persiste los toolCalls", async () => {

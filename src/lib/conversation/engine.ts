@@ -24,7 +24,7 @@ import { permissionsForRole } from "@/lib/agent/permissions/agent.roles"
 import type { PanitasAgent } from "@/lib/agent-core"
 import type { AgentRequest, Message, ResolvedToolCall, UsageInfo } from "@/lib/agent-core/types"
 import type { IntelligenceLayer } from "@/lib/agent-intel"
-import type { StepExecutionResult } from "@/lib/agent-intel/types"
+import type { ConfirmationRequest, StepExecutionResult } from "@/lib/agent-intel/types"
 import { buildConversationalHistory } from "./context-builder"
 import type { StoreServiceContext } from "@/services/context"
 import type { BusinessContextBuilder } from "@/lib/agent/context"
@@ -50,6 +50,8 @@ export type ChatTurnResult = {
     error?: string
   }
   metadata: Record<string, unknown>
+  /** FASE 4C: solicitud de confirmación activa (solo cuando metadata.status === "confirmation_required"). */
+  confirmation?: ConfirmationRequest
 }
 
 export type ConversationEngineDeps = {
@@ -178,6 +180,7 @@ export class ConversationEngine {
             intent: layerIntent,
             trace: layerTrace,
           },
+          confirmation: layerResult.confirmation,
         }
       }
 

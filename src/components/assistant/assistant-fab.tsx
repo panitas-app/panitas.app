@@ -17,7 +17,7 @@ export function AssistantFab() {
         )}
         <Button
           size="icon-lg"
-          onClick={open ? closeAssistant : openAssistant}
+          onClick={() => (open ? closeAssistant() : openAssistant())}
           aria-label={open ? "Cerrar asistente" : "Abrir asistente Panitas"}
           className={cn(
             "relative size-13 rounded-full shadow-xl shadow-primary/25 transition-transform",

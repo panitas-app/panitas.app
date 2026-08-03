@@ -19,10 +19,11 @@ vi.mock("@/lib/conversation", () => ({ createConversationEngine: vi.fn() }))
 vi.mock("@/lib/audit", () => ({ createAuditEntry: vi.fn().mockResolvedValue(undefined) }))
 vi.mock("@/services/http", () => ({ toServiceResponse: (e: Error) => ({ error: e.message }) }))
 
-import { POST } from "@/app/api/agent/chat/route"
 import { requireRole } from "@/lib/permissions"
 import { requireFeature } from "@/lib/features"
 import { createConversationEngine } from "@/lib/conversation"
+
+let POST: (req: unknown) => Promise<unknown>
 
 const current = {
   userId: "user-1",
@@ -30,8 +31,8 @@ const current = {
   store: { id: "store-1", name: "Mi Tienda", plan: "comercio", negocioId: null },
 }
 
-function makeRequest(message: string) {
-  return { json: vi.fn().mockResolvedValue({ message }) } as never
+function makeRequest(message: string, extra: Record<string, unknown> = {}) {
+  return { json: vi.fn().mockResolvedValue({ message, ...extra }) } as never
 }
 
 const chatResult = {
@@ -41,9 +42,13 @@ const chatResult = {
 }
 
 describe("POST /api/agent/chat — gate de plan (basic_ai)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     vi.mocked(requireRole).mockResolvedValue(current as never)
+    // El route cachea el engine a nivel de módulo: recargamos el módulo por test
+    // para que cada test arranque con su propio engine mock.
+    vi.resetModules()
+    ;({ POST } = await import("@/app/api/agent/chat/route"))
   })
 
   it("permite el chat cuando el plan incluye basic_ai", async () => {
@@ -88,5 +93,44 @@ describe("POST /api/agent/chat — gate de plan (basic_ai)", () => {
       expect.objectContaining({ status: 400 })
     )
     expect(createConversationEngine).not.toHaveBeenCalled()
+  })
+
+  it("reenvía confirmedStepIds al engine en la segunda vuelta de confirmación", async () => {
+    vi.mocked(requireFeature).mockReturnValue({ allowed: true })
+    const chat = vi.fn().mockResolvedValue({
+      ...chatResult,
+      confirmation: {
+        actions: [{ stepId: "step-1", tool: "products.delete", description: "Eliminar", impact: "No recuperable" }],
+        confirmCodes: ["confirm:step-1"],
+        message: "Necesito tu confirmación.",
+        requestedAt: "2026-01-01T00:00:00.000Z",
+      },
+    })
+    vi.mocked(createConversationEngine).mockReturnValue({ chat } as never)
+
+    await POST(makeRequest("elimina el producto", { confirmedStepIds: ["step-1"] }))
+
+    expect(chat).toHaveBeenCalledWith(
+      expect.objectContaining({ storeId: "store-1" }),
+      expect.objectContaining({ message: "elimina el producto", confirmedStepIds: ["step-1"] })
+    )
+  })
+
+  it("filtra IDs no string de confirmedStepIds y valida el límite", async () => {
+    vi.mocked(requireFeature).mockReturnValue({ allowed: true })
+    const chat = vi.fn().mockResolvedValue(chatResult)
+    vi.mocked(createConversationEngine).mockReturnValue({ chat } as never)
+
+    await POST(makeRequest("ejecuta", { confirmedStepIds: ["step-1", 123, "", "step-2"] }))
+    expect(chat).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ confirmedStepIds: ["step-1", "step-2"] })
+    )
+
+    await POST(makeRequest("ejecuta", { confirmedStepIds: Array.from({ length: 11 }, (_, i) => `s${i}`) }))
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: "Demasiadas confirmaciones en la solicitud" }),
+      expect.objectContaining({ status: 400 })
+    )
   })
 })
