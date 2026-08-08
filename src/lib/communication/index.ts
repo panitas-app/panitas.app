@@ -12,6 +12,7 @@ export {
   PROVIDER_MESSAGE_STATUSES,
   PROVIDER_SENDERS,
   PROVIDER_STATUSES,
+  PROVIDER_STATUS_UPDATE_TYPES,
   type CommunicationEventName,
   type CommunicationEventRecord,
   type ProviderAttachment,
@@ -28,6 +29,8 @@ export {
   type ProviderSender,
   type ProviderSendResult,
   type ProviderStatus,
+  type ProviderStatusUpdate,
+  type ProviderStatusUpdateType,
   type ProviderWebhookPayload,
 } from "./provider-types"
 export type { CommunicationProvider, ProviderSendOptions } from "./interfaces/communication-provider"
@@ -59,6 +62,27 @@ export {
   type RotatedCredentials,
 } from "./security"
 export { MockCommunicationProvider, type MockProviderOptions } from "./providers"
+export {
+  WhatsAppProvider,
+  normalizeWhatsAppPhone,
+  type WhatsAppProviderOptions,
+  type WhatsAppConnectionConfig,
+} from "./providers"
+export {
+  InstagramProvider,
+  type InstagramConnectionConfig,
+  type InstagramProviderOptions,
+} from "./providers"
+export {
+  MessengerProvider,
+  type MessengerConnectionConfig,
+  type MessengerProviderOptions,
+} from "./providers"
+export {
+  MetaMessagingProvider,
+  type MetaMessagingConfig,
+  type MetaMessagingProviderOptions,
+} from "./providers"
 export { parseWebhookPayload } from "./providers/webhook-parser"
 export { ProviderRegistry } from "./provider-registry"
 export { MockProviderFactory, type ProviderFactoryOptions } from "./provider-factory"

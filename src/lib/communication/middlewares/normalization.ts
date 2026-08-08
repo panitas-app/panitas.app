@@ -49,6 +49,7 @@ export function normalizeInboundEvent(input: {
   attachments?: ProviderAttachment[]
   externalMessageId?: string
   metadata?: Record<string, unknown>
+  statusUpdate?: import("../provider-types").ProviderStatusUpdate
 }): ProviderInboundEvent {
   const message: ProviderMessage = {
     id: input.externalMessageId ?? nextInboundId(input.channel),
@@ -67,5 +68,6 @@ export function normalizeInboundEvent(input: {
     channel: input.channel,
     conversationId: input.conversationId,
     message,
+    statusUpdate: input.statusUpdate,
   }
 }

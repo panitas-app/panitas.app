@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { csrfGuard } from "@/lib/csrf"
+import { prisma } from "@/lib/prisma"
 import { InboxMessageService, type InboxSender, type InboxContentType } from "@/lib/inbox"
+import { sendAgentMessage } from "@/lib/whatsapp/send-service"
+import { sendMetaAgentMessage } from "@/lib/meta/send-service"
 import { requireInboxStore, inboxErrorResponse } from "../../_helpers"
 
 const messages = new InboxMessageService()
@@ -58,7 +61,44 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       senderName: body.senderName,
       externalId: body.externalId,
     })
-    return NextResponse.json(message, { status: 201 })
+
+    let externalId: string | null = null
+    if (body.sender === "agent") {
+      try {
+        const conversation = await prisma.inboxConversation.findUnique({
+          where: { id },
+          select: { channel: { select: { type: true } } },
+        })
+        const channelType = conversation?.channel.type
+        const outcome =
+          channelType === "instagram" || channelType === "messenger"
+            ? await sendMetaAgentMessage(current.ctx, id, channelType, {
+                text: body.content,
+                contentType: body.contentType,
+                attachments: body.attachments,
+              })
+            : await sendAgentMessage(current.ctx, id, {
+                text: body.content,
+                contentType: body.contentType,
+                attachments: body.attachments,
+              })
+        externalId = outcome.externalId
+        if (externalId) {
+          await prisma.inboxMessage.update({
+            where: { id: message.id },
+            data: { externalId },
+          })
+        }
+      } catch {
+        await prisma.inboxMessage.update({
+          where: { id: message.id },
+          data: { status: "failed" },
+        })
+        throw new Error("No se pudo enviar el mensaje por el canal")
+      }
+    }
+
+    return NextResponse.json({ ...message, externalId }, { status: 201 })
   } catch (error: unknown) {
     return inboxErrorResponse(error, "Error al enviar el mensaje")
   }

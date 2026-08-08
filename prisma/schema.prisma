@@ -342,6 +342,9 @@ model Store {
   inboxNotes        InboxNote[]
   inboxAiSummaries  InboxAiSummary[]
 
+  // Conexiones de canales (WhatsApp Cloud API, FASE 8A)
+  channelConnections ChannelConnection[]
+
   // Base de Conocimiento (FASE 7D)
   knowledgeDocuments   KnowledgeDocument[]
   knowledgeCategories  KnowledgeCategory[]
@@ -1853,9 +1856,40 @@ model InboxChannel {
   store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   conversations InboxConversation[]
+  connection   ChannelConnection?
 
   @@unique([storeId, type])
   @@index([storeId, isActive])
+}
+
+// ─── WHATSAPP CLOUD API — CONEXIONES POR NEGOCIO (FASE 8A) ──────────────────
+// Conexión real de un canal con un proveedor de mensajería (Meta WhatsApp Cloud
+// API). Cada negocio guarda aquí su propia conexión multi-tenant: token de
+// acceso, número de teléfono de la WABA y verify token. El estado del proveedor
+// en runtime se deriva de `status` (pending, connected, disconnected, error,
+// revoked). Los secrets NO se exponen fuera del servidor (sanitizeProviderConfig).
+
+model ChannelConnection {
+  id             String    @id @default(cuid())
+  channelId      String    @unique
+  channel        InboxChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  provider       String    @default("meta") // meta (WhatsApp Cloud API) | mock
+  status         String    @default("pending") // pending, connected, disconnected, error, revoked
+  config         String    @default("{}") // JSON serializado (accessToken, phoneNumberId, wabaId, verifyToken...)
+  externalRef    String?   // phone_number_id de la WABA (resuelve el store en webhooks)
+  errorMessage   String?
+  connectedAt    DateTime?
+  disconnectedAt DateTime?
+  lastHealthAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, channelId])
+  @@index([storeId, status])
+  @@index([externalRef])
 }
 
 model InboxConversation {
@@ -1888,6 +1922,7 @@ model InboxConversation {
 
   @@index([storeId, status, updatedAt])
   @@index([storeId, updatedAt])
+  @@index([storeId, externalRef])
   @@index([customerId])
   @@index([assignedToId])
   @@index([channelId])
@@ -1917,6 +1952,7 @@ model InboxMessage {
   @@index([conversationId, createdAt])
   @@index([storeId, createdAt])
   @@index([storeId, sender])
+  @@unique([storeId, externalId])
 }
 
 model InboxParticipant {

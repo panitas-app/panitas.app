@@ -22,12 +22,15 @@ export interface ProviderFactoryOptions {
   requireConnected?: boolean
   /** Sobrescribe opciones por canal. */
   perChannel?: Partial<Record<ProviderChannelType, Partial<MockProviderOptions>>>
+  /** Proveedores reales por canal que sustituyen al mock (p. ej. WhatsApp Cloud API). */
+  realProviders?: Partial<Record<ProviderChannelType, CommunicationProvider>>
 }
 
 export class MockProviderFactory {
   private readonly cache = new Map<string, CommunicationProvider>()
   private readonly defaults: Omit<MockProviderOptions, "channel">
   private readonly perChannel: Partial<Record<ProviderChannelType, Partial<MockProviderOptions>>>
+  private readonly realProviders: Partial<Record<ProviderChannelType, CommunicationProvider>>
 
   constructor(options: ProviderFactoryOptions = {}) {
     this.defaults = {
@@ -36,10 +39,16 @@ export class MockProviderFactory {
       requireConnected: options.requireConnected,
     }
     this.perChannel = options.perChannel ?? {}
+    this.realProviders = options.realProviders ?? {}
   }
 
-  /** Crea (y cachea) el proveedor mock del canal. */
+  /** Crea (y cachea) el proveedor del canal (real si está registrado, si no mock). */
   create(channel: ProviderChannelType, overrides: Partial<MockProviderOptions> = {}): CommunicationProvider {
+    const real = this.realProviders[channel]
+    if (real) {
+      this.cache.set(real.meta.id, real)
+      return real
+    }
     const id = PROVIDER_CHANNEL_META[channel].defaultProviderId
     const existing = this.cache.get(id)
     if (existing) return existing

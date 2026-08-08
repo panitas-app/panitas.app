@@ -137,6 +137,19 @@ export interface ProviderInboundEvent {
   channel: ProviderChannelType
   conversationId: string
   message: ProviderMessage
+  /** Actualización de estado de un mensaje previamente enviado (webhooks de estado). */
+  statusUpdate?: ProviderStatusUpdate
+}
+
+/** Tipos de actualización de estado reportados por los proveedores (delivery receipts). */
+export const PROVIDER_STATUS_UPDATE_TYPES = ["delivered", "read", "failed"] as const
+export type ProviderStatusUpdateType = (typeof PROVIDER_STATUS_UPDATE_TYPES)[number]
+
+export interface ProviderStatusUpdate {
+  type: ProviderStatusUpdateType
+  externalMessageId: string
+  timestamp: string
+  error?: string
 }
 
 // ─── Vista de runtime (para UI/estado) ──────────────────────────────────────
