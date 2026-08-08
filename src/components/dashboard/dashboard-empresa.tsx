@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { DollarSign, ShoppingCart, Calendar, Users, TrendingUp, CheckCircle, Clock, Zap, Receipt } from "lucide-react"
 import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
@@ -44,7 +44,7 @@ interface Props {
   pendingCommissions: number
 }
 
-export function DashboardEmpresa({ store, rate: initialRate, sales, appointments, crm, orders, visitorData, categoryStats, serviceStats, pendingCommissions }: Props) {
+export function DashboardEmpresa({ store, rate: initialRate, sales, appointments, crm, orders, serviceStats, pendingCommissions }: Props) {
   const rate = initialRate
   const { showBolivares } = useBcvRate()
 

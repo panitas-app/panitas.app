@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/table"
 import { SALES_QUESTION_TYPES } from "@/lib/crm/constants"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import {
   Plus,
   Loader2,
@@ -43,8 +42,6 @@ import {
   GripVertical,
   ChevronRight,
   Save,
-  X,
-  ListChecks,
   Trophy,
   Target,
 } from "lucide-react"
@@ -1075,7 +1072,7 @@ export function SalesScriptAdmin() {
                 placeholder='{"questionId":"xxx","value":"Si"}'
               />
               <p className="text-[11px] text-muted-foreground">
-                Si se cumple, la pregunta se muestra. Ejemplo: solo mostrar si respondio "Si"
+                Si se cumple, la pregunta se muestra. Ejemplo: solo mostrar si respondio &quot;Si&quot;
               </p>
             </div>
 

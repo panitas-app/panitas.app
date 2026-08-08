@@ -118,7 +118,7 @@ export default async function SettingsPage(props: Props) {
                 <CardTitle>Gestión de Equipo</CardTitle>
               </CardHeader>
               <CardContent>
-                <TeamSettings storeId={current.store.id} />
+                <TeamSettings />
               </CardContent>
             </Card>
           </TabsContent>

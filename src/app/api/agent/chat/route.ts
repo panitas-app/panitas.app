@@ -3,8 +3,8 @@ import { requireRole } from "@/lib/permissions"
 import { requireFeature } from "@/lib/features"
 import { csrfGuard } from "@/lib/csrf"
 import { rateLimit } from "@/lib/rate-limit"
-import { toServiceResponse } from "@/services/http"
 import { createConversationEngine } from "@/lib/conversation"
+import { toClientChatView, humanizeError } from "@/lib/conversational"
 import type { StoreServiceContext } from "@/services/context"
 import { createAuditEntry } from "@/lib/audit"
 
@@ -81,12 +81,11 @@ export async function POST(request: NextRequest) {
       storeId: ctx.storeId,
     }).catch(() => undefined)
 
-    return NextResponse.json(result)
+    return NextResponse.json(toClientChatView(result))
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : ""
-    if (message.includes("No tienes") || message.includes("Tu plan")) {
-      return NextResponse.json({ error: message }, { status: 403 })
-    }
-    return toServiceResponse(error)
+    const isPlanError = message.includes("No tienes") || message.includes("Tu plan")
+    const human = humanizeError(error)
+    return NextResponse.json({ error: human }, { status: isPlanError ? 403 : 500 })
   }
 }

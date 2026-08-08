@@ -24,7 +24,6 @@ import { ActivityTimeline } from "@/components/admin/prospects/activity-timeline
 import { FileUploadZone } from "@/components/admin/prospects/file-upload-zone"
 import { SalesScriptTab } from "@/components/admin/prospects/sales-script-tab"
 import {
-  PROSPECT_STATUSES,
   getStatusInfo,
   getTemperatureInfo,
 } from "@/lib/crm/constants"
@@ -39,10 +38,8 @@ import {
   Mail,
   Pencil,
   MapPin,
-  Globe,
   CalendarClock,
   Loader2,
-  Check,
 } from "lucide-react"
 
 interface ProspectDetail {

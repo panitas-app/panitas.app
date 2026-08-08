@@ -109,7 +109,7 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null)
   const [availableRoutes, setAvailableRoutes] = useState<SalesRoute[]>([])
-  const [selectedBusinessType, setSelectedBusinessType] = useState<string | null>(null)
+  const [, setSelectedBusinessType] = useState<string | null>(null)
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const answersRef = useRef(answers)
   answersRef.current = answers
@@ -306,7 +306,7 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
       })
       setMode("completed")
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [currentSectionIndex, sections.length, sessionId, score, temperatura, selectedPlan, selectedRoute])
 
   const handlePrev = useCallback(() => {
@@ -544,7 +544,7 @@ export function SalesScriptTab({ prospectId, autoStart, onSessionComplete, prosp
                   >
                     Configuracion &gt; Guion de Venta
                   </Link>{" "}
-                  y haz clic en "Sembrar datos iniciales".
+                  y haz clic en &quot;Sembrar datos iniciales&quot;.
                 </p>
               </CardContent>
             </Card>

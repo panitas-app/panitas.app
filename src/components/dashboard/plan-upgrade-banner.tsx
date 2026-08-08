@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Crown, Sparkles, ArrowUp, Check, X, Rocket, ArrowRight } from "lucide-react"
+import { Crown, Sparkles, Check, X, Rocket, ArrowRight } from "lucide-react"
 
 interface PlanUpgradeBannerProps {
   planId: string

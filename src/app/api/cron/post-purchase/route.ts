@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { enviarPostCompra } from "@/lib/email"
-import { formatDate } from "@/lib/email-helpers"
 import { timingSafeEqual } from "crypto"
 
 function safeTokenMatch(provided: string, expected: string): boolean {

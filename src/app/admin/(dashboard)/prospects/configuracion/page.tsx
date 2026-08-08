@@ -2,12 +2,10 @@
 
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PROSPECT_STATUSES, PROSPECT_CATEGORIES } from "@/lib/crm/constants"
 import { cn } from "@/lib/utils"
 import {
-  Settings,
   ListChecks,
   Tag,
   Activity,

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Plus, Search, Pencil, Trash2, UserCircle, Smartphone, Link as LinkIcon, Copy, Check } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, UserCircle, Smartphone, Link as LinkIcon, Check } from "lucide-react"
 import { toast } from "sonner"
 
 interface Seller {

@@ -89,7 +89,7 @@ describe("IntelligenceLayer", () => {
 
     expect(result.status).toBe("confirmation_required")
     expect(result.confirmation?.confirmCodes).toEqual(["confirm:step-1"])
-    expect(result.reply).toContain("confirmar")
+    expect(result.reply).toMatch(/confirm/i)
     expect(spy).not.toHaveBeenCalled()
     expect(result.toolResults).toHaveLength(0)
   })

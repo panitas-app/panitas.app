@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import { PLAN_LIMITS, resolvePlanLimitKey } from "@/lib/constants"
 import { createAuditEntry } from "@/lib/audit"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 import {
   safeStr,
   requireStr,
@@ -206,6 +207,22 @@ export class ProductService {
       stock: product.stock,
     })
 
+    fireDomainEvent({
+      type: "product.created",
+      data: {
+        productId: product.id,
+        name: productWithCategory?.name ?? name,
+        sku: productWithCategory?.sku ?? finalSku,
+        price: product.price,
+        stock: product.stock,
+      },
+      aggregateId: product.id,
+      aggregateType: "Product",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "product.service",
+    })
+
     return productWithCategory
   }
 
@@ -365,6 +382,37 @@ export class ProductService {
       sku: updated?.sku ?? product.sku ?? "",
     })
 
+    fireDomainEvent({
+      type: "product.updated",
+      data: {
+        productId: id,
+        name: updated?.name ?? product.name,
+        sku: updated?.sku ?? product.sku ?? "",
+      },
+      aggregateId: id,
+      aggregateType: "Product",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "product.service",
+    })
+
+    if (body.price !== undefined && updated) {
+      fireDomainEvent({
+        type: "product.price.changed",
+        data: {
+          productId: id,
+          name: updated.name,
+          oldPrice: product.price,
+          newPrice: updated.price,
+        },
+        aggregateId: id,
+        aggregateType: "Product",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "product.service",
+      })
+    }
+
     if (body.stock !== undefined && updated) {
       eventService.emit("inventory.updated", {
         productId: id,
@@ -373,6 +421,22 @@ export class ProductService {
         stock: updated.stock,
         delta: updated.stock - product.stock,
         reason: "product_edit",
+      })
+      fireDomainEvent({
+        type: "product.stock.changed",
+        data: {
+          productId: id,
+          name: updated.name,
+          oldStock: product.stock,
+          newStock: updated.stock,
+          delta: updated.stock - product.stock,
+          reason: "product_edit",
+        },
+        aggregateId: id,
+        aggregateType: "Product",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "product.service",
       })
     }
 
@@ -392,6 +456,16 @@ export class ProductService {
       entityId: id,
       storeId: ctx.storeId,
       userId: ctx.userId,
+    })
+
+    fireDomainEvent({
+      type: "product.deleted",
+      data: { productId: id, name: product.name },
+      aggregateId: id,
+      aggregateType: "Product",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "product.service",
     })
 
     return { success: true }

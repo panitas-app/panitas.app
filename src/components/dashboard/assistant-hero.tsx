@@ -71,7 +71,7 @@ export function AssistantHero({
             onKeyDown={(e) => {
               if (e.key === "Enter") submit()
             }}
-            placeholder={`Pregúntale a Panitas sobre ${storeName}…`}
+            placeholder={`Pregúntale cualquier cosa a Panitas...`}
             className="min-h-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
           />
           <button

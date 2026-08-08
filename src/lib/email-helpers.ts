@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import type { Customer } from "@prisma/client"
 
 export function formatUSD(amount: number): string {
   return `$${amount.toFixed(2)}`

@@ -235,7 +235,6 @@ export default function OrderDetailPage() {
 
   const customerPhoneDigits = order.customerPhone.replace(/[^0-9]/g, "")
   const firstPendingPayment = order.payments.find((p) => p.status === "pending")
-  const isAlreadyVerified = order.paymentStatus === "paid" || verified
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 relative">

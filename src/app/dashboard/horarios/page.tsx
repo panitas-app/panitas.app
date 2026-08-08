@@ -13,7 +13,6 @@ import {
   Save,
   ArrowRight,
   Power,
-  Sparkles,
 } from "lucide-react"
 import {
   Dialog,

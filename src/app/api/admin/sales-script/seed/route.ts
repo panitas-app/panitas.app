@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
 import { seedSalesData } from "@/lib/crm/seed-data"
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const admin = await getLocalSuperadmin()
     if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })

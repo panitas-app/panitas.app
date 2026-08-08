@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -174,7 +173,6 @@ function PaymentAccountForm({
               onChange={(e) => {
                 const digits = e.target.value.replace(/\D/g, "")
                 if (digits.length === 20) {
-                  const fmt = formatAccountNumber(digits)
                   const validation = validateAccountNumber(digits)
                   if (!validation.valid) {
                     e.target.setCustomValidity(validation.error || "")

@@ -1,5 +1,6 @@
 import { CustomerRepository } from "@/repositories/customer.repository"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
 
@@ -65,6 +66,16 @@ export class CustomerService {
       name: customer.name,
     })
 
+    fireDomainEvent({
+      type: "customer.created",
+      data: { customerId: customer.id, name: customer.name, phone: input.phone },
+      aggregateId: customer.id,
+      aggregateType: "Customer",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "customer.service",
+    })
+
     return { customer, created: true }
   }
 
@@ -80,6 +91,21 @@ export class CustomerService {
       name: customer.name,
       totalSpent: updated.totalSpent,
       totalOrders: updated.totalOrders,
+    })
+
+    fireDomainEvent({
+      type: "customer.updated",
+      data: {
+        customerId,
+        name: customer.name,
+        totalSpent: updated.totalSpent,
+        totalOrders: updated.totalOrders,
+      },
+      aggregateId: customerId,
+      aggregateType: "Customer",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "customer.service",
     })
 
     return updated

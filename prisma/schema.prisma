@@ -48,7 +48,9 @@ model User {
   cashRegisterSessions CashRegisterSession[] // opened sessions
   scannerSessions ScannerSession[]
   conversations Conversation[]
+  inboxAssignedConversations InboxConversation[] // FASE 7A
   memories BusinessMemory[]
+  knowledgeDocuments KnowledgeDocument[] // FASE 7D
 }
 
 model Plan {
@@ -320,6 +322,31 @@ model Store {
   conversations Conversation[]
   memories BusinessMemory[]
   recommendations Recommendation[]
+
+  // Cobranza inteligente (FASE 6B)
+  collectionSettings CollectionSettings?
+  collectionTemplates CollectionTemplate[]
+  collectionContacts CollectionContactLog[]
+
+  // Proveedores / Cuentas por pagar (FASE 6C)
+  suppliers         Supplier[]
+  supplierInvoices  SupplierInvoice[]
+  supplierPayments  SupplierPayment[]
+
+  // Centro de conversaciones omnicanal (FASE 7A)
+  inboxChannels     InboxChannel[]
+  inboxConversations InboxConversation[]
+  inboxMessages     InboxMessage[]
+  inboxParticipants InboxParticipant[]
+  inboxTags         InboxTag[]
+  inboxNotes        InboxNote[]
+  inboxAiSummaries  InboxAiSummary[]
+
+  // Base de Conocimiento (FASE 7D)
+  knowledgeDocuments   KnowledgeDocument[]
+  knowledgeCategories  KnowledgeCategory[]
+  knowledgeTags        KnowledgeTag[]
+  knowledgeHistory     KnowledgeHistory[]
 }
 
 model StoreVisit {
@@ -478,6 +505,8 @@ model Customer {
   tags      CustomerTagRelation[]
   followUps CustomerFollowUp[]
   automationLogs AutomationLog[]
+  collectionContacts CollectionContactLog[]
+  inboxConversations InboxConversation[] // FASE 7A
 
   @@unique([storeId, phone])
   @@index([storeId])
@@ -561,6 +590,7 @@ model Order {
   downPayment  Float?       // monto inicial pagado (si aplica)
   creditTerm   String?      // "3_cuotas_15d" — tipo de crédito
   totalCredito Float?       // monto total diferido a crédito
+  creditStatus String?   @default("active") // active, completed, cancelled
   creditDays   Int?         // días de crédito otorgados (legacy)
   dueDate      DateTime?    // fecha de vencimiento del crédito (legacy)
 
@@ -570,6 +600,7 @@ model Order {
   payments     OrderPayment[]
   commissions  SellerCommission[]
   installments Installment[]
+  collectionContacts CollectionContactLog[]
 
   @@index([storeId, status, createdAt])
   @@index([storeId, paymentStatus])
@@ -605,6 +636,7 @@ model OrderPayment {
   method        String   // bank_transfer, pago_movil, cash
   amount        Float
   reference     String?
+  notes         String?  // observaciones del abono
   bankOrigin    String?  // banco emisor del cliente
   paidAt        DateTime?
   receiptImage  String?
@@ -640,6 +672,72 @@ model Installment {
 
   @@index([orderId])
   @@index([status])
+}
+
+// ─── COBRANZA INTELIGENTE (FASE 6B) ─────────────────────────────────
+// Configuración de cobranza por tienda: métodos de pago habilitados,
+// nivel preferido y nombre de negocio para las plantillas.
+model CollectionSettings {
+  id            String   @id @default(cuid())
+  paymentMethods String  @default("[]") // JSON array de métodos habilitados
+  defaultLevel  Int      @default(2) // nivel sugerido por defecto (1-3)
+  businessName  String?  // override de {{nombre_negocio}} (fallback store.name)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  storeId String @unique
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+}
+
+// Plantilla de mensaje de cobranza editable por categoría.
+// isBuiltIn = true marca las 5 plantillas por defecto (restaurables).
+model CollectionTemplate {
+  id        String   @id @default(cuid())
+  category  String   // primer_recordatorio, segundo_recordatorio, ultimo_aviso, despues_abono, agradecimiento
+  name      String   // etiqueta mostrada en el asistente
+  level     Int      @default(1) // 1 amistoso, 2 formal, 3 último aviso
+  body      String   // plantilla con variables {{variable}}
+  isBuiltIn Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, category, name])
+  @@index([storeId, category])
+}
+
+// Historial de contacto de cobranza por crédito.
+// Se registra como intento (status pending) y pasa a sent/responded.
+model CollectionContactLog {
+  id           String    @id @default(cuid())
+  channel      String    @default("whatsapp") // whatsapp, call, sms, email, other
+  category     String?   // primer_recordatorio, segundo_recordatorio, ...
+  level        Int       @default(1)
+  templateName String?
+  message      String?   // mensaje renderizado
+  status       String    @default("pending") // pending, sent, responded
+  userId       String?   // usuario que preparó/envió
+  sentAt       DateTime?
+  respondedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([storeId, status])
+  @@index([orderId])
+  @@index([customerId])
 }
 
 // POS — Caja / Sesión de caja
@@ -751,6 +849,88 @@ model ExpenseBudget {
   updatedAt DateTime @updatedAt
 
   @@unique([storeId, category, month, year])
+}
+
+// ─── PROVEEDORES / CUENTAS POR PAGAR (FASE 6C) ────────────────────────────
+// Proveedor del negocio. Evoluciona la capa delgada `Expense.vendor` hacia una
+// entidad real con saldos, facturas y pagos (cuentas por pagar).
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  ruc       String   @default("") // RIF / identificación fiscal
+  phone     String   @default("")
+  email     String   @default("")
+  address   String   @default("")
+  category  String   @default("") // insumos, mercancía, servicios, transporte...
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  invoices SupplierInvoice[]
+  payments SupplierPayment[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+  @@index([storeId, isActive])
+}
+
+// Factura / compra registrada a un proveedor: genera el saldo pendiente.
+model SupplierInvoice {
+  id            String    @id @default(cuid())
+  number        String    @default("") // Nº de factura del proveedor
+  description   String
+  amount        Float     // monto total de la factura
+  date          DateTime  @default(now())
+  dueDate       DateTime? // vencimiento (si otorga crédito de pago)
+  status        String    @default("pending") // pending, partial, paid, cancelled
+  paidAmount    Float     @default(0)
+  paymentMethod String    @default("cash")
+  documentRef   String    @default("")
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  payments SupplierPayment[]
+
+  @@index([storeId])
+  @@index([storeId, date])
+  @@index([storeId, status])
+  @@index([supplierId])
+}
+
+// Pago o abono registrado a un proveedor. Se aplica en cascada a las facturas
+// pendientes más antiguas (oldest-first) y actualiza sus saldos automáticamente.
+model SupplierPayment {
+  id            String    @id @default(cuid())
+  amount        Float
+  date          DateTime  @default(now())
+  paymentMethod String    @default("cash")
+  reference     String    @default("")
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  invoiceId String?
+  invoice   SupplierInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([storeId, date])
+  @@index([supplierId])
+  @@index([invoiceId])
 }
 
 model StoreSubscription {
@@ -1617,6 +1797,10 @@ model Conversation {
   userId    String
   storeId   String
   negocioId String?
+  // FASE 5C: estado estructurado de la conversación (JSON serializado) —
+  // contexto del turno (intención, entidad activa, parámetros) y resumen compacto.
+  contextState String? // JSON serializado (ConversationContextState)
+  summary      String? // JSON serializado (ConversationSummaryState)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1643,6 +1827,173 @@ model ConversationMessage {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// ─── OMNICHANNEL INBOX — CENTRO DE CONVERSACIONES (FASE 7A) ─────────────────
+// Centro unificado de conversaciones con clientes. Nombres prefijados con
+// `Inbox` para no colisionar con el motor conversacional del asistente
+// (Conversation / ConversationMessage, FASE 3C). Sin conexiones externas aún:
+// el modelo queda preparado para WhatsApp, Instagram, Messenger, chat de la
+// tienda online y email.
+// "ConversationStatus" se modela como el campo `status` de InboxConversation
+// con valores restringidos en el dominio TS (nueva, pendiente, en_atencion,
+// resuelta, archivada) — convención del repo (sin enums Prisma).
+
+model InboxChannel {
+  id        String   @id @default(cuid())
+  type      String   // whatsapp, instagram, messenger, webchat, email, other
+  name      String   // "WhatsApp", "Instagram", "Messenger", "Chat tienda online", "Email"...
+  provider  String   @default("") // futuro: twilio, meta, email_smtp, panitas_web...
+  config    String   @default("{}") // JSON serializado (ajustes del canal)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  conversations InboxConversation[]
+
+  @@unique([storeId, type])
+  @@index([storeId, isActive])
+}
+
+model InboxConversation {
+  id            String    @id @default(cuid())
+  title         String    @default("")
+  channelId     String
+  channel       InboxChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  status        String    @default("nueva") // nueva, pendiente, en_atencion, resuelta, archivada
+  priority      String    @default("normal") // baja, normal, alta, urgente
+  unreadCount   Int       @default(0)
+  isPinned      Boolean   @default(false)
+  externalRef   String?   // id de la conversación en el proveedor externo (futuro)
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignedToId  String?   // userId del agente que la atiende
+  assignedTo    User?     @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  metadata      String?   // JSON serializado
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  messages     InboxMessage[]
+  participants InboxParticipant[]
+  tags         InboxConversationTag[]
+  notes        InboxNote[]
+  aiSummaries  InboxAiSummary[]
+
+  @@index([storeId, status, updatedAt])
+  @@index([storeId, updatedAt])
+  @@index([customerId])
+  @@index([assignedToId])
+  @@index([channelId])
+}
+
+model InboxMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  channel        String   // whatsapp, instagram, messenger, webchat, email, other
+  sender         String   // customer | agent | system
+  authorId       String?  // userId si sender = agent
+  senderName     String   @default("")
+  recipient      String   @default("") // destino del mensaje (número, handle, email)
+  content        String   @default("")
+  contentType    String   @default("text") // text, image, file, audio, video
+  attachments    String?  // JSON serializado [{type,url,name,size}]
+  status         String   @default("received") // received, delivered, read, sent, failed
+  externalId     String?  // id del mensaje en el proveedor (futuro)
+  metadata       String?  // JSON serializado
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([storeId, sender])
+}
+
+model InboxParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String   @default("customer") // customer | agent | bot
+  name           String   @default("")
+  identifier     String   // número, handle, email
+  channel        String   @default("")
+  userId         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([storeId])
+}
+
+model InboxTag {
+  id        String   @id @default(cuid())
+  name      String   // venta, soporte, cobranza, consulta, pedido, reclamo, otro
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  conversations InboxConversationTag[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+}
+
+model InboxConversationTag {
+  conversationId String
+  tagId          String
+  conversation   InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  tag            InboxTag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt      DateTime          @default(now())
+
+  @@id([conversationId, tagId])
+}
+
+model InboxNote {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  content        String
+  createdBy      String?  // userId
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([storeId])
+}
+
+model InboxAiSummary {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   InboxConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  kind           String   // summary, intent, suggestion, relevant_history
+  payload        String   // JSON serializado
+  source         String?  // ai | heuristic (modelo/proveedor IA)
+  createdAt      DateTime @default(now())
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, kind, createdAt])
+  @@index([storeId])
 }
 
 // ── Panitas Business Context & Memory System (FASE 3D) ──────────────────────
@@ -1705,4 +2056,152 @@ model Recommendation {
   @@index([storeId, status, createdAt])
   @@index([storeId, ruleId, createdAt])
   @@index([storeId, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUSINESS KNOWLEDGE BASE (FASE 7D)
+// ═══════════════════════════════════════════════════════════════════════════
+// La Base de Conocimiento es multi-tenant (cada modelo lleva `storeId` con FK
+// directa). Separa claramente: documento original (fileName/fileUrl/fileType),
+// contenido procesado (content + chunks en KnowledgeEmbedding), metadatos
+// (title/summary/type/status/categorías/etiquetas/autor) y embeddings
+// (KnowledgeEmbedding.vector — reservado para RAG futuro, hoy null).
+
+model KnowledgeDocument {
+  id          String   @id @default(cuid())
+  storeId     String
+  title       String
+  content     String   @default("")
+  summary     String?
+  type        String   @default("text")
+  source      String   @default("manual")
+  status      String   @default("published")
+  fileName    String?
+  fileUrl     String?
+  fileType    String?
+  fileSize    Int?
+  version     Int      @default(1)
+  viewCount   Int      @default(0)
+  authorId    String?
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  categories  KnowledgeDocumentCategory[]
+  tags        KnowledgeDocumentTag[]
+  versions    KnowledgeVersion[]
+  history     KnowledgeHistory[]
+  embeddings  KnowledgeEmbedding[]
+
+  @@index([storeId, updatedAt])
+  @@index([storeId, status])
+  @@index([storeId, type])
+  @@index([storeId, createdAt])
+}
+
+model KnowledgeCategory {
+  id          String   @id @default(cuid())
+  storeId     String
+  name        String
+  slug        String
+  description String?
+  color       String   @default("#6366f1")
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  documents   KnowledgeDocumentCategory[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+}
+
+model KnowledgeTag {
+  id          String   @id @default(cuid())
+  storeId     String
+  name        String
+  slug        String
+  createdAt   DateTime @default(now())
+
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  documents   KnowledgeDocumentTag[]
+
+  @@unique([storeId, slug])
+  @@index([storeId])
+}
+
+model KnowledgeDocumentCategory {
+  documentId String
+  categoryId String
+
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  category   KnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, categoryId])
+  @@index([categoryId])
+}
+
+model KnowledgeDocumentTag {
+  documentId String
+  tagId      String
+
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag        KnowledgeTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+  @@index([tagId])
+}
+
+model KnowledgeVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  version    Int
+  title      String
+  content    String
+  summary    String?
+  fileName   String?
+  fileUrl    String?
+  changeNote String?
+  authorId   String?
+  createdAt  DateTime @default(now())
+
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+}
+
+model KnowledgeHistory {
+  id         String   @id @default(cuid())
+  storeId    String
+  documentId String?
+  action     String // created, updated, deleted, indexed, viewed, restored, category.created...
+  title      String?
+  userId     String?
+  metadata   String? // JSON serializado
+  createdAt  DateTime @default(now())
+
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  document   KnowledgeDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([documentId])
+}
+
+model KnowledgeEmbedding {
+  id         String   @id @default(cuid())
+  documentId String
+  version    Int?
+  chunkIndex Int
+  chunk      String
+  vector     String? // JSON reservado para el vector store futuro (RAG)
+  model      String?
+  dimensions Int?
+  createdAt  DateTime @default(now())
+
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
 }

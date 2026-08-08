@@ -50,7 +50,8 @@ describe("ConfirmationSystem", () => {
     expect(request.actions[0]).toMatchObject({ stepId: "s1", tool: "products.delete" })
     expect(request.actions[0].description).toContain("Eliminar")
     expect(request.confirmCodes).toEqual(["confirm:s1"])
-    expect(request.message).toContain("confirmar")
+    expect(request.message).toContain("confirm")
+    expect(request.message).toContain("¿Confirmas")
   })
 
   it("isFullyConfirmed exige todas las confirmaciones", () => {

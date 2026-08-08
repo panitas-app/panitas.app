@@ -1,5 +1,5 @@
 const { v2: cloudinary } = require("cloudinary")
-const { readFileSync, statSync } = require("fs")
+const { statSync } = require("fs")
 const { join, basename } = require("path")
 
 const envUrl = process.env.CLOUDINARY_URL

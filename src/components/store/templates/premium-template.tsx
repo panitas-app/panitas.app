@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/store/product-card"
 import { CartSheet } from "@/components/store/cart-sheet"
@@ -9,7 +8,7 @@ import { Carousel } from "@/components/ui/carousel"
 import { WhatsAppFloat } from "@/components/ui/whatsapp-float"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
 import {
-  Search, ShoppingCart, Store, Sparkles, ChevronRight,
+  Search, ShoppingCart, Store, Sparkles,
   Menu, X, ArrowUpRight,
   Gem, Award, Shield,
 } from "lucide-react"
@@ -26,11 +25,10 @@ const stagger: Variants = {
 }
 
 export function PremiumTemplate({
-  store, products, bcvRate, slug, accentColor,
+  store, products, bcvRate, accentColor,
   cart, cartCount, cartOpen, onCartOpen,
   onAddToCart, onUpdateQty, onRemove, onCheckout,
 }: TemplateComponentProps) {
-  const router = useRouter()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
@@ -79,8 +77,6 @@ export function PremiumTemplate({
   const uncategorized = useMemo(() => {
     return products.filter((p) => !p.category)
   }, [products])
-
-  const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ "--primary": accentColor, "--ring": accentColor } as React.CSSProperties}>

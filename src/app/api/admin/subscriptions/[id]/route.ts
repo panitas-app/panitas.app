@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
-import { sendEmail, enviar2doPagoConfirmado, enviarRenovacionExitosa } from "@/lib/email"
+import { sendEmail } from "@/lib/email"
 import { templatePaymentVerified, templatePaymentRejected } from "@/lib/email-templates"
-import { formatDate } from "@/lib/email-helpers"
 import { createAuditEntry } from "@/lib/audit"
 import { planIdToStorePlanType } from "@/lib/plans"
 

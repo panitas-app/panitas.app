@@ -21,6 +21,8 @@ export const AGENT_PERMISSIONS = [
   "agenda.cancel",
   "report.read",
   "subscription.read",
+  "knowledge.read",
+  "knowledge.write",
 ] as const
 
 export type AgentPermission = (typeof AGENT_PERMISSIONS)[number]
@@ -34,6 +36,7 @@ export const READ_ONLY_PERMISSIONS: AgentPermission[] = [
   "agenda.read",
   "report.read",
   "subscription.read",
+  "knowledge.read",
 ]
 
 export function isAgentPermission(value: string): value is AgentPermission {

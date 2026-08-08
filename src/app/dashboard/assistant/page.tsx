@@ -1,10 +1,10 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { Plus, Bot } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { AssistantChatView } from "@/components/assistant/assistant-chat-view"
-import { BusinessMonitorPanel } from "@/components/assistant/business-monitor-panel"
 import { useAssistantChat } from "@/hooks/use-assistant-chat"
 import { cn } from "@/lib/utils"
 
@@ -12,12 +12,26 @@ import { cn } from "@/lib/utils"
  * Panitas Main Assistant (FASE 4C).
  * Página dedicada: chat a ancho completo + monitor de negocio 4B lateral.
  * Reutiliza el mismo hook y componentes que el Sheet del dashboard.
+ *
+ * Acepta `?q=<consulta>` para prelanzar una pregunta desde accesos rápidos
+ * (por ejemplo, las acciones "Consultar con Panitas" del panel financiero 6D).
  */
 export default function AssistantPage() {
   const chat = useAssistantChat()
+  const sentRef = useRef(false)
+
+  useEffect(() => {
+    if (sentRef.current) return
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get("q")
+    if (!q || !q.trim()) return
+    sentRef.current = true
+    chat.send(q)
+  }, [chat])
+
 
   return (
-    <div className="flex h-[calc(100dvh-6.5rem)] flex-col gap-4 lg:h-[calc(100dvh-5rem)] lg:flex-row">
+    <div className="flex h-[calc(100dvh-6.5rem)] flex-col gap-4 lg:h-[calc(100dvh-5rem)]">
       <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border/60 bg-background/70 shadow-sm">
         <header className="flex items-center gap-3 border-b border-border/60 px-5 py-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -60,10 +74,6 @@ export default function AssistantPage() {
 
         <AssistantChatView chat={chat} />
       </section>
-
-      <aside className="hidden min-h-0 w-80 shrink-0 flex-col rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm lg:flex">
-        <BusinessMonitorPanel />
-      </aside>
     </div>
   )
 }

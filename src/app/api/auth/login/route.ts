@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit"
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
-    const { success, remaining, resetIn } = await rateLimit(`login:${ip}`, 5, 60 * 1000)
+    const { success, resetIn } = await rateLimit(`login:${ip}`, 5, 60 * 1000)
     if (!success) {
       return NextResponse.json(
         { error: `Demasiados intentos. Intenta de nuevo en ${Math.ceil(resetIn / 1000)}s` },

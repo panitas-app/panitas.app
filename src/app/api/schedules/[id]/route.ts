@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getCurrentNegocio } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
-import { safeInt } from "@/lib/validate"
 
 export async function PATCH(
   request: NextRequest,

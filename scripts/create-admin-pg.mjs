@@ -15,7 +15,7 @@ async function run() {
   const password = "admin"
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  const user = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email },
     update: { role: "superadmin", password: hashedPassword },
     create: { email, name: "Superadmin Principal", password: hashedPassword, role: "superadmin" },

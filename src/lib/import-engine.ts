@@ -231,7 +231,6 @@ function detectColumn(header: string): { field: string | null; confidence: numbe
 
 export function parseFile(buffer: Buffer, filename: string): ImportPreview {
   const ext = filename.toLowerCase().split(".").pop()
-  const isExcel = ext === "xlsx" || ext === "xls"
 
   if (ext === "csv") {
     return parseCSV(buffer)

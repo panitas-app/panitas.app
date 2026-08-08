@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { sendEmail } from "@/lib/email"
 import { templateInstallmentReminder } from "@/lib/email-templates"
 import { timingSafeEqual } from "crypto"
+import { fireDomainEvent } from "@/lib/events"
 
 function safeTokenMatch(provided: string, expected: string): boolean {
   const a = Buffer.from(provided, "utf8")
@@ -68,7 +69,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, sent, total: installments.length })
+    // FASE 5H: señala créditos vencidos (cuotas pendientes pasadas de fecha) por pedido.
+    const overdueRows = await prisma.installment.findMany({
+      where: { status: "pending", dueDate: { lt: new Date() } },
+      select: { orderId: true, amount: true, order: { select: { storeId: true } } },
+    })
+    const overdueByOrder = new Map<string, { storeId: string; amount: number }>()
+    for (const row of overdueRows) {
+      const current = overdueByOrder.get(row.orderId)
+      overdueByOrder.set(row.orderId, {
+        storeId: row.order.storeId,
+        amount: (current?.amount ?? 0) + row.amount,
+      })
+    }
+    let overdueCount = 0
+    for (const [orderId, info] of overdueByOrder) {
+      fireDomainEvent({
+        type: "credit.overdue",
+        data: { orderId, amount: info.amount },
+        aggregateId: orderId,
+        aggregateType: "Order",
+        tenantId: info.storeId,
+        source: "cron:installment-reminders",
+      })
+      overdueCount++
+    }
+
+    return NextResponse.json({ success: true, sent, total: installments.length, overdueCount })
   } catch (error) {
     console.error("Cron installment reminder error:", error)
     return NextResponse.json({ error: "Error interno" }, { status: 500 })

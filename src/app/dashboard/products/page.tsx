@@ -32,7 +32,6 @@ export default async function ProductsPage({
   if (category) where.categoryId = category
 
   let products: any[] = []
-  let total = 0
   let categories: any[] = []
   try {
     const result = await Promise.all([
@@ -44,7 +43,6 @@ export default async function ProductsPage({
       prisma.product.count({ where }),
     ])
     products = result[0]
-    total = result[1]
     categories = await prisma.category.findMany({
       where: { storeId: current.store.id },
       orderBy: { name: "asc" },

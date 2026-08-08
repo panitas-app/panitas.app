@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const admin = await getLocalSuperadmin()
   if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 

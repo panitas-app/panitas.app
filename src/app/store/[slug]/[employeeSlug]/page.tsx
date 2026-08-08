@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { BookingFlow, type ServiceData, type BookingStoreData, type PaymentAccountData } from "@/components/booking/booking-flow"
-import { Loader2, Store, MapPin, Phone, Briefcase, Clock } from "lucide-react"
+import { Loader2, Store, Phone, Briefcase, Clock } from "lucide-react"
 
 interface EmployeeData {
   id: string
@@ -36,7 +36,6 @@ const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "
 
 export default function EmployeeProfilePage() {
   const params = useParams()
-  const router = useRouter()
   const slug = params?.slug as string
   const employeeSlug = params?.employeeSlug as string
 
@@ -63,8 +62,6 @@ export default function EmployeeProfilePage() {
     }
     load()
   }, [slug, employeeSlug])
-
-  const accentColor = data?.store.primaryColor || "#FFB92E"
 
   if (loading) {
     return (

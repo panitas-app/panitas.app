@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { BLOG_POSTS, getAllPostSlugs, getPostBySlug } from "@/lib/blog/posts"
+import { getAllPostSlugs, getPostBySlug } from "@/lib/blog/posts"
 import { ArticleSchema, BreadcrumbSchema } from "@/lib/seo/schema"
 import { BlogTOC, BlogArticleContent, BlogArticleFAQ, BlogRelatedPosts, BlogArticleCTA } from "@/components/blog/blog-content"
 

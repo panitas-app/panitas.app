@@ -8,14 +8,10 @@ import { getPostHogClient } from "@/lib/posthog-server"
 
 const PASSWORD_MIN_LENGTH = 6
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tienda"
-}
-
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
-    const { success, remaining, resetIn } = await rateLimit(`register:${ip}`, 3, 15 * 60 * 1000)
+    const { success, resetIn } = await rateLimit(`register:${ip}`, 3, 15 * 60 * 1000)
     if (!success) {
       return NextResponse.json(
         { error: `Demasiados intentos. Intenta de nuevo en ${Math.ceil(resetIn / 1000)}s` },
@@ -102,7 +98,7 @@ export async function POST(req: Request) {
     phog.flush().catch(e => console.error("[posthog flush error]", e))
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch {
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }

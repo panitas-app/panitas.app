@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -39,7 +37,6 @@ interface PendingItem {
 }
 
 export default function SeguimientosPage() {
-  const router = useRouter()
   const [items, setItems] = useState<PendingItem[]>([])
   const [loading, setLoading] = useState(true)
 

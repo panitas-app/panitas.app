@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useDebounce } from "@/hooks/use-debounce"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -77,7 +76,6 @@ interface Prospect {
 }
 
 export default function ProspectsListPage() {
-  const router = useRouter()
   const [data, setData] = useState<Prospect[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")

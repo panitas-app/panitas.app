@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getEffectiveRate } from "@/lib/bcv"
 
 export async function GET(
   _request: Request,

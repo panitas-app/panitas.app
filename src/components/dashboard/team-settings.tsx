@@ -48,7 +48,7 @@ type Invitation = {
   createdAt: string
 }
 
-export function TeamSettings({ storeId }: { storeId: string }) {
+export function TeamSettings() {
   const [members, setMembers] = useState<Member[]>([])
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)

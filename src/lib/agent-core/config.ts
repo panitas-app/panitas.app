@@ -2,7 +2,7 @@
  * Configuración central del Agent Core (FASE 3A).
  *
  * El Model Router lee de aquí qué proveedor + modelo usar por cada tipo de tarea.
- * Hoy todos apuntan al mismo modelo gratuito de OpenRouter; mañana se cambia cada
+ * Hoy todos apuntan al modelo gratuito de NVIDIA NIM; mañana se cambia cada
  * tarea de forma independiente SOLO editando configuración/env, sin tocar el Core.
  */
 import type { AgentTaskType } from "./types"
@@ -16,13 +16,16 @@ export const AGENT_TASK_TYPES_LIST: AgentTaskType[] = [
   "reply_suggestion",
 ]
 
-/** Modelo gratuito por defecto (OpenRouter Free). */
-export const DEFAULT_FREE_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+/** Modelo gratuito por defecto (NVIDIA NIM). */
+export const DEFAULT_FREE_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
+/** Modelo gratuito por defecto cuando la tarea apunta a OpenRouter. */
+export const DEFAULT_OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
 
-export const DEFAULT_PROVIDER = "openrouter"
+export const DEFAULT_PROVIDER = "nvidia"
 export const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 export const DEFAULT_OPENROUTER_TITLE = "Panitas"
 export const DEFAULT_OPENROUTER_REFERER = "https://panitas.app"
+export const DEFAULT_NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 export interface ModelTaskConfig {
   model: string
@@ -38,8 +41,14 @@ export interface OpenRouterSettings {
   httpReferer: string
 }
 
+export interface NvidiaSettings {
+  apiKey: string
+  baseUrl: string
+}
+
 export interface AgentCoreConfig {
   openrouter: OpenRouterSettings
+  nvidia: NvidiaSettings
   models: Record<AgentTaskType, ModelTaskConfig>
   defaults: {
     timeoutMs: number
@@ -70,12 +79,17 @@ function toFloat(value: string | undefined, fallback: number): number {
 export function loadAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentCoreConfig {
   const provider = (env.AI_PROVIDER ?? "").trim() || DEFAULT_PROVIDER
 
+  const DEFAULT_MODEL_BY_PROVIDER: Record<string, string> = {
+    nvidia: DEFAULT_FREE_MODEL,
+    openrouter: DEFAULT_OPENROUTER_MODEL,
+  }
+
   const models = {} as Record<AgentTaskType, ModelTaskConfig>
   for (const task of AGENT_TASK_TYPES_LIST) {
     const spec = TASK_ENV[task]
     const taskProvider = ((env[`${spec.env}_PROVIDER`] ?? "").trim() || provider)
     models[task] = {
-      model: (env[spec.env] ?? "").trim() || DEFAULT_FREE_MODEL,
+      model: (env[spec.env] ?? "").trim() || (DEFAULT_MODEL_BY_PROVIDER[taskProvider] ?? DEFAULT_FREE_MODEL),
       provider: taskProvider,
       temperature: toFloat(env[`${spec.env}_TEMPERATURE`], spec.temperature),
       maxTokens: toInt(env[`${spec.env}_MAX_TOKENS`], spec.maxTokens),
@@ -88,6 +102,10 @@ export function loadAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentCore
       baseUrl: (env.OPENROUTER_BASE_URL ?? "").trim() || DEFAULT_OPENROUTER_BASE_URL,
       appTitle: (env.OPENROUTER_APP_TITLE ?? "").trim() || DEFAULT_OPENROUTER_TITLE,
       httpReferer: (env.OPENROUTER_HTTP_REFERER ?? "").trim() || DEFAULT_OPENROUTER_REFERER,
+    },
+    nvidia: {
+      apiKey: (env.NVIDIA_NIM_API_KEY ?? env.NVIDIA_API_KEY ?? "").trim(),
+      baseUrl: (env.NVIDIA_NIM_BASE_URL ?? env.NVIDIA_BASE_URL ?? "").trim() || DEFAULT_NVIDIA_BASE_URL,
     },
     models,
     defaults: {

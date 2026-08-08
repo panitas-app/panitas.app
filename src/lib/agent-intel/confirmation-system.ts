@@ -1,16 +1,39 @@
 /**
- * Confirmation System (FASE 4A).
+ * Confirmation System (FASE 4A + 5B).
  *
  * Garantiza que las acciones destructivas o críticas NUNCA se ejecuten sin
  * confirmación explícita del usuario. Define las reglas declarativas, evalúa
  * un plan, produce la solicitud de confirmación y valida las confirmaciones
  * recibidas en la segunda vuelta.
  *
+ * FASE 5B: todas las descripciones e impactos están en lenguaje natural, sin
+ * nombres internos de herramientas. Los tool names quedan solo en la capa
+ * interna (`ConfirmationAction.tool`) y se descartan antes de llegar al cliente.
+ *
  * El Execution Planner consulta `requirementsFor(plan)` ANTES de ejecutar
  * cualquier paso; si un paso exige confirmación y no está en `confirmedStepIds`,
  * NO se ejecuta.
  */
 import type { ConfirmationAction, ConfirmationRequest, ConfirmationRule, ExecutionPlan, PlannedStep } from "./types"
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: "pendiente",
+  confirmed: "confirmado",
+  preparing: "en preparación",
+  shipped: "enviado",
+  delivered: "entregado",
+  cancelled: "cancelado",
+}
+
+function orderStatusLabel(status: unknown): string {
+  return ORDER_STATUS_LABELS[String(status ?? "")] ?? "actualizado"
+}
+
+function quantityOf(input: Record<string, unknown>): string {
+  const quantity = input.quantity
+  if (typeof quantity === "number" && Number.isFinite(quantity)) return `${quantity} unidad(es)`
+  return "la cantidad indicada"
+}
 
 export const DEFAULT_CONFIRMATION_RULES: ConfirmationRule[] = [
   {
@@ -21,10 +44,12 @@ export const DEFAULT_CONFIRMATION_RULES: ConfirmationRule[] = [
   {
     tool: "orders.updateStatus",
     description: (input) =>
-      input.status === "cancelled" ? "Cancelar la venta o pedido" : "Cambiar el estado del pedido",
+      input.status === "cancelled"
+        ? "Cancelar la venta o pedido"
+        : `Marcar el pedido como ${orderStatusLabel(input.status)}`,
     impact: (input) =>
       input.status === "cancelled"
-        ? "La orden quedará cancelada y se revertirá el stock de los productos vendidos."
+        ? "La orden quedará cancelada y el stock de los productos vendidos volverá a estar disponible."
         : "El pedido cambiará de estado y podría afectar el inventario.",
     when: (input) => input.status === "cancelled",
   },
@@ -32,9 +57,12 @@ export const DEFAULT_CONFIRMATION_RULES: ConfirmationRule[] = [
     tool: "inventory.updateStock",
     description: (input) =>
       input.type === "decrease"
-        ? "Reducir el stock del producto"
+        ? `Reducir el stock en ${quantityOf(input)}`
         : "Ajustar el stock del producto",
-    impact: () => "Cambia la cantidad disponible del producto. Un ajuste puede reducir existencias.",
+    impact: (input) =>
+      input.type === "decrease"
+        ? "La cantidad disponible del producto disminuirá."
+        : "Se fijará la cantidad disponible del producto.",
     when: (input) => input.type === "decrease" || input.type === "adjustment",
   },
 ]
@@ -71,7 +99,7 @@ export class ConfirmationSystem {
       actions.push({
         stepId: step.id,
         tool: step.tool,
-        description: rule?.description(step.input) ?? `Ejecutar la acción en la herramienta ${step.tool}`,
+        description: rule?.description(step.input) ?? "Confirmar esta acción antes de continuar",
         impact: rule?.impact(step.input) ?? "Esta acción no se puede deshacer automáticamente.",
       })
       confirmCodes.push(`confirm:${step.id}`)
@@ -82,7 +110,7 @@ export class ConfirmationSystem {
       confirmCodes,
       message: `Necesito tu confirmación antes de continuar:\n${actions
         .map((a) => `- ${a.description}. ${a.impact}`)
-        .join("\n")}\n\nResponde "confirmar" para proceder.`,
+        .join("\n")}\n\n¿Confirmas que deseas proceder?`,
       requestedAt: new Date().toISOString(),
     }
   }

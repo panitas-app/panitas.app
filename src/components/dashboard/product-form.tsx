@@ -3,16 +3,8 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { toast } from "sonner"
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -27,7 +19,6 @@ import {
   Trash2,
   Tag,
   BadgeDollarSign,
-  ChevronDown,
   Sparkles,
   Ruler,
   Smartphone,
@@ -35,12 +26,10 @@ import {
 import type { Product, Category } from "@prisma/client"
 import Pusher from "pusher-js"
 import QRCode from "qrcode"
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode"
+import { Html5Qrcode } from "html5-qrcode"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
 import { MobileCameraScanner } from "@/components/scanner/mobile-camera-scanner"
 
@@ -96,7 +85,7 @@ export function ProductForm({
   const [scannerOpen, setScannerOpen] = useState(false)
   const [mobileScannerOpen, setMobileScannerOpen] = useState(false)
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
-  const [scannerToken, setScannerToken] = useState<string | null>(null)
+  const [, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
   const [scannerErrorMsg, setScannerErrorMsg] = useState("")
   const [isMobileMode, setIsMobileMode] = useState(false)
@@ -294,11 +283,6 @@ export function ProductForm({
     }
   }
 
-  function handleCategorySuggested(categoryName: string) {
-    setNewCategoryName(categoryName)
-    setShowNewCategoryInput(true)
-  }
-
   // Wholesale scale managers
   function handleAddPriceScale() {
     setPriceScales((prev) => [...prev, { quantity: "", price: "" }])
@@ -399,81 +383,6 @@ export function ProductForm({
       setScannerStatus("error")
       setScannerErrorMsg("Error inesperado. Intenta de nuevo.")
     }
-  }
-
-  async function resizeImageForScanning(file: File): Promise<File | Blob> {
-    return new Promise((resolve) => {
-      const img = new Image()
-      const url = URL.createObjectURL(file)
-      img.onload = () => {
-        URL.revokeObjectURL(url)
-        const maxDim = 1200
-        let { width, height } = img
-        if (width <= maxDim && height <= maxDim) {
-          resolve(file)
-          return
-        }
-        if (width > height) {
-          height = Math.round((height * maxDim) / width)
-          width = maxDim
-        } else {
-          width = Math.round((width * maxDim) / height)
-          height = maxDim
-        }
-        const canvas = document.createElement("canvas")
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext("2d")
-        if (!ctx) { resolve(file); return }
-        ctx.drawImage(img, 0, 0, width, height)
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(new File([blob], file.name, { type: "image/jpeg" }))
-          } else {
-            resolve(file)
-          }
-        }, "image/jpeg", 0.9)
-      }
-      img.onerror = () => resolve(file)
-      img.src = url
-    })
-  }
-
-  function scanBarcodeFromFile() {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "image/*"
-    ;(input as any).capture = "environment"
-
-    input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-
-      try {
-        const resized = await resizeImageForScanning(file)
-        const code = await (Html5Qrcode as any).scanFile(resized, false)
-        const trimmed = code.trim()
-        const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-        if (barcodeInput) {
-          setNativeInputValue(barcodeInput, trimmed)
-          toast.success(`Código escaneado: ${trimmed}`)
-        }
-      } catch {
-        try {
-          const code = await (Html5Qrcode as any).scanFile(file, false)
-          const trimmed = code.trim()
-          const barcodeInput = document.getElementById("barcode") as HTMLInputElement
-          if (barcodeInput) {
-            setNativeInputValue(barcodeInput, trimmed)
-            toast.success(`Código escaneado: ${trimmed}`)
-          }
-        } catch {
-          toast.error("No se pudo leer el código de barras. Asegúrate de que la imagen sea clara y bien enfocada.")
-        }
-      }
-    }
-
-    input.click()
   }
 
   function stopScannerCamera() {

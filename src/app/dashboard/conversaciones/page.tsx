@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { MessageCircle } from "lucide-react"
 
 import { FeatureLockScreen } from "@/components/ui/feature-lock-screen"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { InboxClient } from "@/components/inbox/inbox-client"
 import { hasFeature } from "@/lib/features"
 
 export const metadata = {
@@ -32,25 +32,17 @@ export default async function ConversacionesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
+    <div className="h-full min-h-[calc(100vh-9rem)]">
+      <div className="mb-4">
         <h1 className="flex items-center gap-2 font-heading text-2xl font-bold text-foreground">
           <MessageCircle className="size-6 text-primary" />
           Conversaciones
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tu bandeja unificada de clientes. Disponible próximamente en una actualización.
+          Bandeja unificada de clientes. Panitas sugiere respuestas, nunca las envía por ti.
         </p>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Próximamente</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Este módulo se activará en la próxima fase. Mientras tanto, puedes contactar a tus
-          clientes desde la lista de clientes.
-        </CardContent>
-      </Card>
+      <InboxClient />
     </div>
   )
 }

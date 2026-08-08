@@ -153,7 +153,7 @@ function VideoCycler({ videos, isActive, accent }: { videos: string[]; isActive:
 }
 
 function ChoosePlanContent() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const isAuthenticated = status === "authenticated"
   const router = useRouter()
   const searchParams = useSearchParams()

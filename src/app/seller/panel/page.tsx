@@ -15,7 +15,7 @@ export default async function SellerDashboardPage() {
   })
   if (!seller) redirect("/seller/login")
 
-  const [orders, commissions] = await Promise.all([
+  const [orders] = await Promise.all([
     prisma.order.findMany({
       where: { sellerId: seller.id },
       orderBy: { createdAt: "desc" },

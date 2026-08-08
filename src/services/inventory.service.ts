@@ -2,6 +2,7 @@ import { createAuditEntry } from "@/lib/audit"
 import { safeStr, safeInt } from "@/lib/validate"
 import { InventoryRepository } from "@/repositories/inventory.repository"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
 
@@ -94,6 +95,23 @@ export class InventoryService {
       reason: type as string,
     })
 
+    fireDomainEvent({
+      type: "product.stock.changed",
+      data: {
+        productId,
+        name: product.name,
+        oldStock: product.stock,
+        newStock,
+        delta,
+        reason: type as string,
+      },
+      aggregateId: productId,
+      aggregateType: "Product",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "inventory.service",
+    })
+
     if (newStock > 0 && newStock <= LOW_STOCK_THRESHOLD) {
       await createAuditEntry({
         action: "stock.low",
@@ -107,6 +125,19 @@ export class InventoryService {
         storeId: ctx.storeId,
         productName: product.name,
         remainingStock: newStock,
+      })
+      fireDomainEvent({
+        type: "inventory.low_stock",
+        data: {
+          productId,
+          name: product.name,
+          remainingStock: newStock,
+        },
+        aggregateId: productId,
+        aggregateType: "Product",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "inventory.service",
       })
     }
 

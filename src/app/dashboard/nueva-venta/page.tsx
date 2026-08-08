@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { Plus, Minus, Trash2, Search, User, Phone, CreditCard, Package, ShoppingCart, Store } from "lucide-react"
+import { Plus, Minus, Trash2, Search, User, CreditCard, Package, ShoppingCart, Store } from "lucide-react"
 import posthog from "posthog-js"
 
 interface Product {

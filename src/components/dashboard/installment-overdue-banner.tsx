@@ -9,7 +9,7 @@ interface Props {
   amount: number
 }
 
-export function InstallmentOverdueBanner({ subscriptionId, dueDate, amount }: Props) {
+export function InstallmentOverdueBanner({ dueDate, amount }: Props) {
   const [dismissed, setDismissed] = useState(false)
 
   if (dismissed) return null

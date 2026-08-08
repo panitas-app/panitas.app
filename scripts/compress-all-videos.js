@@ -4,7 +4,6 @@ const path = require("path");
 
 const PUBLIC_VIDEOS = path.join(__dirname, "..", "public", "videos");
 const OUTPUT_DIR = path.join(__dirname, "..", "temp-compressed");
-const CLOUDINARY_CLOUD = "dxgqv585u";
 
 if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 

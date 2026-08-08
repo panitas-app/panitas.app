@@ -11,6 +11,7 @@ import type { CustomerService } from "@/services/customer.service"
 import type { OrderService } from "@/services/order.service"
 import type { BusinessSummaryGenerator } from "@/lib/business-intelligence"
 import type { RecommendationService } from "@/lib/recommendations"
+import type { KnowledgeService } from "@/lib/knowledge"
 
 export interface ToolDeps {
   productService?: ProductService
@@ -22,4 +23,6 @@ export interface ToolDeps {
   businessMonitor?: BusinessSummaryGenerator
   /** Servicio de recomendaciones operativas (FASE 4D), inyectable en tests. */
   recommendationService?: RecommendationService
+  /** Base de Conocimiento (FASE 7D), inyectable en tests. */
+  knowledgeService?: KnowledgeService
 }

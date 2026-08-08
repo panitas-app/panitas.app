@@ -57,7 +57,6 @@ function generatePurchaseOrderPDF(order: OrderData) {
   const store = order.store || ({} as any)
   const owner = store.user || {}
   const items = order.items || []
-  const payments = order.payments || []
   const isCredit = order.creditDays && order.creditDays > 0
 
   const doc = new jsPDF()
@@ -184,7 +183,6 @@ function generatePurchaseOrderPDF(order: OrderData) {
     doc.setFont("helvetica", "normal")
     doc.setTextColor(80)
 
-    const payment = payments[0]
     doc.text("Método: Crédito", 20, payY + 12)
     doc.text(`Días de crédito: ${order.creditDays} días`, 20, payY + 17)
     if (order.dueDate) doc.text(`Fecha de vencimiento: ${formatDateShort(order.dueDate)}`, 20, payY + 22)

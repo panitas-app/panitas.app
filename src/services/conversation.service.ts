@@ -1,8 +1,10 @@
 import { ConversationRepository, type ConversationScope } from "@/repositories/conversation.repository"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
 import type { Message, MessageRole, ResolvedToolCall } from "@/lib/agent-core/types"
+import type { ConversationContextState, ConversationListItem, ConversationSummaryState } from "@/lib/conversations/conversation-types"
 import { createAuditEntry } from "@/lib/audit"
 
 export type SaveMessageInput = {
@@ -38,6 +40,7 @@ type PrismaConversation = {
   createdAt: Date
   updatedAt: Date
   messages?: PrismaConversationMessage[]
+  _count?: { messages: number }
 }
 
 export class ConversationService {
@@ -64,7 +67,7 @@ export class ConversationService {
       status: c.status,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
-      messageCount: c.messages?.length ?? 0,
+      messageCount: c._count ? c._count.messages : c.messages?.length ?? 0,
     }
   }
 
@@ -89,6 +92,15 @@ export class ConversationService {
       conversationId: conversation.id,
       storeId: ctx.storeId,
       userId: ctx.userId,
+    })
+    fireDomainEvent({
+      type: "conversation.started",
+      data: { conversationId: conversation.id, title: conversation.title },
+      aggregateId: conversation.id,
+      aggregateType: "Conversation",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "conversation.service",
     })
     createAuditEntry({
       action: "conversation.created",
@@ -154,6 +166,16 @@ export class ConversationService {
       role: input.role,
     })
 
+    fireDomainEvent({
+      type: "conversation.message.created",
+      data: { conversationId, role: input.role, content: input.content.slice(0, 500) },
+      aggregateId: conversationId,
+      aggregateType: "Conversation",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "conversation.service",
+    })
+
     return this.toMessage(message)
   }
 
@@ -166,6 +188,15 @@ export class ConversationService {
       storeId: ctx.storeId,
       userId: ctx.userId,
     })
+    fireDomainEvent({
+      type: "conversation.deleted",
+      data: { conversationId: id },
+      aggregateId: id,
+      aggregateType: "Conversation",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "conversation.service",
+    })
     createAuditEntry({
       action: "conversation.deleted",
       entity: "Conversation",
@@ -175,5 +206,88 @@ export class ConversationService {
     }).catch(() => undefined)
 
     return { deleted: true }
+  }
+
+  // ── FASE 5C: renombrar, estado de contexto/resumen y búsqueda ──────────────
+
+  /** Renombra la conversación (solo si pertenece al scope). */
+  async rename(ctx: StoreServiceContext, id: string, title: string): Promise<ConversationDTO> {
+    const clean = title.trim().slice(0, 60)
+    if (!clean) throw serviceError("El título no puede estar vacío", 400)
+
+    const result = await this.repo.update(id, this.scope(ctx), { title: clean })
+    if (result.count === 0) throw serviceError("Conversación no encontrada", 404)
+
+    createAuditEntry({
+      action: "conversation.renamed",
+      entity: "Conversation",
+      entityId: id,
+      userId: ctx.userId,
+      storeId: ctx.storeId,
+    }).catch(() => undefined)
+
+    return this.getConversation(ctx, id)
+  }
+
+  /** Lee el estado del contexto de la conversación (JSON deserializado). */
+  async readContext(ctx: StoreServiceContext, id: string): Promise<ConversationContextState | null> {
+    const meta = await this.repo.findMetaById(id, this.scope(ctx))
+    if (!meta) throw serviceError("Conversación no encontrada", 404)
+    if (!meta.contextState) return null
+    try {
+      return JSON.parse(meta.contextState) as ConversationContextState
+    } catch {
+      return null
+    }
+  }
+
+  /** Persiste el estado del contexto de la conversación. */
+  async writeContext(ctx: StoreServiceContext, id: string, state: ConversationContextState): Promise<void> {
+    const result = await this.repo.update(id, this.scope(ctx), { contextState: JSON.stringify(state) })
+    if (result.count === 0) throw serviceError("Conversación no encontrada", 404)
+  }
+
+  /** Lee el resumen estructurado de la conversación (JSON deserializado). */
+  async readSummary(ctx: StoreServiceContext, id: string): Promise<ConversationSummaryState | null> {
+    const meta = await this.repo.findMetaById(id, this.scope(ctx))
+    if (!meta) throw serviceError("Conversación no encontrada", 404)
+    if (!meta.summary) return null
+    try {
+      return JSON.parse(meta.summary) as ConversationSummaryState
+    } catch {
+      return null
+    }
+  }
+
+  /** Persiste el resumen estructurado de la conversación. */
+  async writeSummary(ctx: StoreServiceContext, id: string, state: ConversationSummaryState): Promise<void> {
+    const result = await this.repo.update(id, this.scope(ctx), { summary: JSON.stringify(state) })
+    if (result.count === 0) throw serviceError("Conversación no encontrada", 404)
+  }
+
+  /** Busca conversaciones del usuario por título o contenido. */
+  async search(
+    ctx: StoreServiceContext,
+    query: string,
+    opts: { skip?: number; take?: number; status?: string; updatedAfter?: Date; updatedBefore?: Date } = {},
+  ): Promise<{ conversations: ConversationListItem[]; total: number }> {
+    const { conversations, total } = await this.repo.search(this.scope(ctx), query, {
+      skip: opts.skip,
+      take: opts.take,
+      status: opts.status,
+      updatedAfter: opts.updatedAfter,
+      updatedBefore: opts.updatedBefore,
+    })
+    return {
+      conversations: conversations.map((c) => {
+        const dto = this.toDTO(c)
+        const firstUser = c.messages?.[0]?.content
+        return {
+          ...dto,
+          snippet: firstUser ? (firstUser.length > 120 ? `${firstUser.slice(0, 117)}…` : firstUser) : undefined,
+        }
+      }),
+      total,
+    }
   }
 }

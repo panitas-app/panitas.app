@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { ListChecks } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 import type { BusinessMetric, BusinessSummary } from "@/lib/business-intelligence"
@@ -14,10 +15,16 @@ function formatMetricValue(metric: BusinessMetric, currency: string): string {
 export function BusinessSummaryView({
   summary,
   currency = "Bs",
+  maxInsights,
+  actions,
   className,
 }: {
   summary: BusinessSummary
   currency?: string
+  /** Máximo de hallazgos visibles (para el protagonismo del monitor en el BIC). */
+  maxInsights?: number
+  /** Acciones extra que se renderizan al final (ej. "Ver detalles"/"Preguntar a Panitas"). */
+  actions?: ReactNode
   className?: string
 }) {
   return (
@@ -39,7 +46,7 @@ export function BusinessSummaryView({
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-foreground">Puntos para revisar</h3>
-        <InsightList insights={summary.insights} />
+        <InsightList insights={summary.insights} limit={maxInsights} />
       </div>
 
       {summary.recommendations.length > 0 ? (
@@ -55,6 +62,8 @@ export function BusinessSummaryView({
           </ol>
         </div>
       ) : null}
+
+      {actions ? <div className="pt-1">{actions}</div> : null}
     </div>
   )
 }

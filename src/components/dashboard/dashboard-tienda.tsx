@@ -33,7 +33,7 @@ interface Props {
   categoryStats: { name: string; count: number; sales: number }[]
 }
 
-export function DashboardTienda({ store, rate: initialRate, data, orders, visitorData, categoryStats }: Props) {
+export function DashboardTienda({ store, rate: initialRate, data, orders }: Props) {
   const rate = initialRate
   const { showBolivares } = useBcvRate()
   const todayRevenueVes = data.todayRevenue * rate

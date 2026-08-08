@@ -227,12 +227,12 @@ export function hasModule(planId: string, module: PlanModule): boolean {
   return plan.modules.includes(module)
 }
 
-export function requireAppointmentFeature(negocioId: string) {
+export function requireAppointmentFeature() {
   return { allowed: true }
 }
 
 export function getPlanModules(planId: string): PlanModule[] {
   const resolved = resolvePlanId(planId)
   const plan = getPlan(resolved)
-  return plan?.modules?.filter((m): m is PlanModule => true) || []
+  return (plan?.modules?.filter(() => true) || []) as PlanModule[]
 }

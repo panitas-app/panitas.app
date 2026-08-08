@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { playNotificationSound } from "@/lib/notification-sound"
 import {
   Banknote,
+  BookOpen,
   Bot,
   Briefcase,
   Calendar,
@@ -17,8 +18,8 @@ import {
   Crown,
   ExternalLink,
   FileBarChart,
-  LayoutDashboard,
   MessageCircle,
+  Megaphone,
   Package,
   Palette,
   PanelLeftClose,
@@ -28,6 +29,7 @@ import {
   ShoppingCart,
   Store,
   Tag,
+  Truck,
   UserCircle,
   Users,
   Zap,
@@ -62,10 +64,8 @@ export function getNavSections(planType: string): NavSection[] {
   const isAgenda = planType === "agenda" || planType === "reservas"
   const allRoles: Role[] = ["admin", "manager", "seller", "viewer"]
 
-  const inicio: NavItem[] = [{ href: "/dashboard", label: "Inicio", icon: LayoutDashboard, roles: allRoles }]
-
   const panitas: NavItem[] = [
-    { href: "/dashboard/assistant", label: "Asistente IA", icon: Bot, roles: allRoles },
+    { href: "/dashboard", label: "Asistente", icon: Bot, roles: allRoles },
     { href: "/dashboard/conversaciones", label: "Conversaciones", icon: MessageCircle, plusBadge: true, roles: ["admin", "manager"] },
   ]
 
@@ -83,8 +83,15 @@ export function getNavSections(planType: string): NavSection[] {
     gestion.push({ href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] })
   }
   gestion.push({ href: "/dashboard/customers", label: "Clientes", icon: Users, roles: allRoles })
+  gestion.push({ href: "/dashboard/knowledge", label: "Documentos", icon: BookOpen, roles: allRoles })
   if (!isAgenda) {
     gestion.push({ href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] })
+  }
+  if (!isAgenda) {
+    gestion.push({ href: "/dashboard/collection", label: "Cobranza IA", icon: Megaphone, roles: ["admin", "manager"] })
+  }
+  if (!isAgenda) {
+    gestion.push({ href: "/dashboard/suppliers", label: "Proveedores", icon: Truck, roles: ["admin", "manager"] })
   }
   if (planType === "negocio") {
     gestion.push({ href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] })
@@ -134,7 +141,6 @@ export function getNavSections(planType: string): NavSection[] {
   }
 
   return [
-    { id: "inicio", title: "Inicio", items: inicio },
     { id: "panitas", title: "Panitas IA", items: panitas },
     { id: "gestion", title: "Módulos", items: gestion },
     { id: "config", title: "Configuración", items: config },
@@ -267,26 +273,40 @@ export function SidebarNavContent({ store, role, planId, collapsed = false, onNa
                 aria-label={item.label}
                 data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}
                 className={cn(
-                  "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground/70 transition-colors",
+                  "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
                   collapsed && "justify-center px-0",
-                  !isActive && "hover:bg-muted/60 hover:text-foreground",
+                  isActive
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground",
                 )}
               >
-                {isActive && <span className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-brand-primary" />}
-                {isActive && <span className="absolute inset-0 rounded-xl bg-brand-soft" />}
-                <Icon
-                  className={cn(
-                    "relative z-10 size-[18px] shrink-0",
-                    isActive ? "text-brand-primary" : "text-muted-foreground group-hover:text-foreground",
+                {isActive && <span className="absolute inset-0 rounded-xl border border-gray-200/80" />}
+                <span className="relative z-10 inline-flex shrink-0">
+                  <Icon
+                    className={cn(
+                      "size-[18px]",
+                      isActive ? "text-gray-900" : "text-muted-foreground group-hover:text-foreground",
+                    )}
+                  />
+                  {collapsed && item.badge && pendingCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex size-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-0.5 text-[8px] font-bold leading-none text-white shadow-sm">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
                   )}
-                />
+                  {collapsed && item.plusBadge && !isPlus && (
+                    <span
+                      className="absolute -right-1 -top-1 size-2 rounded-full bg-brand shadow-sm"
+                      title="Requiere plan Plus"
+                    />
+                  )}
+                </span>
                 {!collapsed && <span className="relative z-10 flex-1 truncate">{item.label}</span>}
-                {item.badge && pendingCount > 0 && (
+                {!collapsed && item.badge && pendingCount > 0 && (
                   <span className="relative z-10 ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-sm">
                     {pendingCount > 99 ? "99+" : pendingCount}
                   </span>
                 )}
-                {item.plusBadge && !isPlus && (
+                {!collapsed && item.plusBadge && !isPlus && (
                   <span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-black">
                     <Zap className="size-2.5" />
                     Plus
@@ -342,7 +362,7 @@ export function Sidebar({ store, role, planId, modalidad, collapsed, onToggle }:
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto scrollbar-none px-2.5 py-4">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4">
         <SidebarNavContent store={store} role={role} planId={planId} collapsed={collapsed} />
       </nav>
 

@@ -105,6 +105,20 @@ export type AppEvents = {
     storeId: string
     userId: string
   }
+  "expense.created": {
+    expenseId: string
+    storeId: string
+    amount: number
+    category: string
+    description: string
+  }
+  "expense.updated": {
+    expenseId: string
+    storeId: string
+    amount: number
+    category: string
+    description: string
+  }
   "memory.created": {
     key: string
     storeId: string

@@ -3,8 +3,7 @@ import { getPlanLandingContent, type PlanLandingContent } from "@/lib/plan-landi
 import { ProductSchema, FaqPageSchema, BreadcrumbSchema, WebPageSchema } from "@/lib/seo/schema"
 import { BASE_URL, PAGE_META } from "@/lib/seo/constants"
 
-const PLAN_IDS = ["agenda", "emprendedor", "mayorista"] as const
-type PlanId = (typeof PLAN_IDS)[number]
+type PlanId = "agenda" | "emprendedor" | "mayorista"
 
 const PLAN_SCHEMA_MAP: Record<PlanId, { name: string; description: string; price: string; route: string; planParam: string }> = {
   agenda: {

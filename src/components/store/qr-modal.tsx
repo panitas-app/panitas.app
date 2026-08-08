@@ -16,7 +16,7 @@ interface QrModalProps {
   storeLogo?: string | null
 }
 
-export function QrModal({ open, onClose, storeName, storeUrl, storeLogo }: QrModalProps) {
+export function QrModal({ open, onClose, storeName, storeUrl }: QrModalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [downloading, setDownloading] = useState(false)

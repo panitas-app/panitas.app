@@ -36,6 +36,7 @@ function makeRequest(message: string, extra: Record<string, unknown> = {}) {
 }
 
 const chatResult = {
+  message: { id: "msg-1", role: "assistant" as const, content: "hola", timestamp: "2026-01-01T00:00:00.000Z" },
   response: { ok: true, provider: "openrouter", model: "gpt-4o-mini", toolCalls: [], content: "hola" },
   conversationId: "conv-1",
   metadata: { status: "completed" },
@@ -63,7 +64,17 @@ describe("POST /api/agent/chat — gate de plan (basic_ai)", () => {
       expect.objectContaining({ storeId: "store-1", userId: "user-1", plan: "comercio" }),
       expect.objectContaining({ message: "¿cuánto stock tengo?" })
     )
-    expect(json).toHaveBeenCalledWith(expect.objectContaining({ conversationId: "conv-1" }))
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: "conv-1",
+        message: expect.objectContaining({ id: "msg-1", content: "hola" }),
+        response: expect.objectContaining({ ok: true }),
+      }),
+    )
+    const sent = json.mock.calls[json.mock.calls.length - 1][0] as Record<string, unknown>
+    expect(sent).not.toHaveProperty("provider")
+    expect(sent).not.toHaveProperty("model")
+    expect(sent).not.toHaveProperty("toolCalls")
   })
 
   it("devuelve 403 y no crea el engine cuando el plan no incluye basic_ai", async () => {

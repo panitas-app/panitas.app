@@ -1,5 +1,5 @@
 const { v2: cloudinary } = require("cloudinary")
-const { readdirSync, readFileSync, statSync } = require("fs")
+const { readdirSync, statSync } = require("fs")
 const { join, extname, basename } = require("path")
 
 // Parse CLOUDINARY_URL
@@ -88,7 +88,7 @@ async function main() {
         })
         console.log(`  ${plan}/${basename(file, ".mp4")}: ${url}`)
       }
-    } catch (e) {}
+    } catch {}
   }
 }
 

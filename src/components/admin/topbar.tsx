@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
-import { LogOut, Shield, User, ChevronDown, Settings } from "lucide-react"
+import { LogOut, Shield, User, ChevronDown } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,

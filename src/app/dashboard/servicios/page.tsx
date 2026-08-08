@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import {
   Clock,

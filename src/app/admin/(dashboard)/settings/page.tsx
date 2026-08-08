@@ -2,29 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
 import { Settings2 } from "lucide-react"
 
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<Record<string, string>>({})
+  const [, setSettings] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch("/api/admin/settings").then(r => r.json()).then(d => { setSettings(d || {}); setLoading(false) }).catch(() => setLoading(false))
   }, [])
-
-  async function handleSave(key: string, value: string) {
-    const res = await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
-    })
-    if (res.ok) { toast.success("Guardado"); setSettings(prev => ({ ...prev, [key]: value })) }
-    else toast.error("Error al guardar")
-  }
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Cargando...</div>
 

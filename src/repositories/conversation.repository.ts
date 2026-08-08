@@ -17,6 +17,8 @@ export type ConversationListFilters = {
   skip?: number
   take?: number
   status?: string
+  updatedAfter?: Date
+  updatedBefore?: Date
 }
 
 export class ConversationRepository {
@@ -26,6 +28,14 @@ export class ConversationRepository {
     return this.db.conversation.findFirst({
       where: { id, userId: scope.userId, storeId: scope.storeId },
       include: { messages: { orderBy: { createdAt: "asc" } } },
+    })
+  }
+
+  /** Metadatos ligeros de una conversación (contexto y resumen serializados). */
+  findMetaById(id: string, scope: ConversationScope) {
+    return this.db.conversation.findFirst({
+      where: { id, userId: scope.userId, storeId: scope.storeId },
+      select: { contextState: true, summary: true },
     })
   }
 
@@ -85,5 +95,45 @@ export class ConversationRepository {
     return this.db.conversation.deleteMany({
       where: { id, userId: scope.userId, storeId: scope.storeId },
     })
+  }
+
+  /**
+   * Busca conversaciones del scope por título o contenido de mensajes (FASE 5C).
+   * `snippet` = primer mensaje de usuario (para mostrar coincidencia).
+   */
+  async search(scope: ConversationScope, query: string, filters: ConversationListFilters = {}) {
+    const where: Prisma.ConversationWhereInput = {
+      userId: scope.userId,
+      storeId: scope.storeId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.updatedAfter ? { updatedAt: { gte: filters.updatedAfter } } : {}),
+      ...(filters.updatedBefore ? { updatedAt: { lte: filters.updatedBefore } } : {}),
+      ...(query
+        ? {
+            OR: [
+              { title: { contains: query, mode: "insensitive" } },
+              { messages: { some: { content: { contains: query, mode: "insensitive" } } } },
+            ],
+          }
+        : {}),
+    }
+    const [conversations, total] = await Promise.all([
+      this.db.conversation.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        skip: filters.skip,
+        take: filters.take,
+        include: {
+          _count: { select: { messages: true } },
+          messages: {
+            where: { role: "user" },
+            orderBy: { createdAt: "asc" },
+            take: 1,
+          },
+        },
+      }),
+      this.db.conversation.count({ where }),
+    ])
+    return { conversations, total }
   }
 }

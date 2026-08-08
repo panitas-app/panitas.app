@@ -8,6 +8,7 @@ export const BASE_FEATURES: FeatureKey[] = [
   "online_store",
   "reports",
   "basic_ai",
+  "knowledge_base",
 ]
 
 /** Features exclusivas del plan Panitas Negocios Plus. */
@@ -58,6 +59,12 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
     name: "Asistente IA",
     description: "Asistente de IA consultivo para tu negocio.",
     group: "ai",
+  },
+  knowledge_base: {
+    key: "knowledge_base",
+    name: "Base de Conocimiento",
+    description: "Centro de documentos: políticas, garantías, procedimientos y manuales de tu negocio.",
+    group: "knowledge",
   },
   unified_chat: {
     key: "unified_chat",

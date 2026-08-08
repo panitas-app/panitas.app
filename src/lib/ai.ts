@@ -1,6 +1,45 @@
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+const DEFAULT_NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+const DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
+const DEFAULT_OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
 const MAX_DAILY_REQUESTS = 100
+
+interface AiEndpoint {
+  url: string
+  apiKey: string
+  model: string
+  headers: Record<string, string>
+  label: string
+}
+
+/** Resuelve endpoint, key y modelo desde el entorno (nunca hardcode de secretos). */
+function resolveAiEndpoint(): AiEndpoint {
+  const provider = (process.env.AI_PROVIDER ?? "").trim() || "nvidia"
+  const inventoryModel = process.env.AI_INVENTORY_MODEL?.trim() || process.env.CHAT_MODEL?.trim()
+
+  if (provider === "openrouter") {
+    const base = (process.env.OPENROUTER_BASE_URL ?? "").trim().replace(/\/$/, "") || DEFAULT_OPENROUTER_URL.replace(/\/chat\/completions$/, "")
+    return {
+      url: `${base}/chat/completions`,
+      apiKey: process.env.OPENROUTER_API_KEY ?? "",
+      model: inventoryModel || DEFAULT_OPENROUTER_MODEL,
+      headers: {
+        "HTTP-Referer": process.env.OPENROUTER_HTTP_REFERER ?? "https://panitas.app",
+        "X-OpenRouter-Title": process.env.OPENROUTER_APP_TITLE ?? "Panitas Inventory Import",
+      },
+      label: "OpenRouter",
+    }
+  }
+
+  const base = (process.env.NVIDIA_NIM_BASE_URL ?? "").trim().replace(/\/$/, "") || DEFAULT_NVIDIA_URL.replace(/\/chat\/completions$/, "")
+  return {
+    url: `${base}/chat/completions`,
+    apiKey: process.env.NVIDIA_NIM_API_KEY ?? process.env.NVIDIA_API_KEY ?? "",
+    model: inventoryModel || DEFAULT_NVIDIA_MODEL,
+    headers: {},
+    label: "NVIDIA NIM",
+  }
+}
 
 interface AIProduct {
   name: string
@@ -45,9 +84,9 @@ export function getDailyUsage(): { used: number; limit: number } {
 }
 
 export async function parseInventoryWithAI(rawRows: (string | number | null)[][]): Promise<AIResponse> {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) {
-    return { products: [], errors: ["OPENROUTER_API_KEY no está configurada. Contacta al administrador."] }
+  const endpoint = resolveAiEndpoint()
+  if (!endpoint.apiKey) {
+    return { products: [], errors: ["No hay API key de IA configurada. Contacta al administrador."] }
   }
 
   if (!checkDailyLimit()) {
@@ -104,16 +143,15 @@ ${rowsText}`
   incrementDailyCount()
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(endpoint.url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${endpoint.apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://panitas.app",
-        "X-OpenRouter-Title": "Panitas Inventory Import",
+        ...endpoint.headers,
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: endpoint.model,
         messages: [
           { role: "system", content: "You are an expert inventory data parser. Always return valid JSON only, no markdown code blocks, no explanations." },
           { role: "user", content: prompt },
@@ -125,7 +163,7 @@ ${rowsText}`
 
     if (!response.ok) {
       const errBody = await response.text()
-      console.error("[AI] OpenRouter error:", response.status, errBody)
+      console.error(`[AI] ${endpoint.label} error:`, response.status, errBody)
       return { products: [], errors: [`Error de la API de IA (${response.status}). Intenta de nuevo o usa el mapeo manual.`] }
     }
 

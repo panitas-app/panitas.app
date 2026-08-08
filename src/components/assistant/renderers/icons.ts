@@ -1,0 +1,72 @@
+"use client"
+
+import {
+  Activity,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Banknote,
+  CalendarCheck,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Eye,
+  History,
+  Info,
+  ListChecks,
+  Package,
+  PackageCheck,
+  PackagePlus,
+  Pencil,
+  Plus,
+  Receipt,
+  Search,
+  ShoppingCart,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  Users,
+  Wallet,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react"
+
+/** Registro de iconos por nombre (FASE 5E). Evita importar iconos dinámicos. */
+const ICONS: Record<string, LucideIcon> = {
+  activity: Activity,
+  "alert-triangle": AlertTriangle,
+  "arrow-down": ArrowDown,
+  "arrow-up": ArrowUp,
+  "arrow-up-down": ArrowUpDown,
+  banknote: Banknote,
+  "calendar-check": CalendarCheck,
+  "check-circle-2": CheckCircle2,
+  "chevron-down": ChevronDown,
+  "chevron-right": ChevronRight,
+  copy: Copy,
+  eye: Eye,
+  history: History,
+  info: Info,
+  "list-checks": ListChecks,
+  package: Package,
+  "package-check": PackageCheck,
+  "package-plus": PackagePlus,
+  pencil: Pencil,
+  plus: Plus,
+  receipt: Receipt,
+  search: Search,
+  "shopping-cart": ShoppingCart,
+  sparkles: Sparkles,
+  "trash-2": Trash2,
+  "trending-up": TrendingUp,
+  users: Users,
+  wallet: Wallet,
+  "x-circle": XCircle,
+}
+
+export function iconByName(name?: string): LucideIcon | null {
+  if (!name) return null
+  return ICONS[name] ?? null
+}

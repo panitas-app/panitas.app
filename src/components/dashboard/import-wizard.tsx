@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, ChevronRight, ChevronLeft, Download, Sparkles, ArrowRight, CircleDot, Columns3, FileCheck2 } from "lucide-react"
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, ChevronRight, ChevronLeft, Download, Sparkles, ArrowRight, Columns3, FileCheck2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -88,7 +88,7 @@ function ProgressSteps({ current }: { current: "upload" | "mapping" | "ai-confir
   )
 }
 
-export function ImportWizard({ storeId, categories }: Props) {
+export function ImportWizard({}: Props) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 

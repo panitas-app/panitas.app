@@ -15,6 +15,7 @@ import type { AgentTool, ToolExecutionContext, ToolResponse } from "../types"
 import { buildServiceContext } from "../context"
 import { toolOk } from "../response"
 import type { ToolDeps } from "../deps"
+import { fireDomainEvent } from "@/lib/events"
 
 export type BusinessAlert = {
   severity: "info" | "warning" | "critical"
@@ -118,6 +119,15 @@ export function createAnalyticsTools(deps: ToolDeps = {}): AgentTool[] {
         storeName: typeof ctx.metadata?.storeName === "string" ? ctx.metadata.storeName : undefined,
         userName: typeof ctx.metadata?.userName === "string" ? ctx.metadata.userName : undefined,
       })
+
+      fireDomainEvent({
+        type: "assistant.monitor.updated",
+        data: { summary },
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "tool:analytics.businessMonitor",
+      })
+
       return toolOk(summary)
     },
   }

@@ -7,14 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Pagination } from "@/components/ui/pagination"
 import { toast } from "sonner"
 import {
-  Receipt, Plus, Search, Filter, Download, TrendingUp,
-  Building2, Banknote, Smartphone, Landmark,
-  PiggyBank, ShoppingBag, Home, Car, Utensils, Wifi,
-  Package, Shirt, Heart, GraduationCap, MoreHorizontal, X,
+  Receipt, Plus, Search, Filter, TrendingUp,
+  Banknote, Smartphone, Landmark,
+  PiggyBank, Home, Car, Utensils,
+  Package, Heart, GraduationCap, MoreHorizontal, X,
   Users, Zap, Paperclip, Truck, Megaphone, ClipboardList,
   BarChart3, Scale, Wrench, Monitor, RefreshCw, Wallet,
 } from "lucide-react"
@@ -203,7 +202,7 @@ function ExpenseDashboard() {
         <CardContent>
           {budgets.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No has definido presupuestos mensuales. Ve a "Registrar gasto" y asigna presupuestos por categoría.
+              No has definido presupuestos mensuales. Ve a &quot;Registrar gasto&quot; y asigna presupuestos por categoría.
             </p>
           ) : (
             <div className="space-y-4">
@@ -372,7 +371,6 @@ function ExpenseForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   const catLabels: Record<string, string> = Object.fromEntries(EXPENSE_CATEGORIES.map((c) => [c.value, c.label]))
-  const paymentLabels: Record<string, string> = Object.fromEntries(PAYMENT_METHODS.map((c) => [c.value, c.label]))
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">

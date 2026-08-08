@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (body.name) data.name = String(body.name).slice(0, 100)
   if (body.config) data.config = typeof body.config === "string" ? body.config : JSON.stringify(body.config)
 
-  const automation = await prisma.automation.updateMany({
+  await prisma.automation.updateMany({
     where: { id, storeId: current.store.id },
     data,
   })

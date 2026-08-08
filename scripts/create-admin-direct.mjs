@@ -14,7 +14,7 @@ async function run() {
   const password = "admin" // Contraseña predeterminada sencilla para desarrollo
   const hashedPassword = await bcrypt.hash(password, 10)
   
-  const user = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email },
     update: {
       role: "superadmin",

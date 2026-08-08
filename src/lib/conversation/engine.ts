@@ -29,6 +29,10 @@ import { buildConversationalHistory } from "./context-builder"
 import type { StoreServiceContext } from "@/services/context"
 import type { BusinessContextBuilder } from "@/lib/agent/context"
 import type { MemoryManager, MemoryTurn } from "@/lib/agent/memory"
+import type { ConversationManager } from "@/lib/conversations"
+import type { ConversationalActionsEngine } from "@/lib/conversational-actions"
+import type { BusinessMemoryEngine } from "@/lib/business-memory"
+import { fireDomainEvent } from "@/lib/events"
 
 export type ChatTurnInput = {
   conversationId?: string
@@ -52,6 +56,8 @@ export type ChatTurnResult = {
   metadata: Record<string, unknown>
   /** FASE 4C: solicitud de confirmación activa (solo cuando metadata.status === "confirmation_required"). */
   confirmation?: ConfirmationRequest
+  /** FASE 5D: respuesta enriquecida (tarjetas, tablas, resúmenes) para el cliente. */
+  rich?: import("@/lib/conversational-actions").RichResponse
 }
 
 export type ConversationEngineDeps = {
@@ -63,6 +69,12 @@ export type ConversationEngineDeps = {
   context?: BusinessContextBuilder
   /** FASE 4A: Intelligence Layer opcional (intención, plan, orquestación multi-tool). */
   intelligence?: IntelligenceLayer
+  /** FASE 5C: Memoria conversacional opcional (contexto estructurado por sesión). */
+  conversational?: ConversationManager
+  /** FASE 5D: Conversational Actions opcional (orquesta tools 3B + services 1B). */
+  actions?: ConversationalActionsEngine
+  /** FASE 5G: Memoria estable del negocio opcional (terminología/preferencias/reglas/uso). */
+  businessMemory?: BusinessMemoryEngine
 }
 
 function toResolvedToolCalls(results: StepExecutionResult[]): ResolvedToolCall[] {
@@ -78,8 +90,29 @@ function toResolvedToolCalls(results: StepExecutionResult[]): ResolvedToolCall[]
 export class ConversationEngine {
   constructor(private readonly deps: ConversationEngineDeps) {}
 
+  /** FASE 5G: aprendizaje de la memoria estable (best-effort, nunca bloquea el turno). */
+  private learnFromTurn(ctx: StoreServiceContext, message: string, intent?: string, domains?: string[]): void {
+    fireDomainEvent({
+      type: "assistant.memory.updated",
+      data: { message: message.slice(0, 200), intent },
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "conversation.engine",
+    })
+    if (!this.deps.businessMemory) return
+    void this.deps.businessMemory
+      .learnFromTurn({ userId: ctx.userId, storeId: ctx.storeId, negocioId: ctx.negocioId }, { message, intent, domains })
+      .catch((error: unknown) => console.error("[conversation] aprendizaje de memoria estable falló", error))
+  }
+
   async chat(ctx: StoreServiceContext, input: ChatTurnInput): Promise<ChatTurnResult> {
     const conversation = await this.deps.conversations.ensureConversation(ctx, input.conversationId)
+
+    // FASE 5C: título automático desde el primer mensaje de una conversación nueva.
+    const isNewConversation = conversation.messageCount === 0
+    if (isNewConversation) {
+      await this.deps.conversational?.autoTitle(ctx, conversation.id, input.message)
+    }
 
     const userMessage = await this.deps.conversations.saveMessage(ctx, conversation.id, {
       role: "user",
@@ -106,6 +139,35 @@ export class ConversationEngine {
       console.error("[conversation] no se pudo construir contexto/memoria", error)
     }
 
+    // FASE 5C: prepara el turno con la memoria conversacional (referencias,
+    // cambio de tema, contexto optimizado). Nunca rompe el turno.
+    let prepared: Awaited<ReturnType<ConversationManager["prepareTurn"]>> | null = null
+    try {
+      prepared = await this.deps.conversational?.prepareTurn(ctx, conversation.id, input.message) ?? null
+    } catch (error) {
+      console.error("[conversation] no se pudo preparar la memoria conversacional", error)
+    }
+
+    const resolvedMessage = prepared?.resolvedMessage ?? input.message
+    if (prepared?.memory) {
+      memoryContext = [prepared.memory, memoryContext].filter(Boolean).join("\n\n")
+    }
+
+    // FASE 5G: recupera SOLO los recuerdos estables relevantes por intención
+    // (terminología, preferencias, reglas, uso) para adaptar la respuesta.
+    // Nunca se envía toda la memoria y nunca rompe el turno.
+    let businessMemoryContext: string | undefined
+    try {
+      if (this.deps.businessMemory) {
+        const result = await this.deps.businessMemory.queryForIntent(memoryCtx, {
+          message: resolvedMessage,
+        })
+        businessMemoryContext = result.context
+      }
+    } catch (error) {
+      console.error("[conversation] no se pudo recuperar la memoria estable del negocio", error)
+    }
+
     const request: AgentRequest = {
       userId: ctx.userId,
       storeId: ctx.storeId,
@@ -113,12 +175,12 @@ export class ConversationEngine {
       plan: ctx.plan ?? "business",
       role: ctx.role ?? "admin",
       permissions: permissionsForRole(ctx.role ?? "admin"),
-      message: input.message,
+      message: resolvedMessage,
       sessionId: conversation.id,
       history: limitedHistory,
       taskType: "chat",
       businessContext,
-      memoryContext,
+      memoryContext: [memoryContext, businessMemoryContext].filter(Boolean).join("\n\n"),
       metadata: {
         businessName: ctx.storeName,
         conversationId: conversation.id,
@@ -128,7 +190,118 @@ export class ConversationEngine {
     // FASE 4A — Intelligence Layer: intención → plan → confirmación o ejecución → síntesis.
     let intelligenceToolCalls: ResolvedToolCall[] = []
     let layerIntent: string | undefined
+    let layerDomains: string[] | undefined
     let layerTrace: unknown
+
+    // FASE 5C: persiste la memoria conversacional tras el turno (best-effort).
+    const finalize = (
+      replyText: string,
+      toolNames: ResolvedToolCall[],
+      confirmed: boolean,
+      actionOutcome: { actionId?: string; knownParams?: Record<string, string>; contextStatus?: import("@/lib/conversations").ConversationContextState["status"] } = {},
+    ) => {
+      if (layerIntent) {
+        fireDomainEvent({
+          type: "assistant.context.updated",
+          data: { conversationId: conversation.id, intent: layerIntent, confirmed },
+          aggregateId: conversation.id,
+          aggregateType: "Conversation",
+          tenantId: ctx.storeId,
+          actorId: ctx.userId,
+          source: "conversation.engine",
+        })
+      }
+      return this.deps.conversational?.completeTurn(ctx, conversation.id, {
+        userMessage: input.message,
+        assistantMessage: replyText,
+        toolNames: toolNames.map((t) => t.name),
+        confirmed,
+        intent: layerIntent,
+        ...actionOutcome,
+      })
+    }
+
+    // FASE 5D — Conversational Actions: orquesta tools 3B + services 1B de forma
+    // determinista. Si detecta una acción, responde SIN llamar al LLM.
+    if (this.deps.actions) {
+      const actionResult = await this.deps.actions.run({
+        message: input.message,
+        ctx,
+        runtime: {
+          userId: ctx.userId,
+          storeId: ctx.storeId,
+          negocioId: ctx.negocioId ?? null,
+          plan: ctx.plan ?? "business",
+          role: ctx.role ?? "admin",
+          permissions: request.permissions,
+        },
+        confirmed: Boolean(input.confirmedStepIds?.length),
+        previous: prepared?.context
+          ? {
+              actionId: prepared.context.actionId,
+              knownParams: prepared.context.knownParams ?? {},
+              status: prepared.context.status,
+            }
+          : undefined,
+      })
+
+      if (actionResult.status !== "no_action") {
+        layerIntent = `action.${actionResult.actionId ?? "unknown"}`
+
+        fireDomainEvent({
+          type: "conversation.intent.detected",
+          data: { conversationId: conversation.id, intent: layerIntent, message: input.message.slice(0, 200) },
+          aggregateId: conversation.id,
+          aggregateType: "Conversation",
+          tenantId: ctx.storeId,
+          actorId: ctx.userId,
+          source: "conversation.engine",
+        })
+
+        await this.deps.conversations.saveMessage(ctx, conversation.id, {
+          role: "assistant",
+          content: actionResult.reply,
+          toolCalls: [],
+          metadata: {
+            provider: "actions",
+            model: "deterministic",
+            status: actionResult.status,
+            ...(actionResult.actionId ? { actionId: actionResult.actionId } : {}),
+          },
+        })
+
+        this.learnFromTurn(ctx, input.message, layerIntent, layerDomains)
+
+        await finalize(
+          actionResult.reply,
+          [],
+          actionResult.status === "completed" || Boolean(input.confirmedStepIds?.length),
+          {
+            actionId: actionResult.actionId,
+            knownParams: actionResult.knownParams,
+            contextStatus: actionResult.contextStatus,
+          },
+        )
+
+        return {
+          conversationId: conversation.id,
+          message: userMessage,
+          response: {
+            reply: actionResult.reply,
+            provider: "actions",
+            model: "deterministic",
+            toolCalls: [],
+            ok: true,
+          },
+          metadata: {
+            status: actionResult.status,
+            ...(actionResult.actionId ? { actionId: actionResult.actionId } : {}),
+          },
+          ...(actionResult.confirmation ? { confirmation: actionResult.confirmation } : {}),
+          ...(actionResult.rich ? { rich: actionResult.rich } : {}),
+        }
+      }
+    }
 
     if (this.deps.intelligence) {
       const layerResult = await this.deps.intelligence.run({
@@ -145,7 +318,25 @@ export class ConversationEngine {
       })
 
       layerIntent = layerResult.intent?.type
+      layerDomains = layerResult.intent?.domains
       layerTrace = layerResult.trace
+
+      if (layerIntent) {
+        fireDomainEvent({
+          type: "conversation.intent.detected",
+          data: {
+            conversationId: conversation.id,
+            intent: layerIntent,
+            domains: layerDomains,
+            message: input.message.slice(0, 200),
+          },
+          aggregateId: conversation.id,
+          aggregateType: "Conversation",
+          tenantId: ctx.storeId,
+          actorId: ctx.userId,
+          source: "conversation.engine",
+        })
+      }
 
       if (layerResult.status === "confirmation_required") {
         // No se ejecuta nada: se devuelve la solicitud de confirmación SIN llamar al LLM.
@@ -164,6 +355,8 @@ export class ConversationEngine {
           toolCalls: confirmationToolCalls,
           metadata: { intent: layerIntent, confirmationRequired: true },
         })
+
+        await finalize(reply, confirmationToolCalls, false)
 
         return {
           conversationId: conversation.id,
@@ -199,6 +392,7 @@ export class ConversationEngine {
             toolCalls: intelligenceToolCalls,
             metadata: { intent: layerIntent, provider: "intelligence", model: "deterministic" },
           })
+          await finalize(layerResult.reply, intelligenceToolCalls, false)
           return {
             conversationId: conversation.id,
             message: userMessage,
@@ -249,6 +443,10 @@ export class ConversationEngine {
         taskType: response.taskType,
       },
     })
+
+    this.learnFromTurn(ctx, input.message, layerIntent, layerDomains)
+
+    await finalize(response.reply, toolCalls, Boolean(input.confirmedStepIds?.length))
 
     return {
       conversationId: conversation.id,

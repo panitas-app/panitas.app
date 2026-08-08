@@ -2,8 +2,12 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { neonConfig } from "@neondatabase/serverless"
 import { PrismaAdapter } from "@auth/prisma-adapter"
+import { getLocalSuperadmin } from "@/lib/local-only"
 
 export async function GET() {
+  const admin = await getLocalSuperadmin()
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
   const results: Record<string, unknown> = {}
 
   // 1. Check env vars

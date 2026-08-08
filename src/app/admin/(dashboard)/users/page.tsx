@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"

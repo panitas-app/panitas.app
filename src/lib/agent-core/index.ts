@@ -2,13 +2,14 @@
  * Agent Core (FASE 3A) — barrel público.
  *
  * Única puerta de entrada del núcleo del asistente. `createDefaultAgentCore()`
- * cablea la configuración, el Model Router, el AI Provider Manager, el adaptador
- * OpenRouter y el pipeline. El resto del sistema nunca instancia proveedores directo.
+ * cablea la configuración, el Model Router, el AI Provider Manager, los adaptadores
+ * de proveedor (OpenRouter + NVIDIA NIM) y el pipeline. El resto del sistema nunca
+ * instancia proveedores directo.
  */
 
 // Config y routing
-export { loadAgentConfig, DEFAULT_FREE_MODEL, DEFAULT_PROVIDER } from "./config"
-export type { AgentCoreConfig, ModelTaskConfig, OpenRouterSettings } from "./config"
+export { loadAgentConfig, DEFAULT_FREE_MODEL, DEFAULT_OPENROUTER_MODEL, DEFAULT_PROVIDER, DEFAULT_NVIDIA_BASE_URL } from "./config"
+export type { AgentCoreConfig, ModelTaskConfig, OpenRouterSettings, NvidiaSettings } from "./config"
 export { ModelRouter } from "./model-router"
 export type { ModelRoute } from "./model-router"
 
@@ -71,5 +72,13 @@ export { PanitasAgent } from "./agent-core"
 export type { PanitasAgentDeps } from "./agent-core"
 
 // Factory por defecto
-export { createDefaultAgentCore } from "./factory"
+export { createDefaultAgentCore, createAgentAiProvider } from "./factory"
 export type { DefaultAgentCoreOptions } from "./factory"
+
+// Adaptadores de proveedor (conocimiento del proveedor aislado en providers/)
+export { OpenAICompatibleProvider } from "./providers/openai-compatible"
+export type { OpenAICompatibleProviderConfig } from "./providers/openai-compatible"
+export { OpenRouterProvider, createOpenRouterProvider } from "./providers/openrouter"
+export type { OpenRouterConfig } from "./providers/openrouter"
+export { NvidiaNimProvider, createNvidiaNimProvider } from "./providers/nvidia"
+export type { NvidiaNimConfig } from "./providers/nvidia"

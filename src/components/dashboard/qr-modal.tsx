@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Download, Share2, X, QrCode } from "lucide-react"
+import { Download, Share2, QrCode } from "lucide-react"
 import { toast } from "sonner"
 
 interface QRModalProps {

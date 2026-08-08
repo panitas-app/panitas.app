@@ -3,8 +3,10 @@ import { prisma } from "@/lib/prisma"
 import { getEffectiveRate } from "@/lib/bcv"
 import { getCurrentStore } from "@/lib/permissions"
 import { rateLimit } from "@/lib/rate-limit"
+import { CustomerService } from "@/services/customer.service"
+import { buildMonthlySeries, monthKey } from "@/lib/business-intelligence-center"
 
-export async function GET(request: Request) {
+export async function GET() {
   let storeInfo
   try {
     storeInfo = await getCurrentStore()
@@ -30,14 +32,10 @@ export async function GET(request: Request) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const baseWhere = { storeId }
-  const todayWhere = { ...baseWhere, createdAt: { gte: todayStart } }
-  const weekWhere = { ...baseWhere, createdAt: { gte: weekStart } }
-  const monthWhere = { ...baseWhere, createdAt: { gte: monthStart } }
-
   const nonCancelled = { storeId, status: { not: "cancelled" } }
-  const todayNonCancelled = { ...nonCancelled, createdAt: { gte: todayStart } }
-  const weekNonCancelled = { ...nonCancelled, createdAt: { gte: weekStart } }
   const monthNonCancelled = { ...nonCancelled, createdAt: { gte: monthStart } }
+
+  const seriesStart = new Date(now.getFullYear(), now.getMonth() - 11, 1)
 
   const [
     todayRevenue,
@@ -51,6 +49,10 @@ export async function GET(request: Request) {
     statusCounts,
     productAgg,
     recentOrders,
+    monthOrders,
+    monthlyPayments,
+    monthlyExpenses,
+    customerMetrics,
   ] = await Promise.all([
     // Revenue = suma de OrderPayment verificados (paidAt o createdAt fallback) en el período
     prisma.orderPayment.aggregate({
@@ -87,10 +89,33 @@ export async function GET(request: Request) {
       take: 10,
       select: { id: true, orderNumber: true, customerName: true, status: true, total: true, createdAt: true },
     }),
+    prisma.order.count({ where: monthNonCancelled }),
+    prisma.orderPayment.findMany({
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: seriesStart } }, { paidAt: null, createdAt: { gte: seriesStart } }] },
+      select: { amount: true, paidAt: true, createdAt: true },
+    }),
+    prisma.expense.findMany({
+      where: { ...baseWhere, date: { gte: seriesStart } },
+      select: { amount: true, date: true },
+    }),
+    new CustomerService().metrics({ storeId, userId: storeInfo.userId }),
   ])
 
+  // Serie mensual (últimos 12 meses) para el área Análisis y la tendencia de Salud Financiera.
+  const revenueByMonth: Record<string, number> = {}
+  for (const payment of monthlyPayments) {
+    const key = monthKey(payment.paidAt ?? payment.createdAt)
+    revenueByMonth[key] = (revenueByMonth[key] ?? 0) + (payment.amount ?? 0)
+  }
+  const expensesByMonth: Record<string, number> = {}
+  for (const expense of monthlyExpenses) {
+    const key = monthKey(expense.date)
+    expensesByMonth[key] = (expensesByMonth[key] ?? 0) + (expense.amount ?? 0)
+  }
+  const monthlySeries = buildMonthlySeries(revenueByMonth, expensesByMonth, 12, now)
+
   const productIds = productAgg.map((p) => p.productId)
-  let productMap: Record<string, string> = {}
+  const productMap: Record<string, string> = {}
   if (productIds.length > 0) {
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -129,5 +154,16 @@ export async function GET(request: Request) {
       createdAt: o.createdAt.toISOString(),
     })),
     totalOrders: statusCounts.reduce((sum, s) => sum + s._count.id, 0),
+    monthOrders,
+    averageTicketMonth: monthOrders > 0 ? (monthRevenue._sum.amount || 0) / monthOrders : 0,
+    monthlySeries,
+    customers: {
+      total: customerMetrics.total,
+      newThisMonth: customerMetrics.newThisMonth,
+      recurrent: customerMetrics.recurrent,
+      inactive: customerMetrics.inactive,
+      averageCustomerValue: customerMetrics.averageCustomerValue,
+      totalSpent: customerMetrics.totalSpent,
+    },
   })
 }

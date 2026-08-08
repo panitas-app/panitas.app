@@ -1,5 +1,3 @@
-import { SEOPages } from "@/lib/seo/constants"
-
 export interface SeoLandingData {
   heroTitle: string
   heroSubtitle: string

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-const KNOWN_SOURCES = ["direct", "social", "search", "whatsapp", "email", "qr"] as const
-type Source = typeof KNOWN_SOURCES[number]
+type Source = "direct" | "social" | "search" | "whatsapp" | "email" | "qr"
 
 function classifySource(referrer: string | undefined, ref: string | undefined): Source {
   const r = (ref || "").toLowerCase()

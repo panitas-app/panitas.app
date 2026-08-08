@@ -31,8 +31,6 @@ interface Subscription {
   store: { name: string; slug: string; plan: string }
 }
 
-const planColors: Record<string, string> = {}
-
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
   verified: "bg-blue-100 text-blue-700",

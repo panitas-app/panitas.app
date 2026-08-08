@@ -38,7 +38,7 @@ export function MobileSidebar({ store, role, planId, open, onClose }: MobileSide
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-none px-3 py-4">
+        <div className="flex-1 overflow-y-auto px-3 py-4">
           <SidebarNavContent store={store} role={role} planId={planId} onNavClick={onClose} />
         </div>
       </div>

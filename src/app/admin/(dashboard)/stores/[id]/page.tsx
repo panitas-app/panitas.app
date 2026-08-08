@@ -6,10 +6,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { ArrowLeft, Store, Users, Package, ShoppingCart, DollarSign, Calendar, ExternalLink, TrendingUp, CreditCard } from "lucide-react"
+import { ArrowLeft, Users, Package, ShoppingCart, ExternalLink, TrendingUp, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { planDisplayLabel, planColor } from "@/lib/plans"
 
@@ -22,9 +21,6 @@ interface StoreDetail {
   revenueByMonth: Array<{ month: string; total: number; count: number }>
   subscriptions: Array<{ id: string; plan: string; status: string; amount: number; createdAt: string; endDate: string | null }>
 }
-
-const planLabels: Record<string, string> = {}
-const planColors: Record<string, string> = {}
 
 export default function AdminStoreDetailPage() {
   const params = useParams()

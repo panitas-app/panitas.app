@@ -122,7 +122,7 @@ async function scrapeAgenciasComVe(browser, empresa) {
     try {
       await page.goto(new URL(st.href, empresa.url).href, { waitUntil: "domcontentloaded", timeout: 20000 })
       await page.waitForTimeout(1500)
-    } catch (e) {
+    } catch {
       console.log(`  ⚠ Zulia timeout, continuando...`)
       continue
     }

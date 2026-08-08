@@ -25,8 +25,6 @@ interface StoreItem {
   _count: { products: number; orders: number; members: number }
 }
 
-const planColors: Record<string, string> = {}
-
 export default function AdminStoresPage() {
   const [data, setData] = useState<StoreItem[]>([])
   const [loading, setLoading] = useState(true)

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,8 +12,8 @@ import { toast } from "sonner"
 import { useBcvRate } from "@/lib/bcv-context"
 import { formatBCV } from "@/lib/bcv/format"
 import {
-  Plus, Minus, Trash2, Search, Package, ShoppingCart, User, Phone, CreditCard,
-  DollarSign, Printer, Download, X,   ChevronDown, ChevronUp, ChevronRight, Percent, Banknote,
+  Plus, Minus, Trash2, Package, ShoppingCart, User, CreditCard,
+  DollarSign, Printer, Download, X,   ChevronDown, ChevronUp, ChevronRight, Percent,
   BadgePercent, ScanLine, Receipt, CalendarCheck, SplitSquareVertical, UserPlus, Smartphone,
 } from "lucide-react"
 import Pusher from "pusher-js"
@@ -35,7 +34,6 @@ interface CustomerResult { id: string; name: string; phone: string; documentId?:
 interface TodaySale { id: string; orderNumber: string; total: number; customerName: string; createdAt: string; paymentStatus: string }
 
 export default function POSPage() {
-  const router = useRouter()
   const { rate: bcvRate, showBolivares } = useBcvRate()
 
   // Products
@@ -106,17 +104,16 @@ export default function POSPage() {
   const [dailyLoading, setDailyLoading] = useState(false)
 
   // Loading
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   // Scanner
   const [scannerOpen, setScannerOpen] = useState(false)
   const [mobileScannerOpen, setMobileScannerOpen] = useState(false)
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
-  const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
   const [scannerDevice, setScannerDevice] = useState<string>("")
   const [scannerQrUrl, setScannerQrUrl] = useState<string | null>(null)
+  const [, setScannerToken] = useState<string | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const pusherRef = useRef<Pusher | null>(null)
 
@@ -1029,7 +1026,7 @@ async function processSale() {
                 <div className="mt-1 rounded-lg border border-dashed border-border p-2">
                   <p className="text-[10px] text-muted-foreground mb-1.5">Cliente no encontrado</p>
                   <div className="flex gap-1.5">
-                    <Input placeholder="Nombre" value={customerSearch} onChange={(e) => {}} className="h-7 text-[11px] flex-1" />
+                    <Input placeholder="Nombre" value={customerSearch} onChange={() => {}} className="h-7 text-[11px] flex-1" />
                     <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0"
                       onMouseDown={() => { setShowNewCustomer(true); setShowCustomerSearch(false) }}>
                       Crear

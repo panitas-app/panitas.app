@@ -24,8 +24,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const { skip, take, page } = getPaginationParams(searchParams)
   const status = searchParams.get("status") ?? undefined
+  // FASE 5C: búsqueda por título o contenido (p.ej. ?q=zapato).
+  const query = searchParams.get("q") ?? undefined
 
-  const { conversations, total } = await conversationService.list(ctxFrom(current), { skip, take, status })
+  const result = query
+    ? await conversationService.search(ctxFrom(current), query, { skip, take, status })
+    : await conversationService.list(ctxFrom(current), { skip, take, status })
 
-  return NextResponse.json(paginatedResponse(conversations, total, page, take))
+  return NextResponse.json(paginatedResponse(result.conversations, result.total, page, take))
 }

@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (body.notes !== undefined) data.notes = String(body.notes).slice(0, 500)
   if (body.dueDate) data.dueDate = new Date(body.dueDate)
 
-  const fu = await prisma.customerFollowUp.updateMany({
+  await prisma.customerFollowUp.updateMany({
     where: { id, storeId: current.store.id },
     data,
   })

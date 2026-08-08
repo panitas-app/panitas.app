@@ -23,7 +23,7 @@ export function AskPanitas() {
         onKeyDown={(e) => {
           if (e.key === "Enter") handleSubmit()
         }}
-        placeholder="Pregúntale a Panitas…"
+        placeholder="Pregúntale cualquier cosa a Panitas..."
         className="min-h-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
       />
       <button

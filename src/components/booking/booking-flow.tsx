@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Stepper } from "@/components/ui/stepper"
 import { toast } from "sonner"
 import {
   ChevronLeft, ChevronRight, Check, Clock, ArrowLeft, Loader2,
-  Store, MapPin, Phone, ImageIcon, X, Upload, Banknote,
-  Sparkles, AlertCircle,
+  Store, Phone, ImageIcon, X, Upload, Banknote,
+  Sparkles,
 } from "lucide-react"
 
 export interface ServiceData {
@@ -104,7 +103,6 @@ const STEP_LABELS = [
 ]
 
 export function BookingFlow({ store, services, paymentAccounts = [], slug, employeeId, onComplete, showHeader = true }: BookingFlowProps) {
-  const router = useRouter()
   const accentColor = store.primaryColor || "#FFB92E"
 
   const [step, setStep] = useState<Step>("service")

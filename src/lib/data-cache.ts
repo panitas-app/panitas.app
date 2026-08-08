@@ -1,6 +1,5 @@
 import { cache } from "react"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
 
 export const getCachedStore = cache(async (storeId: string) => {
   return prisma.store.findUnique({ where: { id: storeId } })

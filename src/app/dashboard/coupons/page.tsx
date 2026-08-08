@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
-  Card, CardContent, CardHeader, CardTitle,
+  Card, CardContent,
 } from "@/components/ui/card"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -17,9 +17,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Plus, Copy, Trash2, Percent, DollarSign, Loader2, Tag, Calendar } from "lucide-react"
+import { Plus, Copy, Trash2, Percent, DollarSign, Loader2, Tag } from "lucide-react"
 
 type Coupon = {
   id: string

@@ -7,6 +7,7 @@ import { ProductRepository } from "@/repositories/product.repository"
 import { CustomerService } from "@/services/customer.service"
 import { serviceError } from "@/services/errors"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 import type { StoreServiceContext } from "@/services/context"
 
 export type OrderListOptions = {
@@ -147,6 +148,50 @@ export class OrderService {
         storeId: ctx.storeId,
         orderNumber: order.orderNumber,
         total: order.total,
+      })
+      fireDomainEvent({
+        type: "sale.cancelled",
+        data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
+        aggregateId: id,
+        aggregateType: "Order",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
+      fireDomainEvent({
+        type: "order.cancelled",
+        data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
+        aggregateId: id,
+        aggregateType: "Order",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
+    }
+
+    if (status === "delivered") {
+      fireDomainEvent({
+        type: "sale.completed",
+        data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
+        aggregateId: id,
+        aggregateType: "Order",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
+      fireDomainEvent({
+        type: "order.completed",
+        data: {
+          orderId: id,
+          total: order.total,
+          orderNumber: order.orderNumber,
+          paymentStatus: order.paymentStatus,
+        },
+        aggregateId: id,
+        aggregateType: "Order",
+        tenantId: ctx.storeId,
+        actorId: ctx.userId,
+        source: "order.service",
       })
     }
 
@@ -475,6 +520,22 @@ export class OrderService {
         productId: item.productId,
         storeId,
       })
+      fireDomainEvent({
+        type: "product.stock.changed",
+        data: {
+          productId: item.productId,
+          name: item.productName,
+          oldStock: updated.stock + item.quantity,
+          newStock: updated.stock,
+          delta: -item.quantity,
+          reason: "sale",
+        },
+        aggregateId: item.productId,
+        aggregateType: "Product",
+        tenantId: storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
       if (updated.stock !== null && updated.stock > 0 && updated.stock <= 5) {
         await createAuditEntry({
           action: "stock.low",
@@ -488,6 +549,19 @@ export class OrderService {
           storeId,
           productName: updated.name,
           remainingStock: updated.stock,
+        })
+        fireDomainEvent({
+          type: "inventory.low_stock",
+          data: {
+            productId: updated.id,
+            name: updated.name,
+            remainingStock: updated.stock,
+          },
+          aggregateId: updated.id,
+          aggregateType: "Product",
+          tenantId: storeId,
+          actorId: ctx.userId,
+          source: "order.service",
         })
       }
     }
@@ -567,6 +641,61 @@ export class OrderService {
       total,
       paymentStatus: order.paymentStatus,
     })
+
+    fireDomainEvent({
+      type: "sale.created",
+      data: { orderId: order.id, total, orderNumber: order.orderNumber },
+      aggregateId: order.id,
+      aggregateType: "Order",
+      tenantId: storeId,
+      actorId: ctx.userId,
+      source: "order.service",
+    })
+    fireDomainEvent({
+      type: "order.created",
+      data: {
+        orderId: order.id,
+        total,
+        orderNumber: order.orderNumber,
+        paymentStatus: order.paymentStatus,
+      },
+      aggregateId: order.id,
+      aggregateType: "Order",
+      tenantId: storeId,
+      actorId: ctx.userId,
+      source: "order.service",
+    })
+
+    if (totalCredito > 0 || paymentStatus === "credit" || paymentStatus === "partial") {
+      fireDomainEvent({
+        type: "credit.created",
+        data: {
+          orderId: order.id,
+          total,
+          downPayment,
+          totalCredito: totalCredito > 0 ? totalCredito : total,
+          customerId,
+          customerName: order.customerName,
+          dueDate: dueDate?.toISOString(),
+        },
+        aggregateId: order.id,
+        aggregateType: "Order",
+        tenantId: storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
+      if (customerId) {
+        fireDomainEvent({
+          type: "customer.credit.created",
+          data: { customerId, orderId: order.id, total: totalCredito > 0 ? totalCredito : total },
+          aggregateId: customerId,
+          aggregateType: "Customer",
+          tenantId: storeId,
+          actorId: ctx.userId,
+          source: "order.service",
+        })
+      }
+    }
 
     // ─── Fetch complete order with relations for response ───
     const fullOrder = await this.repo.findById(order.id)

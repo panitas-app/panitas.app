@@ -11,6 +11,7 @@
  * una respuesta coherente y legible.
  */
 import type { SynthesisInput, StepExecutionResult } from "./types"
+import { sanitizeAssistantReply } from "@/lib/conversational"
 
 export interface ResponseSynthesizerOptions {
   /** Máximo de caracteres por resultado de tool inyectado al LLM. */
@@ -84,14 +85,14 @@ export class ResponseSynthesizer {
     return lines.join("\n")
   }
 
-  /** Respuesta determinista sin LLM (confirmaciones o degradación). */
+  /** Respuesta determinista sin LLM (confirmaciones o degradación), en lenguaje natural. */
   buildFallbackReply(input: SynthesisInput): string {
     const okResults = input.results.filter((r) => r.status === "ok")
     const errorResults = input.results.filter((r) => r.status === "error")
 
     if (okResults.length === 0) {
       if (errorResults.length === 0) {
-        return "No pude identificar qué necesitas hacer con eso. ¿Puedes reformular tu solicitud?"
+        return "No pude entender bien tu solicitud. ¿Puedes reformularla?"
       }
       return `No pude completar la acción. ${this.describeErrors(errorResults)}`
     }
@@ -110,13 +111,61 @@ export class ResponseSynthesizer {
 
   private describeResult(result: StepExecutionResult): string {
     const data = result.output?.data
-    if (data === null || data === undefined) return `Listo (${result.tool}).`
-    if (Array.isArray(data) && data.length === 0) return `No se encontraron resultados (${result.tool}).`
-    const text = truncate(data, 400)
-    return `Resultado de ${result.tool}: ${text}`
+    if (data === null || data === undefined) return "Se completó la acción correctamente."
+    return this.describeItem(data)
+  }
+
+  /** Describe un resultado en lenguaje natural, sin nombres internos ni JSON. */
+  private describeItem(item: unknown): string {
+    if (item === null || item === undefined) return "Elemento encontrado."
+    if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") return String(item)
+
+    if (Array.isArray(item)) {
+      if (item.length === 0) return "No se encontraron resultados para tu consulta."
+      const lines = item.slice(0, 5).map((entry) => this.describeItem(entry))
+      const more = item.length > 5 ? `\nY ${item.length - 5} resultado(s) más.` : ""
+      return lines.join("\n") + more
+    }
+
+    if (typeof item === "object") {
+      const obj = item as Record<string, unknown>
+      const name =
+        typeof obj.name === "string" && obj.name.trim()
+          ? obj.name.trim()
+          : typeof obj.title === "string" && obj.title.trim()
+            ? obj.title.trim()
+            : ""
+      const bits: string[] = []
+      if (name) bits.push(name)
+      const push = (label: string, value: unknown) => {
+        if (value !== undefined && value !== null && value !== "") bits.push(`${label}: ${value}`)
+      }
+      push("Precio", typeof obj.price === "number" ? `Bs. ${obj.price}` : undefined)
+      push("Stock", typeof obj.stock === "number" ? `${obj.stock}` : undefined)
+      push("Cantidad", typeof obj.quantity === "number" ? `${obj.quantity}` : undefined)
+      push("Total", typeof obj.total === "number" ? `${obj.total}` : undefined)
+      push("Ventas", typeof obj.ventas === "number" ? `${obj.ventas}` : undefined)
+      push("Estado", typeof obj.status === "string" ? obj.status : undefined)
+      push("Producto", typeof obj.product === "string" ? obj.product : undefined)
+      push("Cliente", typeof obj.customer === "string" ? obj.customer : undefined)
+      if (bits.length > 0) return bits.join(" — ")
+      return "Encontré la información que buscabas."
+    }
+
+    return String(item)
   }
 
   private describeErrors(results: StepExecutionResult[]): string {
-    return results.map((r) => `${r.tool}: ${r.error ?? "error desconocido"}`).join(" · ")
+    const first = results[0]
+    if (results.length === 1) {
+      const err = sanitizeAssistantReply(first.error ?? "").trim()
+      if (!err) return "No se pudo obtener toda la información."
+      if (/timeout|tarde|time.?out/i.test(err)) return "Tardé demasiado en obtener la información."
+      if (/not found|no se encontro|no existe/i.test(err)) return "No encontré la información solicitada."
+      if (/sin permisos|denied|denegado/i.test(err)) return "No tengo permisos para hacer esa acción."
+      if (err.length <= 80) return err
+      return "No se pudo obtener toda la información."
+    }
+    return `Se presentaron ${results.length} problemas al obtener la información.`
   }
 }

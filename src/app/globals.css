@@ -617,3 +617,10 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
 #scanner-viewport canvas {
   display: none !important;
 }
+
+.lab-bg::before {
+  overflow: hidden;
+  max-width: 100vw;
+  max-height: 100vh;
+  box-sizing: border-box;
+}

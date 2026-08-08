@@ -12,8 +12,8 @@ import { WhatsAppFloat } from "@/components/ui/whatsapp-float"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   Search, ShoppingCart, Store, Calendar,
-  ChevronRight, MapPin, Clock, Phone, Mail,
-  Heart, Sparkles, ArrowRight,
+  MapPin, Clock, Phone,
+  Heart, ArrowRight,
   Package, Shield, CreditCard, Globe,
 } from "lucide-react"
 import type { TemplateComponentProps } from "./types"
@@ -36,7 +36,6 @@ export function ModernTemplate({
   cart, cartCount, cartOpen, onCartOpen,
   onAddToCart, onUpdateQty, onRemove, onCheckout,
   canBook,
-  showBolivares,
 }: TemplateComponentProps) {
   const router = useRouter()
   const [search, setSearch] = useState("")

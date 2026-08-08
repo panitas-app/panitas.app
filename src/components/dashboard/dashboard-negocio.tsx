@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { DollarSign, ShoppingCart, Calendar, TrendingUp, Users, Briefcase, BarChart3, ArrowRight, CreditCard, XCircle, CheckCircle, Clock, Wallet } from "lucide-react"
+import { DollarSign, ShoppingCart, Calendar, TrendingUp, Users, Briefcase, BarChart3, ArrowRight, XCircle, CheckCircle, Clock, Wallet } from "lucide-react"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 import type { Store } from "@prisma/client"
 import { formatBCV } from "@/lib/bcv/format"
@@ -23,9 +23,7 @@ interface Props {
   recentActivity: { id: string; type: string; desc: string; time: string; status?: string }[]
 }
 
-export function DashboardNegocio({ store, rate, sales, appointments, orders, visitorData, categoryStats, serviceStats, employeeCount, newCustomers, recentActivity }: Props) {
-  const totalToday = sales.todayRevenue + (appointments.todayApps?.length || 0) * 0
-
+export function DashboardNegocio({ store, rate, sales, appointments, orders, employeeCount, newCustomers, recentActivity }: Props) {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

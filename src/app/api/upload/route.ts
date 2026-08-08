@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { validateFileUpload, isImageMime, isVideoMime } from "@/lib/file-validate"
+import { validateFileUpload, isVideoMime } from "@/lib/file-validate"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import { uploadToCloudinary } from "@/lib/cloudinary"
 

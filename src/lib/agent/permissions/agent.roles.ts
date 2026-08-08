@@ -54,6 +54,7 @@ const ASSISTANT_PERMISSIONS: AgentPermission[] = [
   "agenda.create",
   "report.read",
   "subscription.read",
+  "knowledge.read",
 ]
 
 const SELLER_PERMISSIONS: AgentPermission[] = [
@@ -66,6 +67,7 @@ const SELLER_PERMISSIONS: AgentPermission[] = [
   "customer.read",
   "customer.create",
   "agenda.read",
+  "knowledge.read",
 ]
 
 const ROLE_PERMISSIONS: Record<string, AgentPermission[]> = {

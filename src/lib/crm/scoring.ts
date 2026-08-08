@@ -64,13 +64,6 @@ export function getRouteLabel(route: string | null | undefined): string {
   }
 }
 
-function getOpportunityLevel(score: number): string {
-  if (score >= 121) return "Prioritaria"
-  if (score >= 71) return "Alta"
-  if (score >= 31) return "Media"
-  return "Baja"
-}
-
 export function generateSummary(
   answers: Array<{ valor: string; question: { texto: string; tipo?: string } }>,
   planRecomendado: string,

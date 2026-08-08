@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get("search") || ""
-  const plan = searchParams.get("plan") || ""
   const status = searchParams.get("status") || ""
   const page = parseInt(searchParams.get("page") || "1")
   const limit = 20

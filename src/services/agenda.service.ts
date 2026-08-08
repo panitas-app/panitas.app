@@ -5,6 +5,7 @@ import { formatDate, formatTime } from "@/lib/email-helpers"
 import { AgendaRepository } from "@/repositories/agenda.repository"
 import { serviceError } from "@/services/errors"
 import { eventService } from "@/events/event.service"
+import { fireDomainEvent } from "@/lib/events"
 
 export type AppointmentListOptions = {
   date?: string | null
@@ -161,6 +162,22 @@ export class AgendaService {
       time: appointment.time,
     })
 
+    fireDomainEvent({
+      type: "appointment.created",
+      data: {
+        appointmentId: appointment.id,
+        customerName,
+        customerPhone,
+        date: appointment.date,
+        time: appointment.time,
+        serviceId: appointment.serviceId,
+      },
+      aggregateId: appointment.id,
+      aggregateType: "Appointment",
+      tenantId: negocioId,
+      source: "agenda.service",
+    })
+
     return appointment
   }
 
@@ -168,6 +185,22 @@ export class AgendaService {
     const appointment = await this.repo.findById(appointmentId)
     if (!appointment) throw serviceError("Cita no encontrada", 404)
     if (appointment.negocioId !== negocioId) throw serviceError("No autorizado", 403)
-    return this.repo.update(appointmentId, { status: "cancelled" })
+    const updated = await this.repo.update(appointmentId, { status: "cancelled" })
+
+    fireDomainEvent({
+      type: "appointment.cancelled",
+      data: {
+        appointmentId,
+        customerName: appointment.customerName,
+        date: appointment.date,
+        time: appointment.time,
+      },
+      aggregateId: appointmentId,
+      aggregateType: "Appointment",
+      tenantId: negocioId,
+      source: "agenda.service",
+    })
+
+    return updated
   }
 }

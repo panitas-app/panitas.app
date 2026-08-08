@@ -25,8 +25,6 @@ interface SubscriptionDetail {
   verifiedBy: { name: string | null; email: string | null } | null
 }
 
-const planLabels: Record<string, string> = {}
-const planColors: Record<string, string> = {}
 const statusLabels: Record<string, string> = { pending: "Pendiente", verified: "Verificada", active: "Activa", expired: "Vencida", cancelled: "Cancelada", rejected: "Rechazada" }
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700", verified: "bg-blue-100 text-blue-700",

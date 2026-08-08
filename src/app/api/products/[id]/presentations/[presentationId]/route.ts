@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getCurrentStore, requireRole } from "@/lib/permissions"
+import { requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
 
 export async function DELETE(

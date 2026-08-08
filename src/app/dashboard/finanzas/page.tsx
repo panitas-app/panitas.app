@@ -1,170 +1,268 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DollarSign, TrendingUp, TrendingDown, Wallet, Users, Percent, Calendar } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Banknote, FileBarChart2, HandCoins, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { LoadingState } from "@/components/ui/loading-state"
+import { cn } from "@/lib/utils"
+import { KpiGrid } from "@/components/dashboard/financial/kpi-grid"
+import { ExecutiveSummary } from "@/components/dashboard/financial/executive-summary"
+import { InsightsList } from "@/components/dashboard/financial/insights-list"
+import {
+  PERIODS,
+  formatDate,
+  money,
+  initialsOf,
+  type FinancialIndicators,
+  type FinancialPanel,
+  type FinancialPeriod,
+  type FinancialSummary,
+} from "@/components/dashboard/financial/financial-types"
 
-interface FinData {
-  totalRevenue: number
-  productRevenue: number
-  serviceRevenue: number
-  commissionTotal: number
-  pendingPayouts: number
-  employeeCount: number
-  completedAppointments: number
-  totalOrders: number
-}
+type View = "todo" | "resumen" | "indicadores" | "insights"
+
+const VIEWS: Array<{ value: View; label: string }> = [
+  { value: "todo", label: "Todo" },
+  { value: "resumen", label: "Resumen" },
+  { value: "indicadores", label: "Indicadores" },
+  { value: "insights", label: "Insights" },
+]
 
 export default function FinanzasPage() {
-  const [data, setData] = useState<FinData | null>(null)
+  const [panel, setPanel] = useState<FinancialPanel | null>(null)
+  const [period, setPeriod] = useState<FinancialPeriod>("week")
+  const [view, setView] = useState<View>("todo")
   const [loading, setLoading] = useState(true)
+  const prefsRef = useRef<{ loaded: boolean; period: FinancialPeriod | null; view: View }>({
+    loaded: false,
+    period: null,
+    view: "todo",
+  })
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/analytics").then((r) => r.json()).catch(() => ({})),
-      fetch("/api/employees").then((r) => r.json()).catch(() => []),
-    ]).then(([analytics, employees]) => {
-      setData({
-        totalRevenue: analytics.totalRevenue || 0,
-        productRevenue: analytics.productRevenue || analytics.totalRevenue || 0,
-        serviceRevenue: analytics.serviceRevenue || 0,
-        commissionTotal: 0,
-        pendingPayouts: 0,
-        employeeCount: employees.length || 0,
-        completedAppointments: analytics.completedAppointments || 0,
-        totalOrders: analytics.totalOrders || 0,
+    let active = true
+    fetch("/api/business-memory/finanzas/preferences")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.prefs) return
+        const prefs = data.prefs as { favoritePeriod?: string | null; visualization?: string }
+        prefsRef.current.loaded = true
+        if (prefs.favoritePeriod === "today" || prefs.favoritePeriod === "week" || prefs.favoritePeriod === "month") {
+          prefsRef.current.period = prefs.favoritePeriod
+          setPeriod(prefs.favoritePeriod)
+        }
+        if (prefs.visualization === "resumen" || prefs.visualization === "indicadores" || prefs.visualization === "insights") {
+          prefsRef.current.view = prefs.visualization
+          setView(prefs.visualization)
+        }
       })
-    }).catch(() => toast.error("Error al cargar datos")).finally(() => setLoading(false))
+      .catch(() => {
+        prefsRef.current.loaded = true
+      })
+    return () => {
+      active = false
+    }
   }, [])
 
-  if (loading) return (
-    <div className="space-y-6 p-6">
-      <div className="h-8 w-48 bg-muted rounded-lg animate-pulse" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => <Card key={i} className="rounded-2xl animate-pulse"><CardContent className="p-6"><div className="h-16 bg-muted rounded-xl" /></CardContent></Card>)}
+  const recordUsage = useCallback((nextPeriod: FinancialPeriod, indicators: FinancialIndicators) => {
+    const consulted: string[] = []
+    if (indicators.netFlow !== 0) consulted.push("flujo")
+    if (indicators.totalPending > 0) consulted.push("por_cobrar")
+    if (indicators.totalPayable > 0) consulted.push("por_pagar")
+    if (indicators.overdueCredits > 0 || indicators.overdueSupplierInvoices > 0) consulted.push("vencidos")
+    void fetch("/api/business-memory/finanzas/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ period: nextPeriod, indicators: consulted.slice(0, 4) }),
+    }).catch(() => {})
+  }, [])
+
+  const fetchPanel = useCallback(
+    async (nextPeriod: FinancialPeriod, record: boolean) => {
+      try {
+        const res = await fetch(`/api/financial?period=${nextPeriod}`)
+        if (!res.ok) throw new Error("Error al cargar el panel financiero")
+        const data = await res.json()
+        setPanel(data.panel)
+        if (record && data.panel?.indicators) {
+          recordUsage(nextPeriod, data.panel.indicators)
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Error al cargar el panel financiero")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [recordUsage],
+  )
+
+  useEffect(() => {
+    fetchPanel(period, prefsRef.current.loaded || period !== prefsRef.current.period)
+  }, [period, fetchPanel])
+
+  const saveView = useCallback((next: View) => {
+    setView(next)
+    if (next === "todo") return
+    void fetch("/api/business-memory/finanzas/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visualization: next }),
+    }).catch(() => {})
+  }, [])
+
+  const indicators = panel?.indicators
+  const summary: FinancialSummary | null = panel?.summary ?? null
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-heading text-xl font-black flex items-center gap-2">
+            <FileBarChart2 className="size-6 text-primary" /> Inteligencia Financiera
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Tus ingresos, gastos, cuentas por cobrar y por pagar en un solo panel ejecutivo.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {PERIODS.map((p) => {
+            const active = period === p.value
+            return (
+              <button
+                key={p.value}
+                onClick={() => setPeriod(p.value)}
+                className={cn(
+                  "inline-flex items-center px-3.5 h-9 text-xs font-bold rounded border transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:border-primary/50",
+                )}
+              >
+                {p.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-background p-1 w-fit">
+        {VIEWS.map((v) => {
+          const active = view === v.value
+          return (
+            <button
+              key={v.value}
+              onClick={() => saveView(v.value)}
+              className={cn(
+                "rounded-lg px-3 h-8 text-xs font-bold transition-colors",
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {v.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {loading && !panel ? (
+        <LoadingState message="Calculando inteligencia financiera..." />
+      ) : panel && indicators ? (
+        <>
+          {view !== "indicadores" && view !== "insights" && summary && (
+            <ExecutiveSummary summary={summary} indicators={indicators} />
+          )}
+
+          {view !== "resumen" && view !== "insights" && <KpiGrid indicators={indicators} />}
+
+          {(view === "todo" || view === "indicadores") && (
+            <div className="grid gap-3 md:grid-cols-2">
+              <TopCollectList indicators={indicators} />
+              <TopPayList indicators={indicators} />
+            </div>
+          )}
+
+          {view !== "resumen" && view !== "indicadores" && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" />
+                <h2 className="text-sm font-black text-foreground">Qué revisar hoy</h2>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
+                  {panel.insights.length}
+                </span>
+              </div>
+              <InsightsList insights={panel.insights} />
+            </section>
+          )}
+        </>
+      ) : (
+        <p className="text-sm text-muted-foreground">No se pudieron cargar los datos financieros.</p>
+      )}
+    </div>
+  )
+}
+
+function TopCollectList({ indicators }: { indicators: FinancialIndicators }) {
+  if (indicators.topDebtors.length === 0) {
+    return (
+      <div className="rounded-xl border border-border/50 bg-background/70 p-4">
+        <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">No tienes deudas por cobrar</p>
+        <p className="text-xs text-muted-foreground mt-1">No hay clientes con créditos pendientes.</p>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-xl border border-border/50 bg-background/70 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <HandCoins className="size-4 text-emerald-500" />
+        <h3 className="text-xs font-black text-foreground">Clientes con mayor deuda</h3>
+      </div>
+      <div className="space-y-2">
+        {indicators.topDebtors.map((debtor) => (
+          <div key={debtor.name} className="flex items-center gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-black text-foreground">
+              {initialsOf(debtor.name)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-bold text-foreground">{debtor.name}</p>
+            </div>
+            <span className="text-xs font-black text-foreground">{money(debtor.pending)}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
+}
 
+function TopPayList({ indicators }: { indicators: FinancialIndicators }) {
+  if (indicators.topPayableSuppliers.length === 0) {
+    return (
+      <div className="rounded-xl border border-border/50 bg-background/70 p-4">
+        <p className="text-xs font-black text-sky-600 dark:text-sky-400">No tienes cuentas por pagar</p>
+        <p className="text-xs text-muted-foreground mt-1">No hay facturas pendientes con proveedores.</p>
+      </div>
+    )
+  }
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-accent">Finanzas</h1>
-        <p className="text-sm text-muted-foreground">Panel financiero de tu negocio</p>
+    <div className="rounded-xl border border-border/50 bg-background/70 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="size-4 text-sky-500" />
+        <h3 className="text-xs font-black text-foreground">Proveedores a pagar primero</h3>
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ingresos por productos</span>
-              <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500"><TrendingUp className="size-4" /></div>
+      <div className="space-y-2">
+        {indicators.topPayableSuppliers.map((supplier) => (
+          <div key={supplier.name} className="flex items-center gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-black text-foreground">
+              {initialsOf(supplier.name)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-bold text-foreground">{supplier.name}</p>
+              {supplier.dueDate && (
+                <p className="text-[10px] text-muted-foreground">Vence {formatDate(supplier.dueDate)}</p>
+              )}
             </div>
-            <div className="text-2xl font-black text-foreground">${(data?.productRevenue || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">{data?.totalOrders || 0} pedidos</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ingresos por servicios</span>
-              <div className="flex size-8 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/30 text-purple-500"><Calendar className="size-4" /></div>
-            </div>
-            <div className="text-2xl font-black text-foreground">${(data?.serviceRevenue || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">{data?.completedAppointments || 0} citas completadas</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total facturado</span>
-              <div className="flex size-8 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-500"><Wallet className="size-4" /></div>
-            </div>
-            <div className="text-2xl font-black text-foreground">${(data?.totalRevenue || 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Histórico completo</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border/50">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Empleados</span>
-              <div className="flex size-8 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-500"><Users className="size-4" /></div>
-            </div>
-            <div className="text-2xl font-black text-foreground">{data?.employeeCount || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">en el equipo</p>
-          </CardContent>
-        </Card>
+            <span className="text-xs font-black text-foreground">{money(supplier.outstanding)}</span>
+          </div>
+        ))}
       </div>
-
-      <Tabs defaultValue="revenue" className="w-full">
-        <TabsList className="rounded-xl">
-          <TabsTrigger value="revenue" className="rounded-lg">Ingresos</TabsTrigger>
-          <TabsTrigger value="commissions" className="rounded-lg">Comisiones</TabsTrigger>
-          <TabsTrigger value="payments" className="rounded-lg">Pagos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="revenue" className="mt-4">
-          <Card className="rounded-2xl border-border/50">
-            <CardHeader><CardTitle className="text-sm font-bold">Desglose de ingresos</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600"><TrendingUp className="size-5" /></div>
-                    <div><p className="font-bold text-foreground">Ventas de productos</p><p className="text-xs text-muted-foreground">Pedidos online y presenciales</p></div>
-                  </div>
-                  <span className="text-lg font-black text-emerald-600">${(data?.productRevenue || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/20">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600"><Calendar className="size-5" /></div>
-                    <div><p className="font-bold text-foreground">Ventas de servicios</p><p className="text-xs text-muted-foreground">Citas y reservas completadas</p></div>
-                  </div>
-                  <span className="text-lg font-black text-purple-600">${(data?.serviceRevenue || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-600"><Wallet className="size-5" /></div>
-                    <div><p className="font-bold text-foreground">Total facturado</p><p className="text-xs text-muted-foreground">Suma de todos los ingresos</p></div>
-                  </div>
-                  <span className="text-lg font-black text-blue-600">${(data?.totalRevenue || 0).toFixed(2)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="commissions" className="mt-4">
-          <Card className="rounded-2xl border-border/50">
-            <CardHeader><CardTitle className="text-sm font-bold">Comisiones de empleados</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Percent className="size-12 mb-3 opacity-40" />
-                <p className="font-medium">Módulo de comisiones próximamente</p>
-                <p className="text-sm">Aquí podrás gestionar las comisiones generadas por servicio y producto.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="payments" className="mt-4">
-          <Card className="rounded-2xl border-border/50">
-            <CardHeader><CardTitle className="text-sm font-bold">Pagos a empleados</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <DollarSign className="size-12 mb-3 opacity-40" />
-                <p className="font-medium">Módulo de pagos próximamente</p>
-                <p className="text-sm">Aquí podrás registrar y gestionar pagos de salarios, comisiones y alquileres.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

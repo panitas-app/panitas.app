@@ -7,7 +7,6 @@ import { format } from "date-fns"
 import {
   Upload,
   FileText,
-  Image as ImageIcon,
   Trash2,
   Loader2,
   FolderOpen,

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/store/product-card"
 import { CartSheet } from "@/components/store/cart-sheet"
@@ -13,19 +12,17 @@ import {
   MapPin, Phone, ChevronRight,
   Timer,
 } from "lucide-react"
-import type { TemplateComponentProps, ProductData } from "./types"
+import type { TemplateComponentProps } from "./types"
 
 export function DeliveryTemplate({
-  store, products, bcvRate, slug, accentColor,
+  store, products, bcvRate, accentColor,
   cart, cartCount, cartOpen, onCartOpen,
   onAddToCart, onUpdateQty, onRemove, onCheckout,
 }: TemplateComponentProps) {
-  const router = useRouter()
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [showCartPreview, setShowCartPreview] = useState(false)
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const menuRef = useRef<HTMLDivElement>(null)
 

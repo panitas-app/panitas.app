@@ -2,7 +2,7 @@
 
 import { useState, useRef, type FormEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Store, Calendar, CreditCard, Clock, Check, Upload, MapPin, Wallet } from "lucide-react"
+import { X, Store, Calendar, CreditCard, Clock, Check, Upload, MapPin } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,7 +46,7 @@ const stepsConfig: Record<string, { title: string; description: string; icon: Re
 
 const totalSteps: Record<string, number> = { mayorista: 1, agenda: 4, comercio: 4 }
 
-export function SetupWizard({ storeId, negocioId, planType, completedSteps, onCompleteStep, onClose }: Props) {
+export function SetupWizard({ storeId, planType, completedSteps, onCompleteStep, onClose }: Props) {
   const [step, setStep] = useState(1)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -304,7 +304,7 @@ function PaymentMethodForm({ storeId }: { storeId: string }) {
     } catch (e) { console.error("[unhandled error]", e) }
   }
 
-  async function handleAdd(e: React.MouseEvent) {
+  async function handleAdd() {
     setSaving(true)
     try {
       const body: any = { type, storeId }

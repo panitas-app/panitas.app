@@ -4,7 +4,7 @@ import { FaqPageSchema } from "@/lib/seo/schema"
 import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, Lightbulb, CreditCard, Package, Wrench, Lock, DollarSign } from "lucide-react"
+import { ChevronDown, Lightbulb, CreditCard, Package, Lock, DollarSign } from "lucide-react"
 
 interface FAQItem {
   q: string

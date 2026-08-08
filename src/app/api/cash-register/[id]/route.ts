@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     let totalCash = 0; let totalTransfer = 0; let totalPagoMovil = 0
     let totalCredit = 0
-    let totalSales = 0; let totalOrders = orders.length
+    let totalSales = 0; const totalOrders = orders.length
 
     for (const order of orders) {
       totalSales += order.total

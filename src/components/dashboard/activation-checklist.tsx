@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle2, Circle, PartyPopper, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { track } from "@/lib/analytics/track"
 
 interface ChecklistItem {
   id: string

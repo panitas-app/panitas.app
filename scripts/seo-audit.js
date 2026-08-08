@@ -9,7 +9,6 @@ const BASE = process.argv[2] || "http://localhost:3000"
 const OK = "\x1b[32m✓\x1b[0m"
 const FAIL = "\x1b[31m✗\x1b[0m"
 const WARN = "\x1b[33m⚠\x1b[0m"
-const INFO = "\x1b[36m→\x1b[0m"
 
 let totalPass = 0
 let totalFail = 0
@@ -18,7 +17,6 @@ let totalWarn = 0
 function pass(msg) { totalPass++; console.log(`  ${OK} ${msg}`) }
 function fail(msg) { totalFail++; console.log(`  ${FAIL} ${msg}`) }
 function warn(msg) { totalWarn++; console.log(`  ${WARN} ${msg}`) }
-function info(msg) { console.log(`  ${INFO} ${msg}`) }
 function section(title) { console.log(`\n━━━ ${title} ━━━`) }
 
 async function fetchText(path) {
@@ -281,7 +279,7 @@ async function auditSeoPages() {
     "/software-para-spa", "/blog"
   ]
   for (const page of pages) {
-    const { status, text, headers } = await fetchText(page)
+    const { status, text } = await fetchText(page)
     if (status === 200 && text) {
       pass(`${page} → HTTP 200 (${text.length} chars)`)
       if (text.includes("<h1")) pass(`${page} → H1 presente`)

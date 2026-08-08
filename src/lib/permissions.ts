@@ -68,7 +68,7 @@ async function planFindOrCreate(p: { id: string; nombre: string; label: string; 
 }
 
 async function generateUniqueSlug(baseName: string): Promise<string> {
-  let slug = slugify(baseName)
+  const slug = slugify(baseName)
   let counter = 0
   while (true) {
     const candidate = counter === 0 ? slug : `${slug}-${counter}`

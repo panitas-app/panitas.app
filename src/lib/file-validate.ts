@@ -11,6 +11,8 @@ export const FILE_TYPES: FileTypeConfig[] = [
   { mime: "image/webp", extensions: [".webp"], maxBytes: 5 * 1024 * 1024, label: "Imagen WebP" },
   { mime: "image/gif", extensions: [".gif"], maxBytes: 5 * 1024 * 1024, label: "Imagen GIF" },
   { mime: "application/pdf", extensions: [".pdf"], maxBytes: 10 * 1024 * 1024, label: "PDF" },
+  { mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", extensions: [".docx"], maxBytes: 10 * 1024 * 1024, label: "Documento Word" },
+  { mime: "text/plain", extensions: [".txt", ".md"], maxBytes: 10 * 1024 * 1024, label: "Texto plano" },
   { mime: "video/mp4", extensions: [".mp4"], maxBytes: 50 * 1024 * 1024, label: "Video MP4" },
   { mime: "video/webm", extensions: [".webm"], maxBytes: 50 * 1024 * 1024, label: "Video WebM" },
   { mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", extensions: [".xlsx"], maxBytes: 5 * 1024 * 1024, label: "Excel" },
@@ -42,11 +44,35 @@ function detectMime(buffer: Buffer): string | null {
   if (buffer.length >= 8 && at(buffer, 4, [0x66, 0x74, 0x79, 0x70])) return "video/mp4"
   // WebM: EBML header (1A 45 DF A3)
   if (at(buffer, 0, [0x1A, 0x45, 0xDF, 0xA3])) return "video/webm"
-  // Excel (OOXML) = ZIP magic bytes (50 4B 03 04)
-  if (at(buffer, 0, [0x50, 0x4B, 0x03, 0x04])) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  // Office OOXML = ZIP magic bytes (50 4B 03 04). Los nombres de las entradas
+  // viajan sin comprimir en el header local del ZIP: se distinguen por firmas.
+  if (at(buffer, 0, [0x50, 0x4B, 0x03, 0x04])) {
+    const hasWord = buffer.includes(Buffer.from("word/document.xml"))
+    const hasExcel = buffer.includes(Buffer.from("xl/workbook.xml"))
+    if (hasWord) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    if (hasExcel) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return null
+  }
+  // Texto plano: sin firmas binarias conocidas pero con texto UTF-8 legible.
+  if (isLikelyPlainText(buffer)) return "text/plain"
   // Excel (older .xls): D0 CF 11 E0
   if (at(buffer, 0, [0xD0, 0xCF, 0x11, 0xE0])) return "application/vnd.ms-excel"
   return null
+}
+
+/** Heurística best-effort de texto plano: evita firmas binarias y control chars. */
+function isLikelyPlainText(buffer: Buffer): boolean {
+  if (buffer.length === 0) return false
+  const sample = Math.min(buffer.length, 4096)
+  let control = 0
+  for (let i = 0; i < sample; i++) {
+    const b = buffer[i]
+    if (b === 0 || (b < 0x20 && b !== 0x09 && b !== 0x0a && b !== 0x0d)) {
+      control++
+      if (control > sample * 0.02) return false
+    }
+  }
+  return true
 }
 
 export interface FileValidationResult {

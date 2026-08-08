@@ -14,7 +14,6 @@ import {
   MessageCircle,
   ClipboardCheck,
   Users,
-  TrendingUp,
 } from "lucide-react"
 
 interface Stats {

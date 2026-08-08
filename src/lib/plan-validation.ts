@@ -64,8 +64,6 @@ export async function requireModulo(modulo: ModuloVerifiable): Promise<NegocioPl
   const negocio = await getNegocioActivo()
 
   // Primero validar que el plan no esté vencido/suspendido
-  const plan = await prisma.plan.findUnique({ where: { id: negocio.planId } })
-
   const { allowed, error } = requireAccesoModulo(
     negocio.planId,
     negocio.modalidad,

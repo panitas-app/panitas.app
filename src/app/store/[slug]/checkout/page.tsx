@@ -12,9 +12,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { CheckoutSteps } from "@/components/store/checkout-steps"
-import { BANKS_VENEZUELA, DOCUMENT_TYPES } from "@/lib/constants"
+import { BANKS_VENEZUELA } from "@/lib/constants"
 import { formatBCV } from "@/lib/bcv/format"
-import { formatAccountNumber, validateReference, validatePhone, isMobilePayment } from "@/lib/ve-banks"
+import { formatAccountNumber, validateReference } from "@/lib/ve-banks"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import {
@@ -91,8 +91,6 @@ interface StoreInfo {
 }
 
 const MANUAL_OPTION = "Otra Oficina (Escribir Dirección Manualmente)"
-
-const stepIcons = [ShoppingBag, MapPin, UserIcon, ClipboardList, CreditCard]
 
 const stepVariants = {
   enter: { opacity: 0, x: 60 },
@@ -306,7 +304,6 @@ export default function CheckoutPage() {
     ? store?.paymentAccounts.find((a) => a.id === selectedPaymentAccount)
     : null
 
-  const isPagoMovil = selectedAccount?.type === "mobile"
   const isBinancePay = selectedAccount?.type === "binancepay"
 
   function handleReceiptFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -450,8 +447,6 @@ export default function CheckoutPage() {
       setSubmitting(false)
     }
   }
-
-  const StepIcon = stepIcons[step - 1]
 
   if (submitted) {
     const getWhatsAppUrl = () => {

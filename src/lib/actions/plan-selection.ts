@@ -39,7 +39,7 @@ async function ensurePlanExists(planId: string) {
 }
 
 async function getUniqueSlug(base: string): Promise<string> {
-  let slug = slugify(base)
+  const slug = slugify(base)
   let counter = 0
   while (true) {
     const candidate = counter === 0 ? slug : `${slug}-${counter}`

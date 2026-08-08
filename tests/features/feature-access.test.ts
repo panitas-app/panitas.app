@@ -133,8 +133,9 @@ describe("capa de features: helpers de plan", () => {
     expect(business).not.toContain("unified_chat")
 
     const plus = getPlanFeatures("mayorista")
-    expect(plus).toHaveLength(13)
+    expect(plus).toHaveLength(14)
     expect(plus).toContain("unified_chat")
     expect(plus).toContain("customer_analysis")
+    expect(plus).toContain("knowledge_base")
   })
 })

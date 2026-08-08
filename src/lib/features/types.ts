@@ -17,6 +17,7 @@ export type FeatureKey =
   | "online_store"
   | "reports"
   | "basic_ai"
+  | "knowledge_base"
   | "unified_chat"
   | "whatsapp_inbox"
   | "instagram_inbox"
@@ -26,7 +27,7 @@ export type FeatureKey =
   | "sales_opportunities"
 
 /** Agrupaciones visuales de las features (para páginas públicas). */
-export type FeatureGroup = "core" | "communication" | "ai"
+export type FeatureGroup = "core" | "communication" | "ai" | "knowledge"
 
 /** Límites declarados por plan. `null` = ilimitado. Se preparan para fases
  * futuras; NO se aplican todavía en 2B. */

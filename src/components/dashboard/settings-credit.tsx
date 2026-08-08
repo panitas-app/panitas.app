@@ -13,7 +13,7 @@ interface Props {
   initialCreditDays: string
 }
 
-export function SettingsCredit({ storeId, initialCreditDays }: Props) {
+export function SettingsCredit({ initialCreditDays }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [days, setDays] = useState<string[]>(

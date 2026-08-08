@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, CheckCircle, TrendingUp } from "lucide-react"
+import { Calendar, Clock, CheckCircle } from "lucide-react"
 import type { Store } from "@prisma/client"
 import { SalesChart } from "@/components/dashboard/sales-chart"
 
@@ -29,7 +29,7 @@ interface Props {
   serviceStats: { name: string; count: number; sales: number }[]
 }
 
-export function DashboardAgenda({ store, rate, data, orders, visitorData, serviceStats }: Props) {
+export function DashboardAgenda({ store, rate, data, orders }: Props) {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

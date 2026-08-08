@@ -13,3 +13,42 @@ export { OrderService } from "@/services/order.service"
 export type { OrderListOptions } from "@/services/order.service"
 export { SalesService } from "@/services/sales.service"
 export type { SalesSummaryOptions, SalesOverview, SalesPeriod } from "@/services/sales.service"
+export { ExpenseService } from "@/services/expense.service"
+export type { ExpenseCreateInput, ExpenseUpdateInput, ExpenseListOptions } from "@/services/expense.service"
+export { CreditService } from "@/services/credit.service"
+export type { CreditSummary, CreditDetail, CreditKpis, CreditTimelineEntry, CreditState, CreditStatus } from "@/services/credit.service"
+export { CollectionService } from "@/services/collection.service"
+export {
+  COLLECTION_TEMPLATE_CATEGORIES,
+  COLLECTION_CATEGORY_META,
+  COLLECTION_LEVELS,
+  COLLECTION_TEMPLATE_VARIABLES,
+  BUILT_IN_TEMPLATES,
+  DEFAULT_PAYMENT_METHODS,
+} from "@/services/collection.service"
+export type {
+  CollectionTemplateCategory,
+  CollectionLevel,
+  CollectionChannel,
+  CollectionContactStatus,
+  CollectionTemplateDTO,
+  CollectionSettingsDTO,
+  RenderedReminder,
+  ContactLogDTO,
+  CollectionRecommendation,
+} from "@/services/collection.service"
+export { SupplierService } from "@/services/supplier.service"
+export type {
+  SupplierSummary,
+  SupplierDetail,
+  SupplierInvoiceDTO,
+  SupplierPaymentDTO,
+  SupplierTimelineEntry,
+  SupplierKpis,
+  SupplierListResult,
+  SupplierState,
+  SupplierCreateInput,
+  SupplierUpdateInput,
+  SupplierPurchaseInput,
+  SupplierPaymentInput,
+} from "@/services/supplier.service"

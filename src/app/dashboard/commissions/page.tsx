@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Filter, Clock, CheckCircle2, XCircle } from "lucide-react"
+import { Search, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { toast } from "sonner"
 
 interface Commission {

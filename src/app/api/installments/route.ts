@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getCurrentStore } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
 import { createAuditEntry } from "@/lib/audit"
+import { fireDomainEvent } from "@/lib/events"
 
 export async function GET(request: NextRequest) {
   const current = await getCurrentStore()
@@ -78,6 +79,36 @@ export async function PATCH(request: NextRequest) {
       metadata: { orderId: installment.orderId, number: updated.number, amount: updated.amount },
       storeId: current.store.id,
     })
+
+    fireDomainEvent({
+      type: "credit.payment.created",
+      data: {
+        orderId: installment.orderId,
+        installmentId: updated.id,
+        amount: payAmount,
+        number: updated.number,
+      },
+      aggregateId: installment.orderId,
+      aggregateType: "Order",
+      tenantId: current.store.id,
+      actorId: current.userId,
+      source: "api:installments",
+    })
+
+    const remaining = await prisma.installment.count({
+      where: { orderId: installment.orderId, status: "pending" },
+    })
+    if (remaining === 0) {
+      fireDomainEvent({
+        type: "credit.completed",
+        data: { orderId: installment.orderId },
+        aggregateId: installment.orderId,
+        aggregateType: "Order",
+        tenantId: current.store.id,
+        actorId: current.userId,
+        source: "api:installments",
+      })
+    }
 
     return NextResponse.json(updated)
   } catch (error: any) {

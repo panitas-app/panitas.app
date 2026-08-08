@@ -25,7 +25,7 @@ export function ExpressTemplate({
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [quickQty, setQuickQty] = useState<Record<string, number>>({})
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  const [, setShowScrollTop] = useState(false)
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {

@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Users, UserPlus, Mail, Phone, Calendar, MessageCircle, CheckCircle, Clock, ArrowRight } from "lucide-react"
-import { toast } from "sonner"
+import { Users, Mail, Phone, Clock, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 interface CustomerSummary {

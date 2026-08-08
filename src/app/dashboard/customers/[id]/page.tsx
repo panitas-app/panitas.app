@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Phone, Mail, MapPin, ShoppingBag, DollarSign, Calendar, Hash, FileText, Plus, MessageCircle, CheckCircle, Clock, Tag } from "lucide-react"
+import { ArrowLeft, Phone, Mail, MapPin, ShoppingBag, DollarSign, Calendar, Hash, FileText, Plus, MessageCircle, CheckCircle, Clock } from "lucide-react"
 import { toast } from "sonner"
 
 type Customer = {

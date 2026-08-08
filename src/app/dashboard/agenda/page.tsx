@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import {
-  Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { CalendarIcon, ChevronLeft, ChevronRight, Check, X, Clock, RotateCcw, User, MoveRight, ArrowRight, MessageCircle } from "lucide-react"

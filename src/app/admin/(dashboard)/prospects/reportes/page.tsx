@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { PROSPECT_STATUSES, getStatusInfo } from "@/lib/crm/constants"
+import { PROSPECT_STATUSES } from "@/lib/crm/constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {

@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Crown, CheckCircle2, Clock, XCircle, CreditCard, Upload, CalendarIcon } from "lucide-react"
+import { Crown, CheckCircle2, Clock, XCircle, CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BANKS_VENEZUELA } from "@/lib/constants"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -53,7 +53,7 @@ const pricing: Record<string, { monthly: number; yearly: number }> = {
   advanced: { monthly: 19.99, yearly: 15.99 },
 }
 
-export function SettingsSubscription({ storeId, storePlan }: SettingsSubscriptionProps) {
+export function SettingsSubscription({ storePlan }: SettingsSubscriptionProps) {
   const [active, setActive] = useState<Subscription | null>(null)
   const [history, setHistory] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)

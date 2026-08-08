@@ -1,16 +1,14 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getCurrentStore } from "@/lib/permissions"
-import { UpgradeBannerWrapper } from "@/components/dashboard/upgrade-banner-wrapper"
 import { getEffectiveRate } from "@/lib/bcv"
 import { DashboardTourHandler } from "@/components/dashboard/dashboard-tour-handler"
 import { BcvRateProvider } from "@/lib/bcv-context"
-import { InstallmentOverdueBanner } from "@/components/dashboard/installment-overdue-banner"
 import { SetupWizardProvider } from "@/components/dashboard/setup-wizard-provider"
 import { AssistantProvider } from "@/components/assistant/assistant-provider"
-import { AssistantDashboardChrome } from "@/components/assistant/assistant-dashboard-chrome"
-import { DashboardShell } from "@/components/layout/dashboard-shell"
+import { DashboardChrome } from "@/app/dashboard/dashboard-chrome"
 
 function isRedirectError(error: any): boolean {
   return (
@@ -44,12 +42,12 @@ export default async function DashboardLayout({
             {e?.message || "Error desconocido"}
           </p>
           <div className="flex gap-3 justify-center">
-            <a href="/choose-plan" className="px-4 py-2 bg-[#0066FF] text-white text-sm font-semibold rounded-lg hover:bg-[#0044CC] transition-colors">
+            <Link href="/choose-plan" className="px-4 py-2 bg-[#0066FF] text-white text-sm font-semibold rounded-lg hover:bg-[#0044CC] transition-colors">
               Ir a elegir plan
-            </a>
-            <a href="/" className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+            </Link>
+            <Link href="/" className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors">
               Volver al inicio
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -105,7 +103,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
             storeSetupComplete={storeSetupComplete}
           >
             <div className="flex min-h-[100dvh] bg-[#F7F7F8] text-foreground">
-              <DashboardShell
+              <DashboardChrome
                 store={current.store}
                 user={user}
                 role={current.role}
@@ -122,13 +120,10 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
                   secondPaymentPaid: latestSubscription.secondPaymentPaid,
                   period: latestSubscription.period || "monthly",
                 } : null}
+                activeInstallment={activeInstallment}
               >
-                {activeInstallment && activeInstallment.installmentAmount != null && <InstallmentOverdueBanner subscriptionId={activeInstallment.id} dueDate={activeInstallment.secondPaymentDue!} amount={activeInstallment.installmentAmount} />}
-                <UpgradeBannerWrapper planId={negocio?.planId || null} modalidad={negocio?.modalidad || null}>
-                  {children}
-                </UpgradeBannerWrapper>
-              </DashboardShell>
-              <AssistantDashboardChrome />
+                {children}
+              </DashboardChrome>
             </div>
           </SetupWizardProvider>
         </BcvRateProvider>

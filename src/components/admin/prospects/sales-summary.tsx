@@ -74,7 +74,7 @@ function parseResumenSections(resumen: string) {
   return sections
 }
 
-export function SalesSummary({ session, prospect, finalized, onComplete, onBack, onSaveAndComplete }: SalesSummaryProps) {
+export function SalesSummary({ session, prospect, finalized, onBack, onSaveAndComplete }: SalesSummaryProps) {
   const planInfo = getPlanInfo(session.planRecomendado)
   const sections = parseResumenSections(session.resumen)
   const route = session.routeSeleccionada ? SALES_ROUTES.find((r) => r.value === session.routeSeleccionada) : null

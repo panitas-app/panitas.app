@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Users, Store, DollarSign, CreditCard, TrendingUp, TrendingDown, Activity } from "lucide-react"
+import { Users, DollarSign, CreditCard, TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { format, differenceInDays } from "date-fns"
 

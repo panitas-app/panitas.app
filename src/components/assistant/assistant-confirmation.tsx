@@ -32,9 +32,6 @@ export function ConfirmationCard({
           <li key={action.stepId} className="rounded-xl border border-border/60 bg-background/70 p-3">
             <p className="text-sm font-medium text-foreground">{action.description}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{action.impact}</p>
-            <p className="mt-1.5 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-              {action.tool}
-            </p>
           </li>
         ))}
       </ul>

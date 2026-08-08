@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-
 export function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()

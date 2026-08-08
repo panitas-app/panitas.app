@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaNeonHttp } from "@prisma/adapter-neon"
+import { PrismaNeon } from "@prisma/adapter-neon"
 import { PrismaPg } from "@prisma/adapter-pg"
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
@@ -19,7 +19,7 @@ if (globalForPrisma.prisma) {
   const isLocal = /localhost|127\.0\.0\.1|\.local\./.test(dbUrl)
   const adapter = isLocal
     ? new PrismaPg({ connectionString: dbUrl })
-    : new PrismaNeonHttp(dbUrl, {})
+    : new PrismaNeon({ connectionString: dbUrl })
 
   prismaClient = new PrismaClient({
     adapter,

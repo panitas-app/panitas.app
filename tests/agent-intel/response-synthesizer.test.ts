@@ -80,7 +80,7 @@ describe("ResponseSynthesizer", () => {
       ],
       message: "x",
     })
-    expect(reply).toContain("Resultado de analytics.businessSummary")
+    expect(reply).not.toContain("analytics")
     expect(reply).toContain("1200")
   })
 
@@ -95,7 +95,7 @@ describe("ResponseSynthesizer", () => {
       message: "x",
     })
     expect(reply).toContain("Nota:")
-    expect(reply).toContain("sin permisos")
+    expect(reply).toContain("permisos")
   })
 
   it("buildFallbackReply responde amablemente cuando todo falla", () => {
@@ -106,7 +106,7 @@ describe("ResponseSynthesizer", () => {
       message: "x",
     })
     expect(reply).toContain("No pude completar")
-    expect(reply).toContain("timeout")
+    expect(reply).not.toContain("timeout")
   })
 
   it("buildFallbackReply maneja array vacío como 'sin resultados'", () => {
