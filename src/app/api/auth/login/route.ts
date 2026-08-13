@@ -26,15 +26,13 @@ export async function POST(req: Request) {
     }
 
     try {
-      const result = await signIn("credentials", {
+      // Auth.js v5 beta: signIn con redirect:false retorna un string (redirectUrl)
+      // en exito y lanza AuthError si las credenciales son invalidas.
+      await signIn("credentials", {
         email: trimmedEmail,
         password,
         redirect: false,
       })
-
-      if (result && !result.ok) {
-        return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
-      }
 
       return NextResponse.json({ success: true })
     } catch (err) {
