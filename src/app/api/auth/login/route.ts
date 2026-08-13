@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { AuthError } from "next-auth"
 import { signIn } from "@/lib/auth"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 
@@ -24,17 +25,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Formato de correo inválido" }, { status: 400 })
     }
 
-    const result = await signIn("credentials", {
-      email: trimmedEmail,
-      password,
-      redirect: false,
-    })
+    try {
+      const result = await signIn("credentials", {
+        email: trimmedEmail,
+        password,
+        redirect: false,
+      })
 
-    if (!result || !result.ok) {
-      return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
+      if (result && !result.ok) {
+        return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
+      }
+
+      return NextResponse.json({ success: true })
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
+      }
+      console.error("[login error]", err)
+      return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
     }
-
-    return NextResponse.json({ success: true })
   } catch (err) {
     console.error("[login error]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
