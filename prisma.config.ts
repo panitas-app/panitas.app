@@ -9,9 +9,11 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["DATABASE_URL"] || "",
-    // Base de datos para "shadow" en operaciones de migración (diff, dev).
-    // Debe apuntar a una BD vacía de escratch, nunca a la BD de la app.
-    shadowDatabaseUrl:
-      process.env["SHADOW_DATABASE_URL"] || process.env["DATABASE_URL"] || "",
+    // Base de datos para "shadow" en operaciones de migraci��n (diff, dev).
+    // Debe apuntar a una BD vac��a de escratch, nunca a la BD de la app.
+    // Sin fallback a DATABASE_URL (D-04): en prod SHADOW_DATABASE_URL no existe
+    // y el fallback rompia "prisma migrate deploy" (shadow == main). En local,
+    // SHADOW_DATABASE_URL viene del .env.
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"] || "",
   },
 });
