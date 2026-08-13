@@ -1,17 +1,25 @@
+import { Prisma, PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { generateOrderNumber } from "@/lib/utils"
 import { enviarAlertaNuevoPedido, sendEmail } from "@/lib/email"
 import { templateOrderConfirmation } from "@/lib/email-templates"
 import { createAuditEntry } from "@/lib/audit"
 import { OrderRepository } from "@/repositories/order.repository"
 import { ProductRepository } from "@/repositories/product.repository"
+import { CustomerRepository } from "@/repositories/customer.repository"
 import { CustomerService } from "@/services/customer.service"
 import { serviceError } from "@/services/errors"
 import { eventService } from "@/events/event.service"
 import { fireDomainEvent } from "@/lib/events"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 import type { StoreServiceContext } from "@/services/context"
 
 export type OrderListOptions = {
   status?: string | null
+  paymentStatus?: string | null
+  q?: string | null
+  from?: string | null
+  to?: string | null
   skip?: number
   take?: number
 }
@@ -80,6 +88,10 @@ export class OrderService {
     return this.repo.list({
       storeId: ctx.storeId,
       status: options.status || undefined,
+      paymentStatus: options.paymentStatus || undefined,
+      q: options.q || undefined,
+      from: options.from || undefined,
+      to: options.to || undefined,
       skip: options.skip,
       take: options.take,
     })
@@ -122,7 +134,24 @@ export class OrderService {
     }
 
     if (status === "cancelled") {
-      await this.cancelOrder(ctx, order)
+      // Cancelación atómica (FASE 8G): el guard de re-entrada se resuelve con un
+      // `updateMany` condicional dentro de la MISMA transacción que restaura stock
+      // y deshace totales, de modo que dos cancelaciones concurrentes no pueden
+      // restablecer stock dos veces. Además se limpia el estado de cobro del crédito.
+      // Con repos inyectados (tests) se ejecuta directo sobre los dobles.
+      const useDefaultRepos =
+        this.repo instanceof OrderRepository &&
+        this.customerService instanceof CustomerService
+
+      if (useDefaultRepos) {
+        return prisma.$transaction(async (tx) => {
+          const repo = new OrderRepository(tx)
+          const customerService = new CustomerService(new CustomerRepository(tx))
+          return this.executeCancel(ctx, id, order, oldStatus, repo, customerService, tx)
+        }, { maxWait: 5000, timeout: 30000 })
+      }
+
+      return this.executeCancel(ctx, id, order, oldStatus, this.repo, this.customerService)
     }
 
     await this.repo.updateStatus(id, status)
@@ -135,39 +164,6 @@ export class OrderService {
       storeId: ctx.storeId,
       userId: ctx.userId,
     })
-
-    if (status === "cancelled") {
-      eventService.emit("sale.cancelled", {
-        orderId: id,
-        storeId: ctx.storeId,
-        orderNumber: order.orderNumber,
-        total: order.total,
-      })
-      eventService.emit("order.cancelled", {
-        orderId: id,
-        storeId: ctx.storeId,
-        orderNumber: order.orderNumber,
-        total: order.total,
-      })
-      fireDomainEvent({
-        type: "sale.cancelled",
-        data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
-        aggregateId: id,
-        aggregateType: "Order",
-        tenantId: ctx.storeId,
-        actorId: ctx.userId,
-        source: "order.service",
-      })
-      fireDomainEvent({
-        type: "order.cancelled",
-        data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
-        aggregateId: id,
-        aggregateType: "Order",
-        tenantId: ctx.storeId,
-        actorId: ctx.userId,
-        source: "order.service",
-      })
-    }
 
     if (status === "delivered") {
       fireDomainEvent({
@@ -198,16 +194,18 @@ export class OrderService {
     return this.repo.findById(id)
   }
 
-  /** Restaura stock y deshace totales del cliente al cancelar (una sola vez). */
-  private async cancelOrder(
+  /** Restaura stock y deshace totales del cliente al cancelar (dentro de la tx). */
+  private async restoreOrderResources(
     ctx: StoreServiceContext,
-    order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>
+    order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>,
+    repo: OrderRepository,
+    customerService: CustomerService
   ) {
-    if (order.status === "cancelled") return
-
     for (const item of order.items) {
-      const restored = await this.repo.incrementStock(item.productId, item.quantity)
-      await this.repo.recordStockMovement({
+      // Si el producto fue eliminado tras la venta, no hay stock que restituir.
+      if (!item.productId) continue
+      const restored = await repo.incrementStock(item.productId, item.quantity)
+      await repo.recordStockMovement({
         type: "return",
         quantity: item.quantity,
         balance: restored.stock,
@@ -219,16 +217,106 @@ export class OrderService {
     }
 
     if (order.customerId) {
-      await this.customerService.updateTotals(ctx, order.customerId, -order.total, -1)
+      await customerService.updateTotals(ctx, order.customerId, -order.total, -1)
     }
+  }
+
+  /**
+   * Núcleo de la cancelación (FASE 8G). Recibe un client de transacción (`db`)
+   * cuando se ejecuta dentro de `prisma.$transaction`: así el guard de re-entrada
+   * y la limpieza de cobro del crédito son atómicos con la restauración de stock.
+   * Con dobles de prueba (sin `db`) el flipe se delega en `repo.updateStatus`.
+   */
+  private async executeCancel(
+    ctx: StoreServiceContext,
+    id: string,
+    order: NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>,
+    oldStatus: string,
+    repo: OrderRepository,
+    customerService: CustomerService,
+    db?: Prisma.TransactionClient | PrismaClient
+  ) {
+    if (db) {
+      const flipped = await db.order.updateMany({
+        where: { id, status: { not: "cancelled" } },
+        data: { status: "cancelled" },
+      })
+      if (flipped.count === 0) {
+        throw serviceError("El pedido ya fue cancelado", 400)
+      }
+    } else {
+      await repo.updateStatus(id, "cancelled")
+    }
+
+    await this.restoreOrderResources(ctx, order, repo, customerService)
+
+    if (db) {
+      // Un pedido cancelado deja de ser "por cobrar": el crédito no se sigue
+      // cobrando y los totales de venta ya no lo cuentan.
+      await db.order.update({
+        where: { id },
+        data: {
+          paymentStatus: "cancelled",
+          creditStatus: order.creditTerm ? "cancelled" : undefined,
+        },
+      })
+      if (order.creditTerm) {
+        await db.installment.updateMany({
+          where: { orderId: id, status: { not: "paid" } },
+          data: { status: "cancelled" },
+        })
+      }
+    }
+
+    await createAuditEntry({
+      action: "order.status_changed",
+      entity: "Order",
+      entityId: id,
+      metadata: { oldStatus, newStatus: "cancelled" },
+      storeId: ctx.storeId,
+      userId: ctx.userId,
+    })
+
+    eventService.emit("sale.cancelled", {
+      orderId: id,
+      storeId: ctx.storeId,
+      orderNumber: order.orderNumber,
+      total: order.total,
+    })
+    eventService.emit("order.cancelled", {
+      orderId: id,
+      storeId: ctx.storeId,
+      orderNumber: order.orderNumber,
+      total: order.total,
+    })
+    fireDomainEvent({
+      type: "sale.cancelled",
+      data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
+      aggregateId: id,
+      aggregateType: "Order",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "order.service",
+    })
+    fireDomainEvent({
+      type: "order.cancelled",
+      data: { orderId: id, total: order.total, orderNumber: order.orderNumber },
+      aggregateId: id,
+      aggregateType: "Order",
+      tenantId: ctx.storeId,
+      actorId: ctx.userId,
+      source: "order.service",
+    })
+
+    return repo.findById(id)
   }
 
   /** Pedidos de tienda online (no POS) en un rango, con resumen. */
   async onlineSales(ctx: StoreServiceContext, from?: string, to?: string) {
     const orders = await this.repo.online(
       ctx.storeId,
-      from ? new Date(from) : undefined,
-      to ? new Date(to) : undefined
+      from ? startOfLocalDay(from) : undefined,
+      to ? endOfLocalDay(to) : undefined
     )
     const revenue = orders.reduce((sum, o) => sum + o.total, 0)
     const totalItems = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
@@ -242,441 +330,458 @@ export class OrderService {
   }
 
   async create(ctx: StoreServiceContext, body: OrderCreateInput) {
-    const isPosOrder = body.source === "pos"
-
     // Aislamiento multi-tenant: la tienda siempre se deriva del contexto autenticado.
     // Un `storeId` distinto en el body es un intento de cruzar de negocio.
-    const storeId = ctx.storeId
     if (body.storeId && body.storeId !== ctx.storeId) {
       throw serviceError("No autorizado", 403)
     }
 
-    // ─── Products: fetch real prices from DB ───
-    const productIds = body.items!.map((i) => i.productId)
-    const products = await this.productRepo.findByIds(productIds, storeId)
-    const productMap = new Map(products.map((p) => [p.id, p]))
+    // FASE 8G: con los repos reales toda la creación de orden (orden + items + pagos +
+    // cuotas + stock + comisión + totales de cliente + cupón) es atómica. PrismaNeon
+    // usa WebSocket y soporta transacciones interactivas; un fallo revierte todo.
+    // Cuando se inyectan repos de prueba, se ejecuta directo sobre esos dobles.
+    const useDefaultRepos =
+      this.repo instanceof OrderRepository &&
+      this.productRepo instanceof ProductRepository &&
+      this.customerService instanceof CustomerService
 
-    // Check missing
-    const missingIds = productIds.filter((id: string) => !productMap.has(id))
-    if (missingIds.length > 0) {
-      throw serviceError(`Productos no encontrados: ${missingIds.join(", ")}`, 400)
+    if (useDefaultRepos) {
+      return prisma.$transaction(async (tx) => {
+        const repo = new OrderRepository(tx)
+        const productRepo = new ProductRepository(tx)
+        const customerService = new CustomerService(new CustomerRepository(tx))
+        return this.executeCreate(ctx, body, repo, productRepo, customerService)
+      }, { maxWait: 5000, timeout: 30000 })
     }
 
-    // Check stock & build items with server-validated prices
-    const itemsData: OrderItemInput[] = []
-    for (const item of body.items!) {
-      const product = productMap.get(item.productId)!
-      const qty = parseInt(String(item.quantity))
-      if (product.stock < qty) {
-        throw serviceError(
-          `Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado: ${qty}`,
-          400
-        )
+    return this.executeCreate(ctx, body, this.repo, this.productRepo, this.customerService)
+  }
+
+  private async executeCreate(
+    ctx: StoreServiceContext,
+    body: OrderCreateInput,
+    repo: OrderRepository,
+    productRepo: ProductRepository,
+    customerService: CustomerService
+  ) {
+    const isPosOrder = body.source === "pos"
+    const storeId = ctx.storeId
+
+      // ─── Cash register: reject attaching the order to a closed/foreign session ───
+      if (body.cashRegisterSessionId) {
+        const cashSession = await repo.findCashRegisterSession(body.cashRegisterSessionId)
+        if (!cashSession || cashSession.storeId !== storeId || cashSession.status !== "open") {
+          throw serviceError("La caja indicada no existe o está cerrada", 400)
+        }
       }
 
-      // Determine price: wholesale, client-supplied, or default
-      let unitPrice = product.price
+      // ─── Products: fetch real prices from DB ───
+      const productIds = body.items!.map((i) => i.productId)
+      const products = await productRepo.findByIds(productIds, storeId)
+      const productMap = new Map(products.map((p) => [p.id, p]))
 
-      // Wholesale pricing
-      const useWholesale = item.useWholesale !== false
-      if (useWholesale && product.isWholesale) {
-        let foundScale = false
-        if (product.wholesaleScales) {
-          try {
-            const scales =
-              typeof product.wholesaleScales === "string"
-                ? JSON.parse(product.wholesaleScales)
-                : product.wholesaleScales
-            if (Array.isArray(scales)) {
-              const sorted = [...scales].sort(
-                (a, b) => (b.quantity || 0) - (a.quantity || 0)
-              )
-              const match = sorted.find((s) => qty >= (s.quantity || 0))
-              if (match && match.price > 0) {
-                unitPrice = match.price
-                foundScale = true
+      // Check missing
+      const missingIds = productIds.filter((id: string) => !productMap.has(id))
+      if (missingIds.length > 0) {
+        throw serviceError(`Productos no encontrados: ${missingIds.join(", ")}`, 400)
+      }
+
+      // Check stock & build items with server-validated prices
+      const itemsData: OrderItemInput[] = []
+      for (const item of body.items!) {
+        const product = productMap.get(item.productId)!
+        const qty = parseInt(String(item.quantity))
+        if (product.stock < qty) {
+          throw serviceError(
+            `Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado: ${qty}`,
+            400
+          )
+        }
+
+        // Determine price: wholesale, client-supplied, or default
+        let unitPrice = product.price
+
+        // Wholesale pricing
+        const useWholesale = item.useWholesale !== false
+        if (useWholesale && product.isWholesale) {
+          let foundScale = false
+          if (product.wholesaleScales) {
+            try {
+              const scales =
+                typeof product.wholesaleScales === "string"
+                  ? JSON.parse(product.wholesaleScales)
+                  : product.wholesaleScales
+              if (Array.isArray(scales)) {
+                const sorted = [...scales].sort(
+                  (a, b) => (b.quantity || 0) - (a.quantity || 0)
+                )
+                const match = sorted.find((s) => qty >= (s.quantity || 0))
+                if (match && match.price > 0) {
+                  unitPrice = match.price
+                  foundScale = true
+                }
               }
+            } catch (e) {
+              console.error("[unhandled error]", e)
             }
-          } catch (e) {
-            console.error("[unhandled error]", e)
+          }
+          if (!foundScale && product.wholesalePrice && qty >= 5) {
+            unitPrice = product.wholesalePrice
           }
         }
-        if (!foundScale && product.wholesalePrice && qty >= 5) {
-          unitPrice = product.wholesalePrice
+
+        // Client-supplied price with validation (POS discounts etc.)
+        if (item.price !== undefined && item.price !== null) {
+          const clientPrice = parseFloat(String(item.price))
+          const minPrice = Math.max(product.costPrice || 0, product.price * 0.5)
+          if (clientPrice >= minPrice && clientPrice <= product.price) {
+            unitPrice = clientPrice
+          }
+        }
+
+        itemsData.push({
+          productId: product.id,
+          quantity: qty,
+          price: unitPrice,
+          subtotal: qty * unitPrice,
+          productName: product.name,
+        })
+      }
+
+      // ─── Calculate totals server-side ───
+      const subtotal = itemsData.reduce((sum, i) => sum + i.subtotal, 0)
+      const shippingCost = parseFloat(String(body.shippingCost || 0))
+      let discount = 0
+      let couponId: string | null = null
+
+      // Re-validate coupon server-side
+      if (body.couponId) {
+        const coupon = await repo.findCouponById(body.couponId)
+        if (coupon && coupon.storeId === storeId && coupon.isActive) {
+          const now = new Date()
+          if (coupon.startsAt <= now && (!coupon.expiresAt || coupon.expiresAt >= now)) {
+            if (coupon.maxUses === 0 || coupon.usedCount < coupon.maxUses) {
+              if (subtotal >= coupon.minPurchase) {
+                if (coupon.type === "percentage") {
+                  discount = Math.min(subtotal * (coupon.value / 100), subtotal)
+                } else {
+                  discount = Math.min(coupon.value, subtotal)
+                }
+                couponId = coupon.id
+              }
+            }
+          }
         }
       }
 
-      // Client-supplied price with validation (POS discounts etc.)
-      if (item.price !== undefined && item.price !== null) {
-        const clientPrice = parseFloat(String(item.price))
-        const minPrice = Math.max(product.costPrice || 0, product.price * 0.5)
-        if (clientPrice >= minPrice && clientPrice <= product.price) {
-          unitPrice = clientPrice
+      const total = Math.max(0, subtotal + shippingCost - discount)
+
+      // ─── BCV rate at order time ───
+      const latestRate = await repo.findLatestBcvRate()
+
+      // ─── Find or create customer ───
+      const customerPhone = body.customerPhone?.trim()
+      let customerId: string | undefined
+      if (customerPhone) {
+        const { customer } = await customerService.findOrCreateByPhone(ctx, {
+          phone: customerPhone,
+          name: body.customerName || null,
+          documentId: body.customerDocumentId || null,
+          email: body.customerEmail || null,
+          address: body.customerAddress || null,
+          city: body.customerCity || null,
+          state: body.customerState || null,
+        })
+        customerId = customer.id
+      }
+
+      // ─── Enterprise: resolve seller ───
+      let sellerId: string | null = null
+      let sellerName: string | null = null
+      if (body.sellerId) {
+        const seller = await repo.findSellerById(body.sellerId)
+        if (seller && seller.storeId === storeId && seller.isActive) {
+          sellerId = seller.id
+          sellerName = seller.name
         }
       }
 
-      itemsData.push({
-        productId: product.id,
-        quantity: qty,
-        price: unitPrice,
-        subtotal: qty * unitPrice,
-        productName: product.name,
-      })
-    }
+      // ─── Credit / Installments ───
+      let dueDate: Date | undefined
+      const creditDays = body.creditDays ? parseInt(String(body.creditDays)) : null
+      if (creditDays && creditDays > 0) {
+        dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + creditDays)
+      }
 
-    // ─── Calculate totals server-side ───
-    const subtotal = itemsData.reduce((sum, i) => sum + i.subtotal, 0)
-    const shippingCost = parseFloat(String(body.shippingCost || 0))
-    let discount = 0
-    let couponId: string | null = null
+      // Parse payments array or single payment
+      let paymentsInput: OrderPaymentInput[] | undefined = body.payments
+      if (!paymentsInput && body.payment) {
+        paymentsInput = [body.payment]
+      }
 
-    // Re-validate coupon server-side
-    if (body.couponId) {
-      const coupon = await this.repo.findCouponById(body.couponId)
-      if (coupon && coupon.storeId === storeId && coupon.isActive) {
+      const downPayment = body.downPayment ? parseFloat(String(body.downPayment)) : 0
+      const creditTerm = body.creditTerm || null
+
+      // Parse dynamic cuotas: "cuotas_N_15d"
+      let cuotasCount = 0
+      if (creditTerm?.startsWith("cuotas_")) {
+        cuotasCount = parseInt(creditTerm.split("_")[1]) || 0
+      }
+      const totalCredito = cuotasCount > 0 ? total - downPayment : 0
+
+      // Build installment data for credit sales
+      let installmentsCreate: Array<{ number: number; amount: number; dueDate: Date; status: string }> | undefined
+      if (cuotasCount > 0 && totalCredito > 0) {
+        const eachAmount = totalCredito / cuotasCount
         const now = new Date()
-        if (coupon.startsAt <= now && (!coupon.expiresAt || coupon.expiresAt >= now)) {
-          if (coupon.maxUses === 0 || coupon.usedCount < coupon.maxUses) {
-            if (subtotal >= coupon.minPurchase) {
-              if (coupon.type === "percentage") {
-                discount = Math.min(subtotal * (coupon.value / 100), subtotal)
-              } else {
-                discount = Math.min(coupon.value, subtotal)
-              }
-              couponId = coupon.id
-            }
-          }
+        installmentsCreate = Array.from({ length: cuotasCount }, (_, i) => {
+          const d = new Date(now)
+          d.setDate(d.getDate() + (i + 1) * 15)
+          return { number: i + 1, amount: eachAmount, dueDate: d, status: "pending" }
+        })
+      }
+
+      // Determine paymentStatus
+      let paymentStatus = "pending"
+      if (cuotasCount > 0) {
+        paymentStatus = downPayment > 0 ? "partial" : "credit"
+      } else if (paymentsInput && paymentsInput.length > 0) {
+        const allVerified = paymentsInput.every((p) => p.status === "verified" || p.method !== "credit")
+        paymentStatus = allVerified ? "paid" : "pending"
+      }
+
+      // ─── Create order (atómico: transacción interactiva) ───
+      const order = await repo.create({
+        orderNumber: generateOrderNumber(),
+        status: "pending",
+        paymentStatus,
+        subtotal,
+        discount,
+        shippingCost,
+        total,
+        bcvRateAtOrder: latestRate?.rate || null,
+        currency: body.currency || "USD",
+        customerName: body.customerName as string,
+        customerPhone: customerPhone as string,
+        customerEmail: body.customerEmail || null,
+        customerAddress: body.customerAddress || null,
+        customerCity: body.customerCity || null,
+        customerState: body.customerState || null,
+        customerId,
+        couponId,
+        cashRegisterSessionId: body.cashRegisterSessionId || null,
+        shippingMethod: body.shippingMethod || "pickup_agency",
+        shippingAgency: body.shippingAgency || null,
+        shippingAgencyAddress: body.shippingAgencyAddress || null,
+        shippingAddress: body.shippingAddress || null,
+        sellerId,
+        sellerName,
+        storeId: storeId,
+        posPin: isPosOrder,
+        creditDays,
+        dueDate,
+        downPayment: downPayment > 0 ? downPayment : null,
+        creditTerm,
+        totalCredito: totalCredito > 0 ? totalCredito : null,
+      })
+
+      // ─── Create order items (sequential) ───
+      for (const item of itemsData) {
+        await repo.createItem({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.subtotal,
+          productName: item.productName,
+        })
+      }
+
+      // ─── Create payments (sequential) ───
+      if (paymentsInput && paymentsInput.length > 0) {
+        for (const p of paymentsInput) {
+          await repo.createPayment({
+            orderId: order.id,
+            method: p.method,
+            amount: parseFloat(String(p.amount)),
+            reference: p.reference || null,
+            bankOrigin: p.bankOrigin || null,
+            paidAt: p.paidAt
+              ? new Date(p.paidAt)
+              : (p.status || (p.method === "credit" ? "verified" : "pending")) === "verified"
+                ? new Date()
+                : null,
+            receiptImage: p.receiptImage || null,
+            paymentAccountId: p.paymentAccountId || null,
+            status: p.status || (p.method === "credit" ? "verified" : "pending"),
+          })
         }
       }
-    }
 
-    const total = Math.max(0, subtotal + shippingCost - discount)
-
-    // ─── BCV rate at order time ───
-    const latestRate = await this.repo.findLatestBcvRate()
-
-    // ─── Find or create customer ───
-    const customerPhone = body.customerPhone?.trim()
-    let customerId: string | undefined
-    if (customerPhone) {
-      const { customer } = await this.customerService.findOrCreateByPhone(ctx, {
-        phone: customerPhone,
-        name: body.customerName || null,
-        documentId: body.customerDocumentId || null,
-        email: body.customerEmail || null,
-        address: body.customerAddress || null,
-        city: body.customerCity || null,
-        state: body.customerState || null,
-      })
-      customerId = customer.id
-    }
-
-    // ─── Enterprise: resolve seller ───
-    let sellerId: string | null = null
-    let sellerName: string | null = null
-    if (body.sellerId) {
-      const seller = await this.repo.findSellerById(body.sellerId)
-      if (seller && seller.storeId === storeId && seller.isActive) {
-        sellerId = seller.id
-        sellerName = seller.name
+      // ─── Create installments (sequential) ───
+      if (installmentsCreate) {
+        for (const inst of installmentsCreate) {
+          await repo.createInstallment({
+            orderId: order.id,
+            number: inst.number,
+            amount: inst.amount,
+            dueDate: inst.dueDate,
+            status: inst.status,
+          })
+        }
       }
-    }
 
-    // ─── Credit / Installments ───
-    let dueDate: Date | undefined
-    const creditDays = body.creditDays ? parseInt(String(body.creditDays)) : null
-    if (creditDays && creditDays > 0) {
-      dueDate = new Date()
-      dueDate.setDate(dueDate.getDate() + creditDays)
-    }
-
-    // Parse payments array or single payment
-    let paymentsInput: OrderPaymentInput[] | undefined = body.payments
-    if (!paymentsInput && body.payment) {
-      paymentsInput = [body.payment]
-    }
-
-    const downPayment = body.downPayment ? parseFloat(String(body.downPayment)) : 0
-    const creditTerm = body.creditTerm || null
-
-    // Parse dynamic cuotas: "cuotas_N_15d"
-    let cuotasCount = 0
-    if (creditTerm?.startsWith("cuotas_")) {
-      cuotasCount = parseInt(creditTerm.split("_")[1]) || 0
-    }
-    const totalCredito = cuotasCount > 0 ? total - downPayment : 0
-
-    // Build installment data for credit sales
-    let installmentsCreate: Array<{ number: number; amount: number; dueDate: Date; status: string }> | undefined
-    if (cuotasCount > 0 && totalCredito > 0) {
-      const eachAmount = totalCredito / cuotasCount
-      const now = new Date()
-      installmentsCreate = Array.from({ length: cuotasCount }, (_, i) => {
-        const d = new Date(now)
-        d.setDate(d.getDate() + (i + 1) * 15)
-        return { number: i + 1, amount: eachAmount, dueDate: d, status: "pending" }
-      })
-    }
-
-    // Determine paymentStatus
-    let paymentStatus = "pending"
-    if (cuotasCount > 0) {
-      paymentStatus = downPayment > 0 ? "partial" : "credit"
-    } else if (paymentsInput && paymentsInput.length > 0) {
-      const allVerified = paymentsInput.every((p) => p.status === "verified" || p.method !== "credit")
-      paymentStatus = allVerified ? "paid" : "pending"
-    }
-
-    // ─── Create order (sequential: no nested creates, Neon HTTP doesn't support implicit transactions) ───
-    const order = await this.repo.create({
-      orderNumber: generateOrderNumber(),
-      status: "pending",
-      paymentStatus,
-      subtotal,
-      discount,
-      shippingCost,
-      total,
-      bcvRateAtOrder: latestRate?.rate || null,
-      currency: body.currency || "USD",
-      customerName: body.customerName as string,
-      customerPhone: customerPhone as string,
-      customerEmail: body.customerEmail || null,
-      customerAddress: body.customerAddress || null,
-      customerCity: body.customerCity || null,
-      customerState: body.customerState || null,
-      customerId,
-      couponId,
-      cashRegisterSessionId: body.cashRegisterSessionId || null,
-      shippingMethod: body.shippingMethod || "pickup_agency",
-      shippingAgency: body.shippingAgency || null,
-      shippingAgencyAddress: body.shippingAgencyAddress || null,
-      shippingAddress: body.shippingAddress || null,
-      sellerId,
-      sellerName,
-      storeId: storeId,
-      posPin: isPosOrder,
-      creditDays,
-      dueDate,
-      downPayment: downPayment > 0 ? downPayment : null,
-      creditTerm,
-      totalCredito: totalCredito > 0 ? totalCredito : null,
-    })
-
-    // ─── Create order items (sequential) ───
-    for (const item of itemsData) {
-      await this.repo.createItem({
-        orderId: order.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        subtotal: item.subtotal,
-        productName: item.productName,
-      })
-    }
-
-    // ─── Create payments (sequential) ───
-    if (paymentsInput && paymentsInput.length > 0) {
-      for (const p of paymentsInput) {
-        await this.repo.createPayment({
-          orderId: order.id,
-          method: p.method,
-          amount: parseFloat(String(p.amount)),
-          reference: p.reference || null,
-          bankOrigin: p.bankOrigin || null,
-          paidAt: p.paidAt
-            ? new Date(p.paidAt)
-            : (p.status || (p.method === "credit" ? "verified" : "pending")) === "verified"
-              ? new Date()
-              : null,
-          receiptImage: p.receiptImage || null,
-          paymentAccountId: p.paymentAccountId || null,
-          status: p.status || (p.method === "credit" ? "verified" : "pending"),
-        })
-      }
-    }
-
-    // ─── Create installments (sequential) ───
-    if (installmentsCreate) {
-      for (const inst of installmentsCreate) {
-        await this.repo.createInstallment({
-          orderId: order.id,
-          number: inst.number,
-          amount: inst.amount,
-          dueDate: inst.dueDate,
-          status: inst.status,
-        })
-      }
-    }
-
-    // ─── Decrement stock + stock movements + low stock alerts ───
-    for (const item of itemsData) {
-      const updated = await this.repo.decrementStock(item.productId, item.quantity)
-      await this.repo.recordStockMovement({
-        type: "sale",
-        quantity: -item.quantity,
-        balance: updated.stock,
-        concept: `Venta #${order.orderNumber}`,
-        reference: order.id,
-        productId: item.productId,
-        storeId,
-      })
-      fireDomainEvent({
-        type: "product.stock.changed",
-        data: {
+      // ─── Decrement stock + stock movements + low stock alerts ───
+      for (const item of itemsData) {
+        const updated = await repo.decrementStock(item.productId, item.quantity)
+        await repo.recordStockMovement({
+          type: "sale",
+          quantity: -item.quantity,
+          balance: updated.stock,
+          concept: `Venta #${order.orderNumber}`,
+          reference: order.id,
           productId: item.productId,
-          name: item.productName,
-          oldStock: updated.stock + item.quantity,
-          newStock: updated.stock,
-          delta: -item.quantity,
-          reason: "sale",
-        },
-        aggregateId: item.productId,
-        aggregateType: "Product",
-        tenantId: storeId,
-        actorId: ctx.userId,
-        source: "order.service",
-      })
-      if (updated.stock !== null && updated.stock > 0 && updated.stock <= 5) {
-        await createAuditEntry({
-          action: "stock.low",
-          entity: "Product",
-          entityId: updated.id,
-          metadata: { productName: updated.name, remainingStock: updated.stock },
-          storeId: ctx.storeId,
-        })
-        eventService.emit("inventory.low_stock", {
-          productId: updated.id,
           storeId,
-          productName: updated.name,
-          remainingStock: updated.stock,
         })
         fireDomainEvent({
-          type: "inventory.low_stock",
+          type: "product.stock.changed",
           data: {
-            productId: updated.id,
-            name: updated.name,
-            remainingStock: updated.stock,
+            productId: item.productId,
+            name: item.productName,
+            oldStock: updated.stock + item.quantity,
+            newStock: updated.stock,
+            delta: -item.quantity,
+            reason: "sale",
           },
-          aggregateId: updated.id,
+          aggregateId: item.productId,
           aggregateType: "Product",
           tenantId: storeId,
           actorId: ctx.userId,
           source: "order.service",
         })
-      }
-    }
-
-    // ─── Enterprise: create seller commission ───
-    if (sellerId) {
-      const seller = await this.repo.findSellerById(sellerId)
-      if (seller && seller.commissionType && seller.commissionValue) {
-        let commissionAmount: number
-        if (seller.commissionType === "percentage") {
-          commissionAmount = total * (Number(seller.commissionValue) / 100)
-        } else {
-          commissionAmount = Number(seller.commissionValue)
+        if (updated.stock !== null && updated.stock > 0 && updated.stock <= 5) {
+          await createAuditEntry({
+            action: "stock.low",
+            entity: "Product",
+            entityId: updated.id,
+            metadata: { productName: updated.name, remainingStock: updated.stock },
+            storeId: ctx.storeId,
+          })
+          eventService.emit("inventory.low_stock", {
+            productId: updated.id,
+            storeId,
+            productName: updated.name,
+            remainingStock: updated.stock,
+          })
+          fireDomainEvent({
+            type: "inventory.low_stock",
+            data: {
+              productId: updated.id,
+              name: updated.name,
+              remainingStock: updated.stock,
+            },
+            aggregateId: updated.id,
+            aggregateType: "Product",
+            tenantId: storeId,
+            actorId: ctx.userId,
+            source: "order.service",
+          })
         }
-        await this.repo.createSellerCommission({
-          type: seller.commissionType,
-          value: seller.commissionValue,
-          amount: commissionAmount,
-          status: "pending",
-          sellerId: seller.id,
-          orderId: order.id,
-        })
-      }
-    }
-
-    // ─── Update customer totals ───
-    if (customerId) {
-      await this.customerService.updateTotals(ctx, customerId, total, 1)
-    }
-
-    // ─── Increment coupon usage ───
-    if (couponId) {
-      await this.repo.updateCouponUsedCount(couponId)
-    }
-
-    await createAuditEntry({
-      action: "order.created",
-      entity: "Order",
-      entityId: order.id,
-      storeId: ctx.storeId,
-      userId: ctx.userId,
-    })
-
-    if (!isPosOrder) {
-      if (ctx.storeEmail) {
-        enviarAlertaNuevoPedido(ctx.storeEmail, ctx.storeName || "Tienda", order.orderNumber, order.total).catch((e) =>
-          console.error("[order email error]", e)
-        )
       }
 
-      // Send confirmation to customer
-      if (order.customerEmail) {
-        const itemsHtml = itemsData
-          .map((i) => `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`)
-          .join("")
-        const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
-        sendEmail(
-          order.customerEmail,
-          `Confirmación de tu pedido #${order.orderNumber} — ${ctx.storeName || "Tienda"}`,
-          templateOrderConfirmation(order.customerName, order.orderNumber, ctx.storeName || "Tienda", itemsTable, order.total),
-          "order_confirmation"
-        ).catch((e) => console.error("[order confirmation email error]", e))
+      // ─── Enterprise: create seller commission ───
+      if (sellerId) {
+        const seller = await repo.findSellerById(sellerId)
+        if (seller && seller.commissionType && seller.commissionValue) {
+          let commissionAmount: number
+          if (seller.commissionType === "percentage") {
+            commissionAmount = total * (Number(seller.commissionValue) / 100)
+          } else {
+            commissionAmount = Number(seller.commissionValue)
+          }
+          await repo.createSellerCommission({
+            type: seller.commissionType,
+            value: seller.commissionValue,
+            amount: commissionAmount,
+            status: "pending",
+            sellerId: seller.id,
+            orderId: order.id,
+          })
+        }
       }
-    }
 
-    eventService.emit("sale.created", {
-      orderId: order.id,
-      storeId,
-      total,
-      orderNumber: order.orderNumber,
-    })
+      // ─── Update customer totals ───
+      if (customerId) {
+        await customerService.updateTotals(ctx, customerId, total, 1)
+      }
 
-    eventService.emit("order.created", {
-      orderId: order.id,
-      storeId,
-      orderNumber: order.orderNumber,
-      total,
-      paymentStatus: order.paymentStatus,
-    })
+      // ─── Increment coupon usage ───
+      if (couponId) {
+        await repo.updateCouponUsedCount(couponId)
+      }
 
-    fireDomainEvent({
-      type: "sale.created",
-      data: { orderId: order.id, total, orderNumber: order.orderNumber },
-      aggregateId: order.id,
-      aggregateType: "Order",
-      tenantId: storeId,
-      actorId: ctx.userId,
-      source: "order.service",
-    })
-    fireDomainEvent({
-      type: "order.created",
-      data: {
+      await createAuditEntry({
+        action: "order.created",
+        entity: "Order",
+        entityId: order.id,
+        storeId: ctx.storeId,
+        userId: ctx.userId,
+      })
+
+      if (!isPosOrder) {
+        if (ctx.storeEmail) {
+          enviarAlertaNuevoPedido(ctx.storeEmail, ctx.storeName || "Tienda", order.orderNumber, order.total).catch((e) =>
+            console.error("[order email error]", e)
+          )
+        }
+
+        // Send confirmation to customer
+        if (order.customerEmail) {
+          const itemsHtml = itemsData
+            .map((i) => `<tr><td>${i.productName || "Producto"}</td><td>${i.quantity}</td><td>$${i.price.toFixed(2)}</td></tr>`)
+            .join("")
+          const itemsTable = `<table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>${itemsHtml}</table>`
+          sendEmail(
+            order.customerEmail,
+            `Confirmación de tu pedido #${order.orderNumber} — ${ctx.storeName || "Tienda"}`,
+            templateOrderConfirmation(order.customerName, order.orderNumber, ctx.storeName || "Tienda", itemsTable, order.total),
+            "order_confirmation"
+          ).catch((e) => console.error("[order confirmation email error]", e))
+        }
+      }
+
+      eventService.emit("sale.created", {
         orderId: order.id,
+        storeId,
         total,
         orderNumber: order.orderNumber,
-        paymentStatus: order.paymentStatus,
-      },
-      aggregateId: order.id,
-      aggregateType: "Order",
-      tenantId: storeId,
-      actorId: ctx.userId,
-      source: "order.service",
-    })
+      })
 
-    if (totalCredito > 0 || paymentStatus === "credit" || paymentStatus === "partial") {
+      eventService.emit("order.created", {
+        orderId: order.id,
+        storeId,
+        orderNumber: order.orderNumber,
+        total,
+        paymentStatus: order.paymentStatus,
+      })
+
       fireDomainEvent({
-        type: "credit.created",
+        type: "sale.created",
+        data: { orderId: order.id, total, orderNumber: order.orderNumber },
+        aggregateId: order.id,
+        aggregateType: "Order",
+        tenantId: storeId,
+        actorId: ctx.userId,
+        source: "order.service",
+      })
+      fireDomainEvent({
+        type: "order.created",
         data: {
           orderId: order.id,
           total,
-          downPayment,
-          totalCredito: totalCredito > 0 ? totalCredito : total,
-          customerId,
-          customerName: order.customerName,
-          dueDate: dueDate?.toISOString(),
+          orderNumber: order.orderNumber,
+          paymentStatus: order.paymentStatus,
         },
         aggregateId: order.id,
         aggregateType: "Order",
@@ -684,22 +789,41 @@ export class OrderService {
         actorId: ctx.userId,
         source: "order.service",
       })
-      if (customerId) {
+
+      if (totalCredito > 0 || paymentStatus === "credit" || paymentStatus === "partial") {
         fireDomainEvent({
-          type: "customer.credit.created",
-          data: { customerId, orderId: order.id, total: totalCredito > 0 ? totalCredito : total },
-          aggregateId: customerId,
-          aggregateType: "Customer",
+          type: "credit.created",
+          data: {
+            orderId: order.id,
+            total,
+            downPayment,
+            totalCredito: totalCredito > 0 ? totalCredito : total,
+            customerId,
+            customerName: order.customerName,
+            dueDate: dueDate?.toISOString(),
+          },
+          aggregateId: order.id,
+          aggregateType: "Order",
           tenantId: storeId,
           actorId: ctx.userId,
           source: "order.service",
         })
+        if (customerId) {
+          fireDomainEvent({
+            type: "customer.credit.created",
+            data: { customerId, orderId: order.id, total: totalCredito > 0 ? totalCredito : total },
+            aggregateId: customerId,
+            aggregateType: "Customer",
+            tenantId: storeId,
+            actorId: ctx.userId,
+            source: "order.service",
+          })
+        }
       }
-    }
 
-    // ─── Fetch complete order with relations for response ───
-    const fullOrder = await this.repo.findById(order.id)
+      // ─── Fetch complete order with relations for response ───
+      const fullOrder = await repo.findById(order.id)
 
-    return fullOrder || order
+      return fullOrder || order
   }
 }

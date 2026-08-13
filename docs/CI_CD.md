@@ -1,38 +1,40 @@
 # PANITAS — Flujo de CI/CD
 
-> **Fase 1A** — Documentación del pipeline de verificación automática.
+> **Fase 1A (actualizado en 8F)** — Documentación del pipeline de verificación automática.
 
 ---
 
-## 1. Workflow: `verify.yml`
+## 1. Workflow: `ci.yml`
 
-**Archivo:** `.github/workflows/verify.yml`
+**Archivo:** `.github/workflows/ci.yml` (creado en 8F; sustituye al `verify.yml`
+documentado originalmente, que no llegó a existir).
 
 Se ejecuta en:
 - **Pull Requests** hacia `main` o `develop-v2`
-- **Pushes** a `develop-v2` (rama de integración)
+- **Pushes** a `develop-v2` o `main`
 
 ### Jobs
 
 | Job | Comando | Qué valida |
 |---|---|---|
-| `lint` | `npm run lint` | Reglas de ESLint (Next.js) |
-| `typecheck` | `npm run typecheck` (`tsc --noEmit`) | Tipos TypeScript estrictos |
-| `build` | `npm run build` (`prisma generate && next build`) | Compilación de producción completa |
+| `ci` | `npm ci` → `prisma generate` → `npm run typecheck` → `npm run lint` → `npm test` → `npm run build` | Tipos, ESLint, tests (vitest), build de producción completo |
+| `security` | `npm audit --omit=dev` + gitleaks | Vulnerabilidades de dependencias y fugas de secrets |
 
-`build` depende de `lint` y `typecheck` (no compila si fallan). Se usa `concurrency` para cancelar ejecuciones obsoletas en el mismo PR.
+`ci` ejecuta en orden (fail-fast): si falla typecheck, no llega a build.
+Se recomienda `concurrency` para cancelar ejecuciones obsoletas del mismo PR.
 
 ### Variables de entorno del CI
 
-El job `build` usa valores **placeholder** (nunca secretos reales):
+El job `ci` usa valores **placeholder** (nunca secretos reales):
 
 ```yaml
-DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/ci?schema=public"
-DIRECT_URL: "postgresql://dummy:dummy@localhost:5432/ci?schema=public"
-NEXTAUTH_SECRET: "ci-secret-placeholder"
+DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
+SELLER_JWT_SECRET: "ci-test-secret-clave-para-hmac"
 ```
 
-> Las páginas SSG del proyecto (blog, landings) **no consultan la base de datos** en build, por lo que no se requiere una BD real. Si en el futuro una página prerenderizada requiere datos de BD, se deberá añadir un servicio PostgreSQL al workflow.
+> Las páginas SSG del proyecto (blog, landings) **no consultan la base de datos**
+> en build, por lo que no se requiere una BD real. Si en el futuro una página
+> prerenderizada requiere datos de BD, se deberá añadir un servicio PostgreSQL al workflow.
 
 ---
 
@@ -68,7 +70,8 @@ npm run build       # build de producción
 
 ## 4. Próximos pasos (recomendados, fuera de FASE 1A)
 
-- Añadir **GitHub branch protection** en `develop-v2` y `main`: requerir el job `build` verde + 1 review.
-- Añadir job de **tests** cuando exista cobertura (`npm run test`).
-- Añadir **lint para commits** (conventional commits) o validación del mensaje.
-- Integrar **scan de secretos** en CI (gitleaks) para impedir nuevas fugas automáticamente.
+- [x] Añadir job de **tests** (`npm test`) — incluido en `ci.yml` (8F).
+- [x] Añadir **scan de secretos** en CI (gitleaks) — incluido en `ci.yml` (8F).
+- [ ] Añadir **GitHub branch protection** en `develop-v2` y `main`: requerir el job `ci` verde + 1 review.
+- [ ] Añadir **lint para commits** (conventional commits) o validación del mensaje.
+- [ ] Añadir tests **E2E** (Playwright) para el flujo de compra.

@@ -143,10 +143,10 @@ export interface CopilotAction {
 
 /** Rutas reales del dashboard para cada acción. */
 export const COPILOT_ACTION_HREFS: Record<CopilotActionType, string | null> = {
-  create_quote: "/dashboard/nueva-venta",
-  create_order: "/dashboard/nueva-venta",
+  create_quote: "/dashboard/pos",
+  create_order: "/dashboard/pos",
   register_customer: "/dashboard/customers",
-  register_sale: "/dashboard/nueva-venta",
+  register_sale: "/dashboard/pos",
   check_credit: "/dashboard/creditos",
   register_payment: "/dashboard/creditos",
   check_inventory: "/dashboard/products",

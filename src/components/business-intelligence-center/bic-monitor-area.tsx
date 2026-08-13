@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ListChecks, MessageSquareText } from "lucide-react"
 
 import { BusinessMonitorSection } from "@/components/assistant/business-monitor-section"
+import { AttentionMonitorCard } from "@/components/attention/attention-monitor-card"
 import { Button } from "@/components/ui/button"
 import { useAssistant } from "@/components/assistant/assistant-provider"
 import { useBcvRate } from "@/lib/bcv-context"
@@ -22,9 +23,11 @@ export function BicMonitorArea() {
 
   return (
     <div className="space-y-4">
+      <AttentionMonitorCard />
       <BusinessMonitorSection
         currency={showBolivares ? "Bs" : "USD"}
         maxInsights={showAll ? undefined : 3}
+        onMonitorAction={(action) => openAssistant(action.action)}
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowAll((v) => !v)}>

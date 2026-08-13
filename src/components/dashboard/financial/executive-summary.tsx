@@ -49,20 +49,20 @@ export function ExecutiveSummary({ summary, indicators }: ExecutiveSummaryProps)
         {total > 0 && (
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-success">
                 <HandCoins className="size-3.5" /> Por cobrar {money(pending)}
               </span>
-              <span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400">
+              <span className="inline-flex items-center gap-1 text-info">
                 <Banknote className="size-3.5" /> Por pagar {money(payable)}
               </span>
             </div>
             <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full bg-emerald-500 transition-all"
+                className="h-full bg-success transition-all"
                 style={{ width: `${pendingPct}%` }}
               />
               <div
-                className="h-full bg-sky-500 transition-all"
+                className="h-full bg-info transition-all"
                 style={{ width: `${100 - pendingPct}%` }}
               />
             </div>

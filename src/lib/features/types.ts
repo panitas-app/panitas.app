@@ -25,6 +25,8 @@ export type FeatureKey =
   | "ai_reply_suggestions"
   | "customer_analysis"
   | "sales_opportunities"
+  | "attention_center"
+  | "public_api"
 
 /** Agrupaciones visuales de las features (para páginas públicas). */
 export type FeatureGroup = "core" | "communication" | "ai" | "knowledge"

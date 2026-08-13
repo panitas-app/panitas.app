@@ -26,8 +26,20 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const { skip, take, page } = getPaginationParams(searchParams)
   const status = searchParams.get("status")
+  const paymentStatus = searchParams.get("paymentStatus")
+  const q = searchParams.get("q")
+  const from = searchParams.get("from")
+  const to = searchParams.get("to")
 
-  const { orders, total } = await orderService.list(ctxFrom(current), { status, skip, take })
+  const { orders, total } = await orderService.list(ctxFrom(current), {
+    status,
+    paymentStatus,
+    q,
+    from,
+    to,
+    skip,
+    take,
+  })
 
   return NextResponse.json(paginatedResponse(orders, total, page, take))
 }

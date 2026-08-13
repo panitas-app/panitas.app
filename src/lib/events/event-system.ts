@@ -39,6 +39,8 @@ export interface EventSystemOptions {
   invalidateFinancial?: (storeId: string) => void | Promise<void>
   generateRecommendations?: (input: { tenantId: string; actorId?: string; correlationId?: string }) => Promise<unknown[]>
   notificationChannel?: NotificationChannel
+  /** Re-sync de atención (FASE 8C) ante eventos que invalidan reglas. */
+  attentionSync?: (storeId: string) => void | Promise<void>
   enableListeners?: boolean
   middlewares?: EventMiddleware[]
   dedupeTtlMs?: number
@@ -81,6 +83,7 @@ export function createEventSystem(options: EventSystemOptions = {}): EventSystem
       invalidateFinancial: options.invalidateFinancial,
       generateRecommendations: options.generateRecommendations,
       notificationChannel: options.notificationChannel,
+      attentionSync: options.attentionSync,
     })
   }
 

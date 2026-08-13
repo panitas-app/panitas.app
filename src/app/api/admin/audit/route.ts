@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getLocalSuperadmin } from "@/lib/local-only"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 
 export async function GET(req: NextRequest) {
   const admin = await getLocalSuperadmin()
@@ -22,8 +23,8 @@ export async function GET(req: NextRequest) {
   if (entity) where.entity = { contains: entity, mode: "insensitive" }
   if (from || to) {
     where.createdAt = {}
-    if (from) where.createdAt.gte = new Date(from)
-    if (to) where.createdAt.lte = new Date(to)
+    if (from) where.createdAt.gte = startOfLocalDay(from)
+    if (to) where.createdAt.lte = endOfLocalDay(to)
   }
 
   const [logs, total] = await Promise.all([

@@ -12,7 +12,10 @@ export async function GET() {
     storeInfo = await getCurrentStore()
     if (!storeInfo) throw new Error("No tienes acceso a esta tienda")
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 401 })
+    return NextResponse.json(
+      { error: e?.message?.includes("No tienes") ? "No tienes acceso a esta tienda" : "Error al cargar los datos. Intenta nuevamente." },
+      { status: 401 }
+    )
   }
 
   const rl = await rateLimit(`analytics:${storeInfo.userId}`, 30, 60 * 1000)
@@ -35,6 +38,17 @@ export async function GET() {
   const nonCancelled = { storeId, status: { not: "cancelled" } }
   const monthNonCancelled = { ...nonCancelled, createdAt: { gte: monthStart } }
 
+  // Revenue = suma de OrderPayment verificados (paidAt o createdAt fallback) en el período,
+  // EXCLUYENDO el método "credit": el monto financiado ya se devuelve como abono real
+  // cuando el cliente paga cada cuota. Sin este filtro, las ventas a crédito se
+  // contabilizan dos veces (financiado + abonos).
+  const revenueWhere = (gte: Date) => ({
+    order: { storeId, status: { not: "cancelled" } },
+    status: "verified",
+    method: { not: "credit" },
+    OR: [{ paidAt: { gte } }, { paidAt: null, createdAt: { gte } }],
+  })
+
   const seriesStart = new Date(now.getFullYear(), now.getMonth() - 11, 1)
 
   const [
@@ -56,19 +70,19 @@ export async function GET() {
   ] = await Promise.all([
     // Revenue = suma de OrderPayment verificados (paidAt o createdAt fallback) en el período
     prisma.orderPayment.aggregate({
-      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: todayStart } }, { paidAt: null, createdAt: { gte: todayStart } }] },
+      where: revenueWhere(todayStart),
       _sum: { amount: true },
     }),
     prisma.orderPayment.aggregate({
-      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: weekStart } }, { paidAt: null, createdAt: { gte: weekStart } }] },
+      where: revenueWhere(weekStart),
       _sum: { amount: true },
     }),
     prisma.orderPayment.aggregate({
-      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: monthStart } }, { paidAt: null, createdAt: { gte: monthStart } }] },
+      where: revenueWhere(monthStart),
       _sum: { amount: true },
     }),
     prisma.orderPayment.aggregate({
-      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified" },
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", method: { not: "credit" } },
       _sum: { amount: true },
     }),
     prisma.expense.aggregate({ where: { ...baseWhere, date: { gte: todayStart } }, _sum: { amount: true } }),
@@ -91,7 +105,7 @@ export async function GET() {
     }),
     prisma.order.count({ where: monthNonCancelled }),
     prisma.orderPayment.findMany({
-      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", OR: [{ paidAt: { gte: seriesStart } }, { paidAt: null, createdAt: { gte: seriesStart } }] },
+      where: { order: { storeId, status: { not: "cancelled" } }, status: "verified", method: { not: "credit" }, OR: [{ paidAt: { gte: seriesStart } }, { paidAt: null, createdAt: { gte: seriesStart } }] },
       select: { amount: true, paidAt: true, createdAt: true },
     }),
     prisma.expense.findMany({
@@ -114,7 +128,7 @@ export async function GET() {
   }
   const monthlySeries = buildMonthlySeries(revenueByMonth, expensesByMonth, 12, now)
 
-  const productIds = productAgg.map((p) => p.productId)
+  const productIds = productAgg.map((p) => p.productId).filter((id): id is string => Boolean(id))
   const productMap: Record<string, string> = {}
   if (productIds.length > 0) {
     const products = await prisma.product.findMany({
@@ -125,7 +139,7 @@ export async function GET() {
   }
 
   const topProducts = productAgg.map((p) => ({
-    name: productMap[p.productId] || "Producto eliminado",
+    name: productMap[p.productId ?? ""] || "Producto eliminado",
     qty: p._sum.quantity || 0,
     revenue: p._sum.subtotal || 0,
   }))

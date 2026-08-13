@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { ArrowLeft, CalendarClock, MessageCircle, Package, ReceiptText, Wallet } from "lucide-react"
+import { ArrowLeft, CalendarClock, MessageCircle, MessageCircleQuestion, Package, ReceiptText, Wallet } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingState } from "@/components/ui/loading-state"
 import { toast } from "sonner"
@@ -15,6 +17,7 @@ import { Timeline } from "@/components/dashboard/credits/timeline"
 import {
   CreditDetail,
   STATE_META,
+  buildReminderMessage,
   daysUntil,
   formatDate,
   methodLabel,
@@ -32,6 +35,8 @@ export default function CreditDetailPage() {
   const [notFound, setNotFound] = useState(false)
   const [paying, setPaying] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
   const [cancelling, setCancelling] = useState(false)
 
   const fetchDetail = useCallback(async () => {
@@ -54,22 +59,22 @@ export default function CreditDetailPage() {
     fetchDetail()
   }, [fetchDetail])
 
-  async function handleCancel() {
+  async function confirmCancel() {
     if (!detail) return
-    const reason = window.prompt("Motivo de la cancelación (opcional)")
-    if (reason === null) return
     setCancelling(true)
     try {
       const res = await fetch(`/api/creditos/${detail.orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel", reason: reason || null }),
+        body: JSON.stringify({ action: "cancel", reason: cancelReason.trim() || null }),
       })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || "Error al cancelar el crédito")
       }
       toast.success("Crédito cancelado")
+      setCancelOpen(false)
+      setCancelReason("")
       await fetchDetail()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al cancelar el crédito")
@@ -99,9 +104,7 @@ export default function CreditDetailPage() {
   const isOverdue = detail.state === "overdue"
   const nextDays = detail.nextDueDate ? daysUntil(detail.nextDueDate) : null
 
-  const reminder = canPay
-    ? `Hola ${detail.customerName}, te recordamos que tienes un saldo pendiente de ${money(detail.pending)} en la orden #${detail.orderNumber}. Por favor contáctanos para ponerte al día. ¡Gracias!`
-    : `Hola ${detail.customerName}, gracias por tu pago en la orden #${detail.orderNumber}.`
+  const reminder = buildReminderMessage(detail, canPay)
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -111,7 +114,15 @@ export default function CreditDetailPage() {
         </Link>
         <div className="flex flex-col gap-3 mt-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="font-heading text-xl font-black">{detail.customerName}</h1>
+            <h1 className="font-heading text-xl font-black">
+              {detail.customerId ? (
+                <Link href={`/dashboard/customers/${detail.customerId}`} className="hover:text-primary transition-colors">
+                  {detail.customerName}
+                </Link>
+              ) : (
+                detail.customerName
+              )}
+            </h1>
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold", meta.chip)}>
               <span className={cn("size-1.5 rounded-full", meta.dot)} />
               {meta.label}
@@ -125,21 +136,25 @@ export default function CreditDetailPage() {
             )}
             {canPay && (
               <Button size="sm" variant="outline" onClick={() => setRescheduling(true)}>
-                <CalendarClock /> Recalcular
+                <CalendarClock /> Replanificar
               </Button>
             )}
             <Link href={whatsappLink(detail.customerPhone, reminder)} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
               <MessageCircle /> WhatsApp
             </Link>
             {canPay && (
-              <Button size="sm" variant="destructive" onClick={handleCancel} disabled={cancelling}>
-                {cancelling ? "Cancelando..." : "Cancelar"}
+              <Button size="sm" variant="destructive" onClick={() => setCancelOpen(true)}>
+                Cancelar
               </Button>
             )}
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          {detail.customerPhone} · Orden #{detail.orderNumber} · Creado el {formatDate(detail.createdAt)}
+          {detail.customerPhone} ·{" "}
+          <Link href={`/dashboard/orders/${detail.orderId}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+            Orden #{detail.orderNumber}
+          </Link>{" "}
+          · Creado el {formatDate(detail.createdAt)}
         </p>
       </div>
 
@@ -284,12 +299,49 @@ export default function CreditDetailPage() {
         </CardContent>
       </Card>
 
+      <div className="flex justify-center">
+        <Link
+          href={`/dashboard/assistant?q=${encodeURIComponent(`¿Cuál es el estado del crédito de ${detail.customerName} en la orden #${detail.orderNumber}?`)}`}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:text-primary hover:border-primary/40 transition-colors"
+        >
+          <MessageCircleQuestion className="size-4 text-primary" />
+          Preguntar a Panitas
+        </Link>
+      </div>
+
       {paying && detail && (
         <PaymentModal open onOpenChange={(open) => !open && setPaying(false)} credit={detail} onSaved={fetchDetail} />
       )}
       {rescheduling && detail && (
         <RescheduleModal open onOpenChange={(open) => !open && setRescheduling(false)} credit={detail} onSaved={fetchDetail} />
       )}
+
+      <Dialog open={cancelOpen} onOpenChange={(open) => { setCancelOpen(open); if (!open && !cancelling) setCancelReason("") }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancelar crédito de {detail.customerName}</DialogTitle>
+            <DialogDescription>
+              El crédito de la orden #{detail.orderNumber} quedará marcado como cancelado y ya no podrás registrar abonos. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Textarea
+              rows={3}
+              placeholder="Motivo de la cancelación (opcional)"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={cancelling}>
+              Volver
+            </Button>
+            <Button variant="destructive" onClick={confirmCancel} disabled={cancelling}>
+              {cancelling ? "Cancelando..." : "Cancelar crédito"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

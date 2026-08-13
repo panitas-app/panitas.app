@@ -20,6 +20,8 @@ export const PLUS_FEATURES: FeatureKey[] = [
   "ai_reply_suggestions",
   "customer_analysis",
   "sales_opportunities",
+  "attention_center",
+  "public_api",
 ]
 
 /** Catálogo de features con metadatos para UI y documentación. */
@@ -107,6 +109,18 @@ export const FEATURES: Record<FeatureKey, FeatureDefinition> = {
     name: "Recomendaciones comerciales IA",
     description: "La IA detecta oportunidades de venta y te las señala.",
     group: "ai",
+  },
+  attention_center: {
+    key: "attention_center",
+    name: "Centro de Atención",
+    description: "Panitas te avisa de las situaciones que requieren acción: productos agotados, cuotas vencidas, conversaciones sin responder y más.",
+    group: "core",
+  },
+  public_api: {
+    key: "public_api",
+    name: "API pública y Webhooks",
+    description: "Acceso programático a tus datos de Panitas: API REST con API keys, webhooks firmados y extensiones.",
+    group: "core",
   },
 }
 

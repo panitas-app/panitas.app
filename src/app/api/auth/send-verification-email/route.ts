@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { rateLimit } from "@/lib/rate-limit"
 import { sendEmail } from "@/lib/email"
 import { templateVerifyEmail } from "@/lib/email-templates"
 
@@ -13,6 +14,11 @@ export async function POST() {
   const user = await prisma.user.findUnique({ where: { email: session.user.email } })
   if (!user) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+  }
+
+  const rl = await rateLimit(`send-verification-email:${user.id}`, 3, 15 * 60 * 1000)
+  if (!rl.success) {
+    return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 })
   }
 
   if (user.is_email_verified) {

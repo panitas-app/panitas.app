@@ -4,6 +4,7 @@ import { getCurrentStore, requireRole } from "@/lib/permissions"
 import { getPaginationParams, paginatedResponse } from "@/lib/pagination"
 import { csrfGuard } from "@/lib/csrf"
 import { rateLimit } from "@/lib/rate-limit"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 
 export async function GET(request: NextRequest) {
   const current = await getCurrentStore()
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
 
   const where: any = { storeId: current.store.id }
   if (category && category !== "todas") where.category = category
-  if (from) where.date = { ...where.date, gte: new Date(from) }
-  if (to) where.date = { ...where.date, lte: new Date(to) }
+  if (from) where.date = { ...where.date, gte: startOfLocalDay(from) }
+  if (to) where.date = { ...where.date, lte: endOfLocalDay(to) }
   if (search) where.description = { contains: search }
 
   const orderBy: any = {}

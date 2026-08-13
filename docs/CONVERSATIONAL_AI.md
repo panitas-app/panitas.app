@@ -75,7 +75,7 @@ Conversación del inbox
 **Acciones inteligentes (10):** `create_quote`, `create_order`,
 `register_customer`, `register_sale`, `check_credit`, `register_payment`,
 `check_inventory`, `open_customer_profile`, `check_orders`, `follow_up` — con
-href real a `/dashboard/nueva-venta`, `/dashboard/creditos`,
+href real a `/dashboard/pos`, `/dashboard/creditos`,
 `/dashboard/products`, `/dashboard/crm`, `/dashboard/orders`,
 `/dashboard/conversaciones`.
 

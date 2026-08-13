@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from "react"
-import { ArrowUp, Command, Mic, Paperclip, Square } from "lucide-react"
+import { ArrowUp, Command, Loader2, Mic, Paperclip, Square } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -279,10 +279,11 @@ export function ChatInput({ chat, placeholder = "Pregúntale cualquier cosa a Pa
           type="button"
           onClick={() => chat.handleSend()}
           aria-label="Enviar mensaje"
+          aria-busy={busy}
           disabled={!hasText || busy}
           className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 disabled:shadow-none"
         >
-          <ArrowUp className="size-4" />
+          {busy && hasText ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>
 

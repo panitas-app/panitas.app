@@ -57,7 +57,26 @@ export async function GET(
   ])
 
   return NextResponse.json({
-    store,
+    store: {
+      id: store.id,
+      name: store.name,
+      slug: store.slug,
+      logo: store.logo,
+      banner: store.banner,
+      description: store.description,
+      primaryColor: store.primaryColor,
+      whatsapp: store.whatsapp,
+      phone: store.phone,
+      address: store.address,
+      storeHours: store.storeHours,
+      instagram: store.instagram,
+      facebook: store.facebook,
+      tiktok: store.tiktok,
+      twitter: store.twitter,
+      youtube: store.youtube,
+      linkedin: store.linkedin,
+      showBolivares: store.showBolivares,
+    },
     services,
     agendas,
     paymentAccounts,

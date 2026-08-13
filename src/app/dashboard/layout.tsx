@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { AlertCircle, Home, RefreshCw } from "lucide-react"
 import { getCurrentStore } from "@/lib/permissions"
 import { getEffectiveRate } from "@/lib/bcv"
 import { DashboardTourHandler } from "@/components/dashboard/dashboard-tour-handler"
@@ -32,20 +33,30 @@ export default async function DashboardLayout({
     if (e?.digest === "DYNAMIC_SERVER_USAGE") throw e
     console.error("[dashboard layout crash]", e)
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 bg-white">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-[#050505] mb-3">No se pudo cargar tu tienda</h1>
-          <p className="text-sm text-gray-600 mb-1">
-            Hubo un problema al crear o cargar los datos de tu tienda.
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
+        <div className="flex size-16 items-center justify-center rounded-full bg-destructive/10">
+          <AlertCircle className="size-8 text-destructive/60" />
+        </div>
+        <div className="max-w-md text-center">
+          <h1 className="mb-2 text-2xl font-bold text-foreground">No pudimos cargar tu tienda</h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Hubo un problema al cargar tus datos. Revisa tu conexión e inténtalo de nuevo. Si el problema
+            persiste, cierra sesión y vuelve a entrar.
           </p>
-          <p className="text-xs text-gray-400 mb-6 break-words">
-            {e?.message || "Error desconocido"}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/choose-plan" className="px-4 py-2 bg-[#0066FF] text-white text-sm font-semibold rounded-lg hover:bg-[#0044CC] transition-colors">
-              Ir a elegir plan
-            </Link>
-            <Link href="/" className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            >
+              <RefreshCw className="size-4" />
+              Volver a intentar
+            </button>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Home className="size-4" />
               Volver al inicio
             </Link>
           </div>
@@ -102,7 +113,7 @@ async function DashboardLayoutInner({ children }: { children: React.ReactNode })
             planType={planType}
             storeSetupComplete={storeSetupComplete}
           >
-            <div className="flex min-h-[100dvh] bg-[#F7F7F8] text-foreground">
+            <div className="flex min-h-[100dvh] bg-muted/40 text-foreground">
               <DashboardChrome
                 store={current.store}
                 user={user}

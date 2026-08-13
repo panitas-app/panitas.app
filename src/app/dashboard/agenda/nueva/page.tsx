@@ -63,14 +63,14 @@ export default function NuevaCitaPage() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/agenda" className="text-muted-foreground hover:text-[#050505]">
+        <Link href="/dashboard/agenda" className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-5" />
         </Link>
         <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <CalendarPlus className="size-5" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-[#050505]">Nueva cita manual</h1>
+          <h1 className="text-lg font-bold text-foreground">Nueva cita manual</h1>
           <p className="text-xs text-muted-foreground">Registra una cita para clientes que llaman o reservan en persona</p>
         </div>
       </div>

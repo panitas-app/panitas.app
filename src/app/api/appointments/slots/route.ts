@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
   const employeeId = searchParams.get("employeeId")
   const storeSlug = searchParams.get("store")
 
-  // Support public lookup by store slug
+  // Public lookup by store slug (única vía pública; exige tienda activa).
+  let isPublic = false
   let storeHours: string | null = null
   if (storeSlug && !agendaId) {
     const store = await prisma.store.findUnique({
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
       select: { negocioId: true, storeHours: true },
     })
     if (store?.negocioId) {
+      isPublic = true
       storeHours = store.storeHours
       const agenda = await prisma.agenda.findFirst({
         where: { negocioId: store.negocioId },
@@ -34,11 +36,21 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (!agendaId) {
+  // Cualquier `agendaId` directo (panel/dashboard) exige sesión y que la agenda
+  // pertenezca al negocio autenticado: impide sondear slots de otros negocios.
+  if (!isPublic) {
     const negocio = await getCurrentNegocio()
     if (!negocio) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    agendaId = searchParams.get("agendaId")
     if (!agendaId) return NextResponse.json({ error: "agendaId requerido" }, { status: 400 })
+    const owned = await prisma.agenda.findFirst({
+      where: { id: agendaId, negocioId: negocio.id },
+      select: { id: true },
+    })
+    if (!owned) return NextResponse.json({ error: "Agenda no encontrada" }, { status: 404 })
+  }
+
+  if (!agendaId) {
+    return NextResponse.json({ error: "Agenda no disponible" }, { status: 404 })
   }
 
   // Get schedules

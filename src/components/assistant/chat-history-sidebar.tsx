@@ -96,7 +96,19 @@ export function ChatHistorySidebar({ chat, onClose, className }: ChatHistorySide
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-3">
-        {items.length === 0 ? (
+        {chat.loadingHistory ? (
+          <div className="space-y-2 px-0.5 py-3" aria-label="Cargando historial">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-xl px-2.5 py-2">
+                <div className="size-3.5 shrink-0 animate-pulse rounded-full bg-muted" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+                  <div className="h-2 w-1/4 animate-pulse rounded bg-muted/70" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
           <p className="px-3 py-6 text-center text-xs text-muted-foreground">
             {query ? "Sin resultados" : "Sin conversaciones todavía"}
           </p>
@@ -139,7 +151,7 @@ export function ChatHistorySidebar({ chat, onClose, className }: ChatHistorySide
                       }}
                       className={cn(
                         "group flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2 text-sm transition-colors",
-                        isActive ? "bg-gray-100 text-gray-900" : "text-foreground/75 hover:bg-muted/50 hover:text-foreground",
+                        isActive ? "bg-muted text-foreground" : "text-foreground/75 hover:bg-muted/50 hover:text-foreground",
                       )}
                     >
                       <MessageCircle className="size-3.5 shrink-0 text-muted-foreground" />

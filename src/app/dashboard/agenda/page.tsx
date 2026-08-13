@@ -231,7 +231,7 @@ export default function AgendaPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-heading font-extrabold text-[#102A43]">Agenda</h1>
+        <h1 className="text-2xl font-heading font-extrabold text-foreground">Agenda</h1>
         <div className="flex items-center gap-2">
           <Select value={employeeFilter} onValueChange={(v) => setEmployeeFilter(v || "")}>
             <SelectTrigger className="w-44 h-8 text-xs">
@@ -339,7 +339,7 @@ export default function AgendaPage() {
                     <p className="text-lg font-bold text-white leading-tight">{appt.time}</p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-[#102A43] truncate">{appt.customerName}</p>
+                    <p className="text-sm font-bold text-foreground truncate">{appt.customerName}</p>
                     <p className="text-xs text-gray-500">{appt.customerPhone}</p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                       {appt.service && (

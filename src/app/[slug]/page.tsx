@@ -218,7 +218,7 @@ export default async function StoreSlugCatchAll({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <VisitTracker storeId={store.id} />
       <StoreContentClient

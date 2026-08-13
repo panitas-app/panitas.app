@@ -329,25 +329,6 @@ describe("CollectionService.renderTemplate", () => {
   })
 })
 
-describe("CollectionService.suggestLevel", () => {
-  const service = serviceFor({} as never)
-
-  it("sugiere nivel 1 para ≤2 días de atraso", () => {
-    expect(service.suggestLevel(0)).toBe(1)
-    expect(service.suggestLevel(2)).toBe(1)
-  })
-
-  it("sugiere nivel 2 para 3-10 días", () => {
-    expect(service.suggestLevel(3)).toBe(2)
-    expect(service.suggestLevel(10)).toBe(2)
-  })
-
-  it("sugiere nivel 3 para ≥11 días", () => {
-    expect(service.suggestLevel(11)).toBe(3)
-    expect(service.suggestLevel(30)).toBe(3)
-  })
-})
-
 describe("CollectionService.listTemplates", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -399,27 +380,6 @@ describe("CollectionService.upsertTemplate", () => {
     await expect(
       service.upsertTemplate(ctx, { category: "primer_recordatorio", name: "x", body: "  " })
     ).rejects.toMatchObject({ message: "El cuerpo de la plantilla es obligatorio" })
-  })
-})
-
-describe("CollectionService.deleteTemplate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it("restaura una plantilla por defecto en lugar de eliminarla", async () => {
-    const template = makeTemplate({ body: "Cuerpo editado por el usuario" })
-    const { db, templates } = makeDb({ orders: [], installments: [], templates: [template] })
-    await serviceFor(db).deleteTemplate(ctx, template.id)
-    expect(templates).toHaveLength(1)
-    expect(templates[0].body).toContain("cuota vence")
-  })
-
-  it("elimina una plantilla custom", async () => {
-    const template = makeTemplate({ id: "t2", isBuiltIn: false, name: "Mi recordatorio" })
-    const { db, templates } = makeDb({ orders: [], installments: [], templates: [template] })
-    await serviceFor(db).deleteTemplate(ctx, template.id)
-    expect(templates).toHaveLength(0)
   })
 })
 

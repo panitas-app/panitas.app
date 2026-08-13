@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { triggerSessionEvent } from "@/lib/pusher"
 import { rateLimit } from "@/lib/rate-limit"
+import { verifyScannerToken } from "@/lib/scanner/session-token"
 
 export async function POST(request: NextRequest) {
   const rl = await rateLimit("scanner-connect", 20, 60 * 1000)
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   const session = await prisma.scannerSession.findUnique({ where: { id: sessionId } })
   if (!session) return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
-  if (session.token !== token) return NextResponse.json({ error: "Token inválido" }, { status: 403 })
+  if (!verifyScannerToken(session.token, token)) return NextResponse.json({ error: "Token inválido" }, { status: 403 })
   if (new Date() > session.expiresAt || session.status === "expired") {
     await prisma.scannerSession.update({ where: { id: sessionId }, data: { status: "expired" } })
     return NextResponse.json({ error: "Sesión expirada. Vuelve a generar el QR desde el POS." }, { status: 410 })

@@ -38,7 +38,7 @@ export default function AssistantPage() {
             <Bot className="size-5" />
           </div>
           <div className="min-w-0">
-            <h1 className="font-heading text-base font-bold">Panitas IA</h1>
+            <h1 className="font-heading text-base font-bold">Panitas</h1>
             <p className="text-xs text-muted-foreground">Asistente principal de tu negocio</p>
           </div>
           <Button

@@ -3,6 +3,7 @@ import { safeStr, safeInt } from "@/lib/validate"
 import { InventoryRepository } from "@/repositories/inventory.repository"
 import { eventService } from "@/events/event.service"
 import { fireDomainEvent } from "@/lib/events"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
 
@@ -176,15 +177,16 @@ export class InventoryService {
   async bestSellers(ctx: StoreServiceContext, from?: string, to?: string, take = 10) {
     const rows = await this.repo.bestSellers(
       ctx.storeId,
-      from ? new Date(from) : undefined,
-      to ? new Date(to) : undefined,
+      from ? startOfLocalDay(from) : undefined,
+      to ? endOfLocalDay(to) : undefined,
       take
     )
-    const productIds = rows.map((r) => r.productId)
+    const productIds = rows.map((r) => r.productId).filter((id): id is string => Boolean(id))
     if (productIds.length === 0) return []
     const products = await this.repo.findProductsByIds(productIds)
     const byId = new Map(products.map((p) => [p.id, p]))
     return rows
+      .filter((r): r is typeof r & { productId: string } => r.productId !== null)
       .map((r) => {
         const product = byId.get(r.productId)
         return {

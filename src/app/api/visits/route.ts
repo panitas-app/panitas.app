@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { rateLimit, getClientIp } from "@/lib/rate-limit"
 
 type Source = "direct" | "social" | "search" | "whatsapp" | "email" | "qr"
 
@@ -20,6 +21,11 @@ function classifySource(referrer: string | undefined, ref: string | undefined): 
 
 export async function POST(req: Request) {
   try {
+    const rl = await rateLimit(`visits:${getClientIp(req)}`, 60, 60 * 1000)
+    if (!rl.success) {
+      return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 })
+    }
+
     const body = await req.json()
     const storeId = body.storeId as string | undefined
     if (!storeId) {

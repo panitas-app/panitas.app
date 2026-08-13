@@ -8,12 +8,14 @@ import {
   CircleCheck,
   type LucideIcon,
 } from "lucide-react"
+import { buildWhatsAppUrl } from "@/lib/collection"
 
 export type CreditState = "on_time" | "upcoming" | "overdue" | "paid" | "cancelled"
 
 export interface CreditSummary {
   orderId: string
   orderNumber: string
+  customerId: string | null
   customerName: string
   customerPhone: string
   createdAt: string
@@ -31,6 +33,7 @@ export interface CreditSummary {
   nextAmount: number | null
   overdueDays: number
   lastPaymentAt: string | null
+  attempts: number
 }
 
 export interface CreditKpis {
@@ -140,7 +143,7 @@ export const PAYMENT_METHODS = [
 ] as const
 
 export function money(value: number): string {
-  return `$${value.toFixed(2)}`
+  return `$${value.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function formatDate(d: string, withTime = false): string {
@@ -162,7 +165,12 @@ export function methodLabel(method: string): string {
 }
 
 export function whatsappLink(phone: string, message: string): string {
-  const clean = phone.replace(/[^0-9]/g, "").replace(/^0+/, "")
-  const waPhone = clean.startsWith("58") ? clean : `58${clean}`
-  return `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`
+  return buildWhatsAppUrl(phone, message)
+}
+
+export function buildReminderMessage(c: { customerName: string; orderNumber: string; pending: number }, canPay: boolean): string {
+  if (!canPay) {
+    return `Hola ${c.customerName}, gracias por tu pago en la orden #${c.orderNumber}.`
+  }
+  return `Hola ${c.customerName}, te recordamos que tienes un saldo pendiente de ${money(c.pending)} en la orden #${c.orderNumber}. Por favor contáctanos para ponerte al día. ¡Gracias!`
 }

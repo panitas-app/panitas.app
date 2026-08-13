@@ -21,6 +21,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Suscripción no encontrada" }, { status: 404 })
   }
 
+  // Ownership: solo el dueño o miembros de la tienda pueden pagar su suscripción
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  })
+  if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+
+  const ownedStore = await prisma.store.findFirst({
+    where: {
+      id: subscription.storeId,
+      OR: [
+        { userId: user.id },
+        { members: { some: { userId: user.id } } },
+      ],
+    },
+    select: { id: true },
+  })
+  if (!ownedStore) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  }
+
   if (subscription.paymentMode !== "installment") {
     return NextResponse.json({ error: "Esta suscripción no usa pago en cuotas" }, { status: 400 })
   }

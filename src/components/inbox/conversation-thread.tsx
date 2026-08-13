@@ -294,7 +294,7 @@ export function ConversationThread({
             <div className="mb-1 flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
                 <Sparkles className="size-3.5 text-primary" />
-                Panitas IA — {ai.action ? AI_LABELS[ai.action] : ""}
+                Panitas — {ai.action ? AI_LABELS[ai.action] : ""}
               </span>
               <Button variant="ghost" size="icon-xs" onClick={() => setAi((prev) => ({ ...prev, open: false }))} aria-label="Cerrar">
                 <X />

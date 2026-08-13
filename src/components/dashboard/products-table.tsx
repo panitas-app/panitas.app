@@ -22,7 +22,6 @@ export function DeleteProductButton({ productId }: { productId: string }) {
 
   async function handleDelete() {
     if (loading) return
-    if (!confirm("¿Estás seguro? Esta acción no se puede deshacer.")) return
     setLoading(true)
     try {
       const res = await fetch(`/api/products/${productId}`, { method: "DELETE" })

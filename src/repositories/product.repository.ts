@@ -5,6 +5,8 @@ export type ProductListFilters = {
   storeId: string
   q?: string
   category?: string
+  sort?: "name" | "price" | "stock" | "createdAt"
+  order?: "asc" | "desc"
   skip?: number
   take?: number
 }
@@ -21,7 +23,7 @@ export type ProductPricing = {
 }
 
 export class ProductRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(private readonly db: PrismaClient | Prisma.TransactionClient = prisma) {}
 
   findById(id: string) {
     return this.db.product.findUnique({ where: { id } })
@@ -65,11 +67,14 @@ export class ProductRepository {
 
   async list(filters: ProductListFilters) {
     const where = this.buildWhere(filters)
+    const orderBy = filters.sort
+      ? ({ [filters.sort]: filters.order ?? "asc" } as Prisma.ProductOrderByWithRelationInput)
+      : { createdAt: "desc" as const }
     const [products, total] = await Promise.all([
       this.db.product.findMany({
         where,
         include: { category: true },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip: filters.skip,
         take: filters.take,
       }),
@@ -80,6 +85,26 @@ export class ProductRepository {
 
   countByStore(storeId: string) {
     return this.db.product.count({ where: { storeId } })
+  }
+
+  /** Métricas exactas de inventario para la vista de gestión (productos activos). */
+  async metrics(storeId: string) {
+    const [total, lowStock, outOfStock, valueRows] = await Promise.all([
+      this.db.product.count({ where: { storeId, isActive: true } }),
+      this.db.product.count({ where: { storeId, isActive: true, stock: { lte: 5 } } }),
+      this.db.product.count({ where: { storeId, isActive: true, stock: 0 } }),
+      this.db.$queryRaw<Array<{ value: number | null }>>(Prisma.sql`
+        SELECT COALESCE(SUM(price * stock), 0) AS value
+        FROM "Product"
+        WHERE "storeId" = ${storeId} AND "isActive" = true
+      `),
+    ])
+    return {
+      total,
+      lowStock,
+      outOfStock,
+      inventoryValue: valueRows[0]?.value ?? 0,
+    }
   }
 
   countByStoreCategory(storeId: string, category: string) {

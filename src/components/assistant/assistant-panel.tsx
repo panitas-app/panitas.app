@@ -38,7 +38,7 @@ export function AssistantPanel() {
               <Bot className="size-5" />
             </div>
             <div className="min-w-0">
-              <SheetTitle className="font-heading text-base font-bold">Panitas IA</SheetTitle>
+              <SheetTitle className="font-heading text-base font-bold">Panitas</SheetTitle>
               <SheetDescription className="text-xs">Asistente de negocios</SheetDescription>
             </div>
             <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-black/70">

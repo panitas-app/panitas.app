@@ -85,7 +85,7 @@ export function ProductForm({
   const [scannerOpen, setScannerOpen] = useState(false)
   const [mobileScannerOpen, setMobileScannerOpen] = useState(false)
   const [scannerSessionId, setScannerSessionId] = useState<string | null>(null)
-  const [, setScannerToken] = useState<string | null>(null)
+  const [scannerToken, setScannerToken] = useState<string | null>(null)
   const [scannerStatus, setScannerStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle")
   const [scannerErrorMsg, setScannerErrorMsg] = useState("")
   const [isMobileMode, setIsMobileMode] = useState(false)
@@ -481,7 +481,7 @@ export function ProductForm({
         await fetch("/api/scanner/disconnect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: scannerSessionId }),
+          body: JSON.stringify({ sessionId: scannerSessionId, token: scannerToken }),
         })
       } catch {}
     }

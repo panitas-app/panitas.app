@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // ─── Products: validate stock & prices from DB ───
     const productIds = body.items.map((i: any) => i.productId)
     const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: { id: { in: productIds }, storeId },
       select: { id: true, stock: true, name: true, price: true },
     })
     const productMap = new Map(products.map((p) => [p.id, p]))
@@ -116,10 +116,14 @@ export async function POST(request: NextRequest) {
 
     // ─── Decrement stock + stock movements ───
     for (const item of itemsData) {
-      const updated = await prisma.product.update({
-        where: { id: item.productId },
+      const { count } = await prisma.product.updateMany({
+        where: { id: item.productId, storeId, stock: { gte: item.quantity } },
         data: { stock: { decrement: item.quantity } },
       })
+      if (count === 0) {
+        return NextResponse.json({ error: `Stock insuficiente para "${item.productName}"` }, { status: 400 })
+      }
+      const updated = (await prisma.product.findUnique({ where: { id: item.productId } }))!
       await prisma.stockMovement.create({
         data: {
           type: "sale", quantity: -item.quantity, balance: updated.stock,
@@ -163,6 +167,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 201 })
   } catch (error: any) {
     console.error("Seller order creation error:", error)
-    return NextResponse.json({ error: error?.message || "Error al procesar" }, { status: 500 })
+    return NextResponse.json({ error: "Error al procesar la orden" }, { status: 500 })
   }
 }

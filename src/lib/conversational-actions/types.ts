@@ -91,6 +91,8 @@ export interface QuickAction {
   confirm?: boolean
   /** Nombre de un icono de lucide-react (ej: "pencil", "trash-2"). */
   icon?: string
+  /** Deep link interno (FASE 9B): si existe, la acción abre el módulo en vez de reenviarse al chat. */
+  href?: string
 }
 
 /**

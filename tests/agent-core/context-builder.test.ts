@@ -46,6 +46,20 @@ describe("ContextBuilder", () => {
     expect(ctx.messages[0].content).toContain("Ventas de hoy")
   })
 
+  it("incluye la regla anti prompt-injection (FASE 8G — fix P1)", () => {
+    const builder = new ContextBuilder()
+    const ctx = builder.buildBase({ request, sessionId: "s", history: [] })
+    expect(ctx.messages[0].content).toMatch(/REGLAS DE SEGURIDAD INALTERABLES/i)
+    expect(ctx.messages[0].content).toMatch(/solo datos/i)
+  })
+
+  it("aplica la regla anti prompt-injection incluso con baseSystemPrompt custom", () => {
+    const builder = new ContextBuilder({ baseSystemPrompt: "Prompt custom del negocio" })
+    const ctx = builder.buildBase({ request, sessionId: "s", history: [] })
+    expect(ctx.messages[0].content).toContain("Prompt custom del negocio")
+    expect(ctx.messages[0].content).toMatch(/REGLAS DE SEGURIDAD INALTERABLES/i)
+  })
+
   it("withToolResults inyecta los resultados en el system prompt sin duplicar historial", () => {
     const builder = new ContextBuilder()
     const base = builder.buildBase({ request, sessionId: "s", history })

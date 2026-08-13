@@ -274,6 +274,25 @@ describe("CreditService.list", () => {
     expect(credits).toHaveLength(1)
     expect(credits[0].customerName).toBe("María López")
   })
+
+  it("página la cartera devolviendo metadata y KPIs exactos sobre toda la cartera", async () => {
+    const orders: OrderFixture[] = []
+    const installments: InstallmentFixture[] = []
+    for (let i = 0; i < 25; i++) {
+      const o = makeOrder({ id: `o${i}`, orderNumber: `ORD-${2000 + i}` })
+      orders.push(o)
+      installments.push(makeInstallment({ id: `i${i}`, orderId: o.id, dueDate: daysFromNow(20) }))
+    }
+    const { db } = makeDb({ orders, installments })
+    const result = await serviceFor(db).list(ctx, { page: 2, limit: 10 })
+    expect(result.credits).toHaveLength(10)
+    expect(result.total).toBe(25)
+    expect(result.page).toBe(2)
+    expect(result.totalPages).toBe(3)
+    expect(result.hasMore).toBe(true)
+    expect(result.kpis.activeCredits).toBe(25)
+    expect(result.kpis.totalPending).toBe(25 * 100)
+  })
 })
 
 describe("CreditService.listByCustomer", () => {

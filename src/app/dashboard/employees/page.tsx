@@ -61,7 +61,7 @@ export default function EmployeesPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-accent">Empleados</h1>
+          <h1 className="text-2xl font-bold text-foreground">Empleados</h1>
           <p className="text-sm text-muted-foreground">Gestiona el equipo de trabajo de tu negocio</p>
         </div>
         <Link href="/dashboard/employees/new">

@@ -277,18 +277,18 @@ function ScheduleModal({
                       onClick={() => setType(opt.value)}
                        className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all cursor-pointer ${
                          type === opt.value
-                           ? "border-[#102A43] bg-[#102A43]/5 ring-1 ring-[#102A43]/20 shadow-sm dark:border-primary dark:bg-primary/10 dark:ring-primary/30"
+                           ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
                            : "border-border hover:border-muted-foreground/30 hover:bg-muted/30"
                        }`}
                      >
-                       <opt.icon
-                         className={`size-5 ${type === opt.value ? "text-[#102A43] dark:text-primary" : "text-muted-foreground"}`}
-                       />
-                       <span
-                         className={`text-sm font-semibold leading-tight ${
-                           type === opt.value ? "text-[#102A43] dark:text-primary" : "text-foreground"
-                         }`}
-                      >
+                        <opt.icon
+                          className={`size-5 ${type === opt.value ? "text-primary" : "text-muted-foreground"}`}
+                        />
+                        <span
+                          className={`text-sm font-semibold leading-tight ${
+                            type === opt.value ? "text-primary" : "text-foreground"
+                          }`}
+                       >
                         {opt.label}
                       </span>
                       <span className="text-[10px] text-muted-foreground leading-tight">{opt.desc}</span>

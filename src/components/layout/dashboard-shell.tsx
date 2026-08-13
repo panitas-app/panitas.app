@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState, type ReactNode } from "react"
+import { useCallback, useState, type ReactNode } from "react"
 import type { Store as PrismaStore, User as UserType } from "@prisma/client"
 import { cn } from "@/lib/utils"
 import type { Role } from "@/lib/roles"
@@ -8,8 +8,7 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { MobileSidebar } from "@/components/layout/mobile-sidebar"
 import { DashboardTopbar } from "@/components/layout/topbar"
 import { BottomNav } from "@/components/layout/bottom-nav"
-
-const SIDEBAR_KEY = "panitas:sidebar:collapsed"
+import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed"
 
 interface DashboardShellProps {
   store: PrismaStore
@@ -44,27 +43,8 @@ export function DashboardShell({
   latestSubscription = null,
   children,
 }: DashboardShellProps) {
-  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      try {
-        setCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1")
-      } catch {}
-    })
-    return () => cancelAnimationFrame(id)
-  }, [])
-
-  const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev
-      try {
-        localStorage.setItem(SIDEBAR_KEY, next ? "1" : "0")
-      } catch {}
-      return next
-    })
-  }, [])
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed()
 
   const closeMobile = useCallback(() => setMobileOpen(false), [])
 

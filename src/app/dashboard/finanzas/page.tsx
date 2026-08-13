@@ -204,7 +204,7 @@ function TopCollectList({ indicators }: { indicators: FinancialIndicators }) {
   if (indicators.topDebtors.length === 0) {
     return (
       <div className="rounded-xl border border-border/50 bg-background/70 p-4">
-        <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">No tienes deudas por cobrar</p>
+        <p className="text-xs font-black text-success">No tienes deudas por cobrar</p>
         <p className="text-xs text-muted-foreground mt-1">No hay clientes con créditos pendientes.</p>
       </div>
     )
@@ -212,7 +212,7 @@ function TopCollectList({ indicators }: { indicators: FinancialIndicators }) {
   return (
     <div className="rounded-xl border border-border/50 bg-background/70 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <HandCoins className="size-4 text-emerald-500" />
+        <HandCoins className="size-4 text-success" />
         <h3 className="text-xs font-black text-foreground">Clientes con mayor deuda</h3>
       </div>
       <div className="space-y-2">
@@ -236,7 +236,7 @@ function TopPayList({ indicators }: { indicators: FinancialIndicators }) {
   if (indicators.topPayableSuppliers.length === 0) {
     return (
       <div className="rounded-xl border border-border/50 bg-background/70 p-4">
-        <p className="text-xs font-black text-sky-600 dark:text-sky-400">No tienes cuentas por pagar</p>
+        <p className="text-xs font-black text-info">No tienes cuentas por pagar</p>
         <p className="text-xs text-muted-foreground mt-1">No hay facturas pendientes con proveedores.</p>
       </div>
     )
@@ -244,7 +244,7 @@ function TopPayList({ indicators }: { indicators: FinancialIndicators }) {
   return (
     <div className="rounded-xl border border-border/50 bg-background/70 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Banknote className="size-4 text-sky-500" />
+        <Banknote className="size-4 text-info" />
         <h3 className="text-xs font-black text-foreground">Proveedores a pagar primero</h3>
       </div>
       <div className="space-y-2">

@@ -33,18 +33,20 @@ export async function POST(
       return NextResponse.json({ error: "Payment not found" }, { status: 404 })
     }
 
-    await prisma.orderPayment.update({
-      where: { id: paymentId },
-      data: { status: "verified", paidAt: new Date() },
-    })
-
-    // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
-    await prisma.order.update({
-      where: { id },
-      data: {
-        paymentStatus: "paid",
-        status: orderStatus || "confirmed",
-      },
+    // FASE 8G: verificación del pago y actualización del pedido son atómicas
+    // (PrismaNeon usa WebSocket y soporta transacciones interactivas).
+    await prisma.$transaction(async (tx) => {
+      await tx.orderPayment.update({
+        where: { id: paymentId },
+        data: { status: "verified", paidAt: new Date() },
+      })
+      await tx.order.update({
+        where: { id },
+        data: {
+          paymentStatus: "paid",
+          status: orderStatus || "confirmed",
+        },
+      })
     })
 
     const updated = await prisma.order.findUnique({
@@ -161,7 +163,7 @@ export async function POST(
     }
     console.error("Verify payment error:", error)
     return NextResponse.json(
-      { error: err?.message || "Error al verificar el pago" },
+      { error: "Error al verificar el pago. Intenta nuevamente." },
       { status: 500 }
     )
   }

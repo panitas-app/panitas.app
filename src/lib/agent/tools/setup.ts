@@ -14,6 +14,7 @@ import { createReportTools } from "./domains"
 import { createAnalyticsTools } from "./domains"
 import { createRecommendationsTools } from "./domains"
 import { createKnowledgeTools } from "./domains"
+import { createAttentionTools } from "./domains"
 import type { ToolDeps } from "./deps"
 
 export function buildToolRegistry(deps: ToolDeps = {}): ToolRegistry {
@@ -28,6 +29,7 @@ export function buildToolRegistry(deps: ToolDeps = {}): ToolRegistry {
     ...createAnalyticsTools(deps),
     ...createRecommendationsTools(deps),
     ...createKnowledgeTools(deps),
+    ...createAttentionTools(deps),
   ])
   return registry
 }

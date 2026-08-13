@@ -1,13 +1,17 @@
 "use client"
 
+import Link from "next/link"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import type { QuickAction } from "@/lib/conversational-actions"
 import { iconByName } from "@/components/assistant/renderers/icons"
 
 /**
- * Botones de acción rápida (FASE 5E). Cada QuickAction reenvía texto semántico
- * al asistente (prop `onSend`) — nunca tool names ni IDs internos.
+ * Botones de acción rápida (FASE 5E + 9B). Cada QuickAction reenvía texto
+ * semántico al asistente (prop `onSend`) — nunca tool names ni IDs internos.
+ * Si la acción define `href` (deep link FASE 9B), se renderiza como enlace al
+ * módulo en vez de reenviarse al chat.
  */
 export function QuickActions({
   actions,
@@ -24,6 +28,26 @@ export function QuickActions({
     <div data-slot="assistant-quick-actions" className={cn("flex flex-wrap items-center gap-1.5", className)}>
       {actions.map((action, i) => {
         const Icon = action.icon ? iconByName(action.icon) : null
+        const content = (
+          <>
+            {Icon ? <Icon className="size-3.5" aria-hidden /> : null}
+            {action.label}
+          </>
+        )
+        if (action.href) {
+          return (
+            <Button
+              key={i}
+              size={size}
+              variant={action.variant ?? "secondary"}
+              render={<Link href={action.href} />}
+              title={action.label}
+              className="shrink-0"
+            >
+              {content}
+            </Button>
+          )
+        }
         return (
           <Button
             key={i}
@@ -34,8 +58,7 @@ export function QuickActions({
             onClick={() => onSend?.(action)}
             className="shrink-0"
           >
-            {Icon ? <Icon className="size-3.5" aria-hidden /> : null}
-            {action.label}
+            {content}
           </Button>
         )
       })}

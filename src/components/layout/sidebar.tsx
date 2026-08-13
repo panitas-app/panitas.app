@@ -8,16 +8,20 @@ import { cn } from "@/lib/utils"
 import { playNotificationSound } from "@/lib/notification-sound"
 import {
   Banknote,
+  Bell,
   BookOpen,
   Bot,
   Briefcase,
   Calendar,
   CalendarCheck,
   CalendarPlus,
+  ChevronDown,
+  ChevronRight,
   Clock,
   Crown,
   ExternalLink,
   FileBarChart,
+  LayoutGrid,
   MessageCircle,
   Megaphone,
   Package,
@@ -55,8 +59,9 @@ export interface NavSection {
 }
 
 /**
- * Estructura de navegación FASE 4F (Panitas 2.0):
- * Inicio → Panitas IA → Módulos administrativos → Configuración.
+ * Estructura de navegación FASE 9B (asistente-primero):
+ * PANITAS (Asistente, Conversaciones, Atención) → NEGOCIO (módulos núcleo)
+ * → Más módulos (colapsable) → CONFIGURACIÓN.
  * Mantiene el gating por plan y rol del sidebar legacy.
  */
 export function getNavSections(planType: string): NavSection[] {
@@ -67,63 +72,66 @@ export function getNavSections(planType: string): NavSection[] {
   const panitas: NavItem[] = [
     { href: "/dashboard", label: "Asistente", icon: Bot, roles: allRoles },
     { href: "/dashboard/conversaciones", label: "Conversaciones", icon: MessageCircle, plusBadge: true, roles: ["admin", "manager"] },
+    { href: "/dashboard/atencion", label: "Centro de Atención", icon: Bell, badge: true, plusBadge: true, roles: ["admin", "manager"] },
   ]
 
-  const gestion: NavItem[] = []
+  const negocio: NavItem[] = []
   if (!isAgenda) {
-    gestion.push({ href: "/dashboard/products", label: "Inventario", icon: Package, roles: allRoles })
+    negocio.push({ href: "/dashboard/products", label: "Inventario", icon: Package, roles: allRoles })
   }
   if (planType === "negocio" || isEnterprise || planType === "tienda" || planType === "emprendedor") {
-    gestion.push({ href: "/dashboard/pos", label: "Ventas", icon: Banknote, roles: ["admin", "manager", "seller"] })
+    negocio.push({ href: "/dashboard/pos", label: "Punto de venta", icon: Banknote, roles: ["admin", "manager", "seller"] })
   }
-  if (!isAgenda) {
-    gestion.push({ href: "/dashboard/orders", label: "Pedidos", icon: ShoppingCart, badge: true, roles: allRoles })
-  }
-  if (planType === "tienda" || planType === "emprendedor") {
-    gestion.push({ href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] })
-  }
-  gestion.push({ href: "/dashboard/customers", label: "Clientes", icon: Users, roles: allRoles })
-  gestion.push({ href: "/dashboard/knowledge", label: "Documentos", icon: BookOpen, roles: allRoles })
-  if (!isAgenda) {
-    gestion.push({ href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] })
-  }
-  if (!isAgenda) {
-    gestion.push({ href: "/dashboard/collection", label: "Cobranza IA", icon: Megaphone, roles: ["admin", "manager"] })
-  }
-  if (!isAgenda) {
-    gestion.push({ href: "/dashboard/suppliers", label: "Proveedores", icon: Truck, roles: ["admin", "manager"] })
-  }
-  if (planType === "negocio") {
-    gestion.push({ href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] })
-  }
-  if (isEnterprise) {
-    gestion.push(
-      { href: "/dashboard/sellers", label: "Vendedores", icon: Users, roles: ["admin", "manager"] },
-      { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"] },
-    )
-  }
-  if (isAgenda) {
-    gestion.push(
-      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: allRoles },
-      { href: "/dashboard/agenda/nueva", label: "Nueva cita", icon: CalendarPlus, roles: ["admin", "manager"] },
-      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
-      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
-    )
-  } else if (planType !== "emprendedor" && planType !== "tienda" && !isEnterprise) {
-    gestion.push(
-      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: allRoles },
-      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
-      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
-    )
-  }
-  gestion.push({
+  negocio.push({ href: "/dashboard/customers", label: "Clientes", icon: Users, roles: allRoles })
+  negocio.push({
     href: "/dashboard/analytics",
     label: "Reportes",
     icon: FileBarChart,
     roles: ["admin", "manager", "viewer", "accountant"],
   })
   if (planType === "negocio" || isEnterprise) {
-    gestion.push({ href: "/dashboard/finanzas", label: "Finanzas", icon: FileBarChart, roles: ["admin", "manager", "accountant"] })
+    negocio.push({ href: "/dashboard/finanzas", label: "Finanzas", icon: Receipt, roles: ["admin", "manager", "accountant"] })
+  }
+
+  const mas: NavItem[] = []
+  if (!isAgenda) {
+    mas.push({ href: "/dashboard/orders", label: "Ventas", icon: ShoppingCart, badge: true, roles: allRoles })
+  }
+  if (planType === "tienda" || planType === "emprendedor") {
+    mas.push({ href: "/dashboard/coupons", label: "Cupones", icon: Tag, roles: ["admin", "manager"] })
+  }
+  mas.push({ href: "/dashboard/knowledge", label: "Documentos", icon: BookOpen, roles: allRoles })
+  if (!isAgenda) {
+    mas.push({ href: "/dashboard/creditos", label: "Créditos", icon: CalendarCheck, roles: ["admin", "manager"] })
+  }
+  if (!isAgenda) {
+    mas.push({ href: "/dashboard/collection", label: "Cobranza", icon: Megaphone, roles: ["admin", "manager"] })
+  }
+  if (!isAgenda) {
+    mas.push({ href: "/dashboard/suppliers", label: "Proveedores", icon: Truck, roles: ["admin", "manager"] })
+  }
+  if (planType === "negocio") {
+    mas.push({ href: "/dashboard/employees", label: "Empleados", icon: Briefcase, roles: ["admin", "manager"] })
+  }
+  if (isEnterprise) {
+    mas.push(
+      { href: "/dashboard/sellers", label: "Vendedores", icon: UserCircle, roles: ["admin", "manager"] },
+      { href: "/dashboard/commissions", label: "Comisiones", icon: Receipt, roles: ["admin", "manager"] },
+    )
+  }
+  if (isAgenda) {
+    mas.push(
+      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: allRoles },
+      { href: "/dashboard/agenda/nueva", label: "Nueva cita", icon: CalendarPlus, roles: ["admin", "manager"] },
+      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
+      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
+    )
+  } else if (planType !== "emprendedor" && planType !== "tienda" && !isEnterprise) {
+    mas.push(
+      { href: "/dashboard/agenda", label: "Agenda", icon: Calendar, roles: allRoles },
+      { href: "/dashboard/horarios", label: "Horarios", icon: Clock, roles: ["admin", "manager"] },
+      { href: "/dashboard/servicios", label: "Servicios", icon: Package, roles: ["admin", "manager"] },
+    )
   }
 
   const config: NavItem[] = []
@@ -141,8 +149,9 @@ export function getNavSections(planType: string): NavSection[] {
   }
 
   return [
-    { id: "panitas", title: "Panitas IA", items: panitas },
-    { id: "gestion", title: "Módulos", items: gestion },
+    { id: "panitas", title: "Panitas", items: panitas },
+    { id: "negocio", title: "Negocio", items: negocio },
+    { id: "mas", title: "Más módulos", items: mas },
     { id: "config", title: "Configuración", items: config },
   ]
 }
@@ -223,6 +232,45 @@ function useOrdersBadge(storeId: string, isOnOrders: boolean) {
   return pendingCount
 }
 
+/** Conteo de situaciones abiertas del Centro de Atención (FASE 8C). */
+function useAttentionBadge() {
+  const [openCount, setOpenCount] = useState(0)
+  const prevCountRef = useRef(0)
+  const soundCooldownRef = useRef(false)
+
+  const fetchOpen = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/attention/overview`)
+      if (res.ok) {
+        const data = await res.json()
+        const newCount = data.overview?.open || 0
+        if (newCount > prevCountRef.current && prevCountRef.current > 0 && !soundCooldownRef.current) {
+          playNotificationSound()
+          soundCooldownRef.current = true
+          setTimeout(() => {
+            soundCooldownRef.current = false
+          }, 5000)
+        }
+        prevCountRef.current = newCount
+        setOpenCount(newCount)
+      }
+    } catch (e) {
+      console.error("[sidebar attention count]", e)
+    }
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => void fetchOpen(), 2500)
+    const interval = setInterval(() => void fetchOpen(), 60000)
+    return () => {
+      clearTimeout(t)
+      clearInterval(interval)
+    }
+  }, [fetchOpen])
+
+  return openCount
+}
+
 interface SidebarNavContentProps {
   store: PrismaStore
   role: Role
@@ -237,6 +285,7 @@ export function SidebarNavContent({ store, role, planId, collapsed = false, onNa
   const legacyPlanType = store.planType || store.plan || "tienda"
   const isOnOrders = pathname === "/dashboard/orders" || pathname.startsWith("/dashboard/orders/")
   const pendingCount = useOrdersBadge(store.id, isOnOrders)
+  const attentionCount = useAttentionBadge()
   const isPlus = isPlusPlan(planId || legacyPlanType)
 
   const sections = useMemo(() => getNavSections(legacyPlanType), [legacyPlanType])
@@ -252,71 +301,93 @@ export function SidebarNavContent({ store, role, planId, collapsed = false, onNa
     [sections, role],
   )
 
+  const [moreOpen, setMoreOpen] = useState(true)
+
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon
+    const isActive = isItemActive(pathname, item)
+    const itemCount = item.badge ? (item.href === "/dashboard/atencion" ? attentionCount : pendingCount) : 0
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavClick}
+        title={collapsed ? item.label : undefined}
+        aria-label={item.label}
+        data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}
+        className={cn(
+          "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+          "outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+          collapsed && "justify-center px-0",
+          isActive
+            ? "bg-muted text-foreground"
+            : "text-foreground/70 hover:bg-muted/60 hover:text-foreground",
+        )}
+      >
+        {isActive && <span className="absolute inset-0 rounded-xl border border-border/80" />}
+        <span className="relative z-10 inline-flex shrink-0">
+          <Icon
+            className={cn(
+              "size-[18px]",
+              isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
+            )}
+          />
+          {collapsed && item.badge && itemCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex size-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-0.5 text-[8px] font-bold leading-none text-white shadow-sm">
+              {itemCount > 99 ? "99+" : itemCount}
+            </span>
+          )}
+          {collapsed && item.plusBadge && !isPlus && (
+            <span
+              className="absolute -right-1 -top-1 size-2 rounded-full bg-brand shadow-sm"
+              title="Requiere plan Plus"
+            />
+          )}
+        </span>
+        {!collapsed && <span className="relative z-10 flex-1 truncate">{item.label}</span>}
+        {!collapsed && item.badge && itemCount > 0 && (
+          <span className="relative z-10 ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-sm">
+            {itemCount > 99 ? "99+" : itemCount}
+          </span>
+        )}
+        {!collapsed && item.plusBadge && !isPlus && (
+          <span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-black">
+            <Zap className="size-2.5" />
+            Plus
+          </span>
+        )}
+      </Link>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {visibleSections.map((section, index) => (
-        <div key={section.id} className={cn("space-y-1", index > 0 && "border-t border-border/50 pt-3")}>
-          {!collapsed && (
-            <p className="px-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/60">
-              {section.title}
-            </p>
-          )}
-          {section.items.map((item) => {
-            const Icon = item.icon
-            const isActive = isItemActive(pathname, item)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavClick}
-                title={collapsed ? item.label : undefined}
-                aria-label={item.label}
-                data-tour={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-")}`}
-                className={cn(
-                  "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
-                  collapsed && "justify-center px-0",
-                  isActive
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground",
-                )}
+      {visibleSections.map((section, index) => {
+        const isMore = section.id === "mas"
+        const showItems = collapsed || !isMore || moreOpen
+        return (
+          <div key={section.id} className={cn("space-y-1", index > 0 && "border-t border-border/50 pt-3")}>
+            {!collapsed && !isMore && (
+              <p className="px-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground/60">
+                {section.title}
+              </p>
+            )}
+            {!collapsed && isMore && (
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-expanded={moreOpen}
+                className="flex h-9 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
               >
-                {isActive && <span className="absolute inset-0 rounded-xl border border-gray-200/80" />}
-                <span className="relative z-10 inline-flex shrink-0">
-                  <Icon
-                    className={cn(
-                      "size-[18px]",
-                      isActive ? "text-gray-900" : "text-muted-foreground group-hover:text-foreground",
-                    )}
-                  />
-                  {collapsed && item.badge && pendingCount > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex size-4 min-w-4 items-center justify-center rounded-full border border-background bg-destructive px-0.5 text-[8px] font-bold leading-none text-white shadow-sm">
-                      {pendingCount > 99 ? "99+" : pendingCount}
-                    </span>
-                  )}
-                  {collapsed && item.plusBadge && !isPlus && (
-                    <span
-                      className="absolute -right-1 -top-1 size-2 rounded-full bg-brand shadow-sm"
-                      title="Requiere plan Plus"
-                    />
-                  )}
-                </span>
-                {!collapsed && <span className="relative z-10 flex-1 truncate">{item.label}</span>}
-                {!collapsed && item.badge && pendingCount > 0 && (
-                  <span className="relative z-10 ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-sm">
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </span>
-                )}
-                {!collapsed && item.plusBadge && !isPlus && (
-                  <span className="relative z-10 ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-black">
-                    <Zap className="size-2.5" />
-                    Plus
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-      ))}
+                <LayoutGrid className="size-[18px]" />
+                <span className="flex-1 truncate text-left">Más módulos</span>
+                {moreOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+              </button>
+            )}
+            {showItems ? <div className="space-y-1">{section.items.map(renderItem)}</div> : null}
+          </div>
+        )
+      })}
     </div>
   )
 }

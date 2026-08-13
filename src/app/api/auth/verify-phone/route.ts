@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { rateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -11,6 +12,11 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { email: session.user.email } })
   if (!user) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+  }
+
+  const rl = await rateLimit(`verify-phone:${user.id}`, 5, 15 * 60 * 1000)
+  if (!rl.success) {
+    return NextResponse.json({ error: "Demasiados intentos. Espera 15 minutos." }, { status: 429 })
   }
 
   const { code } = await req.json()

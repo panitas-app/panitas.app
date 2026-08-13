@@ -9,6 +9,7 @@ import { TeamSettings } from "@/components/dashboard/team-settings"
 import { SettingsSubscription } from "@/components/dashboard/settings-subscription"
 import { SettingsCredit } from "@/components/dashboard/settings-credit"
 import { SettingsEmail } from "@/components/dashboard/settings-email"
+import { IntegrationsSettings } from "@/components/dashboard/integrations-settings"
 import { getCurrentStore } from "@/lib/permissions"
 
 interface Props {
@@ -25,8 +26,9 @@ export default async function SettingsPage(props: Props) {
   const isNegocio = planType === "negocio"
   const isEnterprise = planType === "empresa" || planType === "empresarial"
   const isAdmin = current.role === "admin"
+  const isIntegrationsAdmin = isAdmin || current.role === "manager"
 
-  const validTabs = ["general", "payments", "verification", ...(isAdmin ? ["subscription"] : []), ...(isNegocio && isAdmin ? ["team"] : []), ...(isEnterprise ? ["credit"] : [])]
+  const validTabs = ["general", "payments", "verification", ...(isAdmin ? ["subscription"] : []), ...(isNegocio && isAdmin ? ["team"] : []), ...(isEnterprise ? ["credit"] : []), ...(isIntegrationsAdmin ? ["integrations"] : [])]
   const defaultTab = validTabs.includes(searchParams?.tab || "") ? searchParams!.tab! : "general"
 
   let paymentAccounts: any[] = []
@@ -62,6 +64,7 @@ export default async function SettingsPage(props: Props) {
           {isNegocio && isAdmin && <TabsTrigger value="team" className="shrink-0">Equipo</TabsTrigger>}
           {isAdmin && <TabsTrigger value="subscription" className="shrink-0">Suscripción</TabsTrigger>}
           {isEnterprise && <TabsTrigger value="credit" className="shrink-0">Crédito</TabsTrigger>}
+          {isIntegrationsAdmin && <TabsTrigger value="integrations" className="shrink-0">Integraciones</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -144,6 +147,18 @@ export default async function SettingsPage(props: Props) {
               </CardHeader>
               <CardContent>
                 <SettingsCredit storeId={current.store.id} initialCreditDays={current.store.creditDays} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+        {isIntegrationsAdmin && (
+          <TabsContent value="integrations" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Integraciones</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <IntegrationsSettings />
               </CardContent>
             </Card>
           </TabsContent>

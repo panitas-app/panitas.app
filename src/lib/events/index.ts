@@ -11,14 +11,23 @@
 import type { DispatchReport, EventInput } from "./event-types"
 import { createEventSystem, type EventSystem, type EventSystemOptions } from "./event-system"
 import { registerLegacyBridge } from "./legacy-bridge"
+import { webhookDispatcher } from "@/lib/platform/webhooks/app"
 
 let system: EventSystem | null = null
 let legacyBridgeOff: (() => void) | null = null
+let webhookDispatcherOff: (() => void) | null = null
+
+/** Adjunta los listeners de plataforma (webhooks salientes) al bus del sistema. */
+function attachPlatformListeners(eventSystem: EventSystem): void {
+  webhookDispatcherOff?.()
+  webhookDispatcherOff = webhookDispatcher.register(eventSystem.bus)
+}
 
 /** Devuelve el sistema global (lo crea con opciones seguras la primera vez). */
 export function getEventSystem(options?: EventSystemOptions): EventSystem {
   if (!system) {
     system = createEventSystem(options ?? {})
+    attachPlatformListeners(system)
   }
   return system
 }
@@ -27,6 +36,7 @@ export function getEventSystem(options?: EventSystemOptions): EventSystem {
 export function configureEventSystem(options: EventSystemOptions = {}): EventSystem {
   system?.close()
   system = createEventSystem(options)
+  attachPlatformListeners(system)
   return system
 }
 
@@ -34,6 +44,8 @@ export function configureEventSystem(options: EventSystemOptions = {}): EventSys
 export function resetEventSystemForTest(): void {
   legacyBridgeOff?.()
   legacyBridgeOff = null
+  webhookDispatcherOff?.()
+  webhookDispatcherOff = null
   system?.close()
   system = null
 }
@@ -124,8 +136,10 @@ export {
   registerKnowledgeListener,
   registerNotificationsListener,
   registerRecommendationsListener,
+  registerAttentionListener,
   NoopNotificationChannel,
   buildNotification,
+  type AttentionListenerOptions,
   type ConversationEventRecord,
   type CopilotEventRecord,
   type CommunicationEventRecord,

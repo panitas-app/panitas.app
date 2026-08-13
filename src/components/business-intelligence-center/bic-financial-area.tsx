@@ -48,7 +48,7 @@ export function BicFinancialArea({ balance, breakeven }: { balance: BicBalance; 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <TrendingUp className="size-3.5 text-emerald-600" /> Ingresos del mes
+            <TrendingUp className="size-3.5 text-success" /> Ingresos del mes
           </p>
           <p className="mt-1 font-heading text-2xl font-extrabold text-foreground">
             <BicMoney value={balance.monthRevenue} />
@@ -60,7 +60,7 @@ export function BicFinancialArea({ balance, breakeven }: { balance: BicBalance; 
 
         <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <TrendingDown className="size-3.5 text-rose-600" /> Gastos del mes
+            <TrendingDown className="size-3.5 text-destructive" /> Gastos del mes
           </p>
           <p className="mt-1 font-heading text-2xl font-extrabold text-foreground">
             <BicMoney value={balance.monthExpenses} />
@@ -72,13 +72,13 @@ export function BicFinancialArea({ balance, breakeven }: { balance: BicBalance; 
 
         <div
           className={`rounded-2xl border p-4 ${
-            profitable ? "border-emerald-300 bg-emerald-500/5" : "border-rose-300 bg-rose-500/5"
+            profitable ? "border-success/40 bg-success/5" : "border-destructive/40 bg-destructive/5"
           }`}
         >
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Wallet className="size-3.5" /> Utilidad del mes
           </p>
-          <p className={`mt-1 font-heading text-2xl font-extrabold ${profitable ? "text-emerald-600" : "text-rose-600"}`}>
+          <p className={`mt-1 font-heading text-2xl font-extrabold ${profitable ? "text-success" : "text-destructive"}`}>
             {profitable ? "+" : ""}
             <BicMoney value={profit} />
           </p>

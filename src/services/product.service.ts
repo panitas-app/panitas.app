@@ -32,6 +32,8 @@ export function generateSku(name: string): string {
 export type ProductListOptions = {
   q?: string
   category?: string
+  sort?: "name" | "price" | "stock" | "createdAt"
+  order?: "asc" | "desc"
   skip?: number
   take?: number
 }
@@ -41,6 +43,10 @@ export class ProductService {
 
   list(ctx: StoreServiceContext, options: ProductListOptions) {
     return this.repo.list({ storeId: ctx.storeId, ...options })
+  }
+
+  metrics(ctx: StoreServiceContext) {
+    return this.repo.metrics(ctx.storeId)
   }
 
   async getById(ctx: StoreServiceContext, id: string) {

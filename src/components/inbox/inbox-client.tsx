@@ -201,7 +201,7 @@ export function InboxClient() {
           <EmptyState
             icon={UserRound}
             title="Contexto del cliente"
-            description="Pedidos, créditos, notas y recomendaciones de Panitas IA aparecerán aquí."
+            description="Pedidos, créditos, notas y recomendaciones de Panitas aparecerán aquí."
           />
         )}
       </div>

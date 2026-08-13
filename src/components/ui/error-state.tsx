@@ -25,7 +25,7 @@ export function ErrorState({
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-2 gap-1.5">
           <RefreshCw className="size-3.5" />
-          Reintentar
+          Intentar nuevamente
         </Button>
       )}
     </div>

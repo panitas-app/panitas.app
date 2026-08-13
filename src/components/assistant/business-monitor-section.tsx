@@ -20,6 +20,10 @@ import type { BusinessSummary } from "@/lib/business-intelligence"
  * FASE 5E: muestra primero las tarjetas inteligentes (bloques `monitor`
  * del ConversationRenderer) generadas por `summaryToMonitorCards`, y debajo
  * la vista 4B. `onMonitorAction` reenvía las acciones de las tarjetas.
+ *
+ * FASE 9B: los hallazgos tienen UN lugar principal (las tarjetas inteligentes),
+ * por eso `BusinessSummaryView` se renderiza con `hideInsights` para no duplicar
+ * "Puntos para revisar". Superficies migradas a tokens del design system.
  */
 export function BusinessMonitorSection({
   maxInsights,
@@ -55,38 +59,18 @@ export function BusinessMonitorSection({
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    async function run() {
-      try {
-        const res = await fetch("/api/agent/business-summary")
-        const data = await res.json()
-        if (cancelled) return
-        if (!res.ok || !data?.summary) {
-          setError(data?.error ?? "No se pudo cargar el resumen de tu negocio.")
-          return
-        }
-        setSummary(data.summary as BusinessSummary)
-      } catch {
-        if (!cancelled) setError("No se pudo conectar. Intenta de nuevo.")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    void run()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    void load()
+  }, [load])
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg shadow-brand-primary/5">
-      <header className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-4 sm:px-5">
+    <section className="overflow-hidden rounded-3xl border border-border bg-background shadow-subtle">
+      <header className="flex items-center gap-3 border-b border-border bg-background px-4 py-4 sm:px-5">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl brand-gradient text-white shadow-lg shadow-brand-primary/30">
           <LineChart className="size-5" />
         </div>
         <div className="min-w-0">
-          <h2 className="font-heading text-base font-extrabold tracking-tight text-gray-900">Monitor de negocio</h2>
-          <p className="truncate text-xs text-gray-500">Resumen inteligente de tu negocio en tiempo real</p>
+          <h2 className="font-heading text-base font-extrabold tracking-tight text-foreground">Monitor de negocio</h2>
+          <p className="truncate text-xs text-muted-foreground">Resumen inteligente de tu negocio en tiempo real</p>
         </div>
         <span className="hidden shrink-0 items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-brand-primary sm:inline-flex">
           <Sparkles className="size-3" /> IA
@@ -96,7 +80,7 @@ export function BusinessMonitorSection({
           onClick={() => void load()}
           disabled={loading}
           aria-label="Actualizar monitor"
-          className="ml-auto flex size-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:opacity-60"
+          className="ml-auto flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-60"
         >
           <RefreshCw className={cn("size-4", loading && "animate-spin")} />
         </button>
@@ -105,10 +89,10 @@ export function BusinessMonitorSection({
       <div className="p-4 sm:p-6">
         {loading && !summary ? (
           <div className="space-y-3">
-            <div className="h-24 animate-pulse rounded-2xl bg-gray-100" />
+            <div className="h-24 animate-pulse rounded-2xl bg-muted" />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
+                <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
               ))}
             </div>
           </div>
@@ -122,7 +106,7 @@ export function BusinessMonitorSection({
               className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
             />
             <div className="mt-4">
-              <BusinessSummaryView summary={summary} currency={currency} maxInsights={maxInsights} />
+              <BusinessSummaryView summary={summary} currency={currency} hideInsights />
             </div>
             {actions ? <div className="mt-4">{actions}</div> : null}
           </div>

@@ -112,6 +112,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(updated)
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Error al actualizar cuota" }, { status: 500 })
+    console.error("Error updating installment:", error)
+    return NextResponse.json({ error: "Error al actualizar cuota. Intenta nuevamente." }, { status: 500 })
   }
 }

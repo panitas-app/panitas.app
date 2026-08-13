@@ -125,7 +125,7 @@ export class BusinessProfileBuilder {
 
     // Resolver nombres en un segundo pase (los groupBy solo devuelven IDs).
     const [productRows, customerRows] = await Promise.all([
-      this.sales.productsByIds(topProductRows.map((p) => p.productId)),
+      this.sales.productsByIds(topProductRows.map((p) => p.productId).filter((id): id is string => Boolean(id))),
       this.sales.customersByIds(topCustomerRows.map((c) => c.customerId!).filter(Boolean)),
     ])
 
@@ -179,6 +179,7 @@ export class BusinessProfileBuilder {
         customersTotalSpent: customers.totalSpent,
       },
       topProducts: topProductRows
+        .filter((p): p is typeof p & { productId: string } => p.productId !== null)
         .filter((p) => productName.has(p.productId))
         .map((p) => ({
           id: p.productId,

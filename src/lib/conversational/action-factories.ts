@@ -1,10 +1,11 @@
 /**
- * Fábricas de acciones rápidas por entidad (FASE 5E).
+ * Fábricas de acciones rápidas por entidad (FASE 5E + 9B).
  *
  * Capa de servidor (lib): devuelven `QuickAction[]` (client-safe) que el
  * executor adjunta a las tarjetas y que el ConversationRenderer convierte en
  * botones. Al pulsarlos, la acción semántica se reenvía al asistente; nunca
- * exponen tool names ni IDs internos.
+ * exponen tool names ni IDs internos. FASE 9B: si la acción define `href`
+ * (deep link al módulo), el botón abre esa ruta en vez de reenviarse al chat.
  */
 import type { QuickAction } from "@/lib/conversational-actions"
 
@@ -12,8 +13,8 @@ import type { QuickAction } from "@/lib/conversational-actions"
 export function productActions(name: string): QuickAction[] {
   const clean = name.trim()
   return [
-    { label: "Editar", action: `editar producto ${clean}`, variant: "outline", icon: "pencil" },
-    { label: "Agregar stock", action: `agregar stock a ${clean}`, variant: "outline", icon: "package-plus" },
+    { label: "Editar", action: `editar producto ${clean}`, variant: "outline", icon: "pencil", href: "/dashboard/products" },
+    { label: "Agregar stock", action: `agregar stock a ${clean}`, variant: "outline", icon: "package-plus", href: "/dashboard/products" },
     { label: "Eliminar", action: `eliminar producto ${clean}`, variant: "destructive", icon: "trash-2", confirm: true },
   ]
 }
@@ -22,7 +23,7 @@ export function productActions(name: string): QuickAction[] {
 export function saleActions(orderNumber: string): QuickAction[] {
   const clean = orderNumber.trim()
   return [
-    { label: "Ver detalle", action: `ver el pedido ${clean}`, variant: "outline", icon: "eye" },
+    { label: "Ver detalle", action: `ver el pedido ${clean}`, variant: "outline", icon: "eye", href: "/dashboard/orders" },
     { label: "Duplicar", action: `duplicar pedido ${clean}`, variant: "outline", icon: "copy" },
   ]
 }
@@ -31,7 +32,7 @@ export function saleActions(orderNumber: string): QuickAction[] {
 export function customerActions(name: string): QuickAction[] {
   const clean = name.trim()
   return [
-    { label: "Historial", action: `ver historial de ${clean}`, variant: "outline", icon: "history" },
+    { label: "Historial", action: `ver historial de ${clean}`, variant: "outline", icon: "history", href: "/dashboard/customers" },
     { label: "Registrar venta", action: `registrar venta a ${clean}`, variant: "default", icon: "receipt" },
     { label: "Registrar pago", action: `registrar pago de ${clean}`, variant: "outline", icon: "banknote" },
   ]

@@ -75,6 +75,6 @@ export async function POST(request: NextRequest) {
     if (error?.code === "P2002") {
       return NextResponse.json({ error: "El nombre de usuario ya existe" }, { status: 409 })
     }
-    return NextResponse.json({ error: error?.message || "Error al crear vendedor" }, { status: 500 })
+    return NextResponse.json({ error: "Error al crear vendedor. Intenta nuevamente." }, { status: 500 })
   }
 }

@@ -72,7 +72,7 @@ export function RescheduleModal({ open, onOpenChange, credit, onSaved }: Resched
     <Dialog open={open} onOpenChange={(next) => { onOpenChange(next); if (!next) reset() }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Recalcular cuotas</DialogTitle>
+          <DialogTitle>Replanificar cuotas</DialogTitle>
           <DialogDescription>
             {credit.customerName} · Saldo pendiente: <strong className="text-foreground">{money(credit.pending)}</strong>
           </DialogDescription>
@@ -119,7 +119,7 @@ export function RescheduleModal({ open, onOpenChange, credit, onSaved }: Resched
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={submit} disabled={!valid || saving}>
-            {saving ? "Guardando..." : "Recalcular"}
+            {saving ? "Guardando..." : "Replanificar"}
           </Button>
         </DialogFooter>
       </DialogContent>

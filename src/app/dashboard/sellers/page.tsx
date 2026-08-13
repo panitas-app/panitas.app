@@ -140,7 +140,7 @@ export default function SellersPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between" data-tour="vendedores-title">
         <div>
-          <h1 className="text-2xl font-bold text-accent">Vendedores</h1>
+          <h1 className="text-2xl font-bold text-foreground">Vendedores</h1>
           <p className="text-sm text-muted-foreground">Gestiona los vendedores y sus accesos al panel de ventas</p>
         </div>
         <Button data-tour="vendedores-create" onClick={openCreate} className="rounded-xl bg-primary text-accent font-bold gap-2">

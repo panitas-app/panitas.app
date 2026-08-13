@@ -55,7 +55,7 @@ export function computePlanStatus(
         return {
           label: "Renueva tu suscripción",
           href: subscribeHref,
-          className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 animate-pulse font-extrabold",
+          className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 font-extrabold",
           icon: <RefreshCw className="size-3.5" />,
         }
       }
@@ -67,7 +67,7 @@ export function computePlanStatus(
           return {
             label: "Renueva tu suscripción",
             href: subscribeHref,
-            className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 animate-pulse font-extrabold",
+            className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 font-extrabold",
             icon: <RefreshCw className="size-3.5" />,
           }
         }
@@ -94,7 +94,7 @@ export function computePlanStatus(
   return {
     label: "Activa tu plan",
     href: subscribeHref,
-    className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 animate-pulse font-extrabold",
+    className: "border-brand-primary bg-brand-primary text-white shadow-lg shadow-brand-primary/30 font-extrabold",
     icon: <Zap className="size-3.5" />,
   }
 }
@@ -191,7 +191,7 @@ export function DashboardTopbar({
             className="hidden items-center gap-1.5 rounded-xl border border-brand-primary/25 bg-brand-soft px-3 py-2 text-xs font-bold text-brand-primary transition-all hover:bg-brand-primary/15 sm:flex"
           >
             <Bot className="size-3.5" />
-            Panitas IA
+            Panitas
           </button>
 
           <Link

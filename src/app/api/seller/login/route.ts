@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createSellerToken, setSellerCookie } from "@/lib/seller-auth"
+import { rateLimit, getClientIp } from "@/lib/rate-limit"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
   try {
+    const rl = await rateLimit(`seller-login:${getClientIp(request)}`, 5, 60 * 1000)
+    if (!rl.success) {
+      return NextResponse.json({ error: "Demasiados intentos. Intenta en un minuto." }, { status: 429 })
+    }
+
     const { username, password } = await request.json()
     if (!username || !password) {
       return NextResponse.json({ error: "Usuario y contraseña requeridos" }, { status: 400 })

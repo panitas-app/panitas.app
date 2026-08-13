@@ -107,26 +107,26 @@ export interface PriorityMeta {
 export const PRIORITY_META: Record<FinancialPriority, PriorityMeta> = {
   alta: {
     label: "Alta prioridad",
-    chip: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-    text: "text-red-600 dark:text-red-400",
-    dot: "bg-red-500",
-    border: "border-red-200 dark:border-red-900",
+    chip: "bg-destructive/10 text-destructive",
+    text: "text-destructive",
+    dot: "bg-destructive",
+    border: "border-destructive/30",
     icon: AlertTriangle,
   },
   media: {
     label: "Prioridad media",
-    chip: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
-    text: "text-amber-600 dark:text-amber-400",
-    dot: "bg-amber-500",
-    border: "border-amber-200 dark:border-amber-900",
+    chip: "bg-warning/10 text-warning",
+    text: "text-warning",
+    dot: "bg-warning",
+    border: "border-warning/40",
     icon: CalendarClock,
   },
   baja: {
     label: "Baja prioridad",
-    chip: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
-    text: "text-sky-600 dark:text-sky-400",
-    dot: "bg-sky-500",
-    border: "border-sky-200 dark:border-sky-900",
+    chip: "bg-info/10 text-info",
+    text: "text-info",
+    dot: "bg-info",
+    border: "border-info/30",
     icon: Info,
   },
 }
@@ -140,17 +140,17 @@ export interface ToneMeta {
 export const TONE_META: Record<FinancialSummaryTone, ToneMeta> = {
   positive: {
     label: "Buen momento",
-    chip: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400",
+    chip: "bg-success/10 text-success",
     icon: CircleCheck,
   },
   warning: {
     label: "Atención requerida",
-    chip: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+    chip: "bg-warning/10 text-warning",
     icon: AlertTriangle,
   },
   neutral: {
     label: "Estado estable",
-    chip: "bg-slate-100 text-slate-600 dark:bg-slate-900/50 dark:text-slate-400",
+    chip: "bg-muted text-muted-foreground",
     icon: Info,
   },
 }
@@ -196,7 +196,7 @@ export function deltaClassName(delta: number | null, inverted = false): string {
   if (delta === null) return "text-muted-foreground"
   const negative = delta < 0
   const good = inverted ? negative : !negative
-  return good ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+  return good ? "text-success" : "text-destructive"
 }
 
 /** Enlace para consultar a Panitas desde una acción rápida. */

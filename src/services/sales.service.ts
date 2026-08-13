@@ -1,4 +1,5 @@
 import { SalesRepository } from "@/repositories/sales.repository"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 import type { StoreServiceContext } from "@/services/context"
 
 export type SalesSummaryOptions = {
@@ -75,7 +76,7 @@ export class SalesService {
     ])
 
     const topRows = await this.repo.topProducts(ctx.storeId, startOfMonth(now), now, 10)
-    const productIds = topRows.map((r) => r.productId)
+    const productIds = topRows.map((r) => r.productId).filter((id): id is string => Boolean(id))
     const products = productIds.length > 0
       ? await this.repo.productsByIds(productIds)
       : []
@@ -94,6 +95,7 @@ export class SalesService {
       month: toPeriod(month),
       averageTicket: toPeriod(month).averageTicket,
       topProducts: topRows
+        .filter((r): r is typeof r & { productId: string } => r.productId !== null)
         .map((r) => ({ productId: r.productId, name: byId.get(r.productId)?.name ?? "Producto", quantity: r._sum.quantity ?? 0 }))
         .filter((p) => p.quantity > 0),
       frequentCustomers: freqRows
@@ -111,8 +113,8 @@ export class SalesService {
   async averageTicket(ctx: StoreServiceContext, from?: string, to?: string) {
     const summary = await this.repo.summary({
       storeId: ctx.storeId,
-      from: from ? new Date(from) : undefined,
-      to: to ? new Date(to) : undefined,
+      from: from ? startOfLocalDay(from) : undefined,
+      to: to ? endOfLocalDay(to) : undefined,
     })
     return toPeriod(summary).averageTicket
   }
@@ -121,15 +123,16 @@ export class SalesService {
   async productsSold(ctx: StoreServiceContext, from?: string, to?: string, take = 10) {
     const rows = await this.repo.topProducts(
       ctx.storeId,
-      from ? new Date(from) : undefined,
-      to ? new Date(to) : undefined,
+      from ? startOfLocalDay(from) : undefined,
+      to ? endOfLocalDay(to) : undefined,
       take
     )
-    const productIds = rows.map((r) => r.productId)
+    const productIds = rows.map((r) => r.productId).filter((id): id is string => Boolean(id))
     if (productIds.length === 0) return []
     const products = await this.repo.productsByIds(productIds)
     const byId = new Map(products.map((p) => [p.id, p]))
     return rows
+      .filter((r): r is typeof r & { productId: string } => r.productId !== null)
       .map((r) => ({ productId: r.productId, name: byId.get(r.productId)?.name ?? "Producto", quantity: r._sum.quantity ?? 0 }))
       .filter((p) => p.quantity > 0)
   }
@@ -138,8 +141,8 @@ export class SalesService {
   async frequentCustomers(ctx: StoreServiceContext, from?: string, to?: string, take = 10) {
     const rows = await this.repo.frequentCustomers(
       ctx.storeId,
-      from ? new Date(from) : undefined,
-      to ? new Date(to) : undefined,
+      from ? startOfLocalDay(from) : undefined,
+      to ? endOfLocalDay(to) : undefined,
       take
     )
     const customerIds = rows.map((r) => r.customerId).filter((id): id is string => Boolean(id))

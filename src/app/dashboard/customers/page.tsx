@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -17,9 +16,13 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { Search, Eye, Phone, Mail, ShoppingBag, DollarSign, Users } from "lucide-react"
-import { formatDate } from "@/lib/utils"
+import { SearchInput } from "@/components/ui/search-input"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
 import { Pagination } from "@/components/ui/pagination"
+import { Eye, Users, UserPlus, UserX, DollarSign, Phone, Mail, ArrowUp, ArrowDown, ArrowUpDown, MessageCircleQuestion } from "lucide-react"
+
+type SortKey = "name" | "totalOrders" | "totalSpent" | "lastPurchaseAt"
 
 type Customer = {
   id: string
@@ -33,11 +36,86 @@ type Customer = {
   createdAt: string
 }
 
+type CustomerMetrics = {
+  total: number
+  newThisMonth: number
+  recurrent: number
+  inactive: number
+  inactiveDays: number
+  averageCustomerValue: number
+  totalSpent: number
+}
+
+function money(n: number): string {
+  return "$" + n.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function dateOnly(d: string | null): string {
+  if (!d) return "—"
+  return new Date(d).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+function StatCard({
+  icon: Icon,
+  iconClass,
+  value,
+  label,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  iconClass: string
+  value: string
+  label: string
+}) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center gap-1 py-4">
+        <Icon className={`size-5 ${iconClass}`} />
+        <span className="text-2xl font-black text-accent">{value}</span>
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</span>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SortableHead({
+  col,
+  label,
+  align,
+  sort,
+  order,
+  onToggle,
+}: {
+  col: SortKey
+  label: string
+  align?: "right"
+  sort: SortKey
+  order: string
+  onToggle: (col: SortKey) => void
+}) {
+  const active = sort === col
+  const ariaSort = active ? (order === "asc" ? "ascending" : "descending") : "none"
+  return (
+    <TableHead aria-sort={ariaSort} className={align === "right" ? "text-right" : ""}>
+      <button
+        type="button"
+        onClick={() => onToggle(col)}
+        className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary transition-colors"
+      >
+        {label}
+        {active
+          ? (order === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)
+          : <ArrowUpDown className="size-3 opacity-40" />}
+      </button>
+    </TableHead>
+  )
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [metrics, setMetrics] = useState<CustomerMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [sort, setSort] = useState("name")
+  const [sort, setSort] = useState<SortKey>("name")
   const [order, setOrder] = useState("asc")
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -56,6 +134,7 @@ export default function CustomersPage() {
         setCustomers(json.data || [])
         setTotal(json.total || 0)
         setTotalPages(json.totalPages || 0)
+        if (json.metrics) setMetrics(json.metrics)
       }
     } catch (e) { console.error("[unhandled error]", e) } finally {
       setLoading(false)
@@ -64,102 +143,64 @@ export default function CustomersPage() {
 
   useEffect(() => { fetchCustomers() }, [fetchCustomers])
 
-  // Reset to page 1 when search/sort changes
-  useEffect(() => { setPage(1) }, [search, sort, order])
-
-  const toggleSort = (col: string) => {
+  const toggleSort = (col: SortKey) => {
     if (sort === col) setOrder(order === "asc" ? "desc" : "asc")
     else { setSort(col); setOrder("asc") }
+    setPage(1)
   }
-
-  const SortIcon = ({ col }: { col: string }) => (
-    <span className="ml-1 text-[10px] text-slate-400">
-      {sort === col ? (order === "asc" ? "▲" : "▼") : "▽"}
-    </span>
-  )
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-center font-heading text-xl font-semibold">Clientes</h1>
-
-      {/* Stats summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4">
-            <Users className="size-5 text-primary" />
-            <span className="text-2xl font-black text-accent">{total}</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4">
-            <ShoppingBag className="size-5 text-emerald-500" />
-            <span className="text-2xl font-black text-accent">
-              {customers.reduce((s, c) => s + c.totalOrders, 0)}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Órdenes</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4">
-            <DollarSign className="size-5 text-amber-500" />
-            <span className="text-2xl font-black text-accent">
-              ${customers.reduce((s, c) => s + c.totalSpent, 0).toFixed(0)}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gastado</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4">
-            <span className="text-2xl font-black text-accent">
-              {customers.length > 0
-                ? `$${(customers.reduce((s, c) => s + c.totalSpent, 0) / customers.length).toFixed(0)}`
-                : "$0"}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Promedio</span>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-heading text-xl font-black flex items-center gap-2">
+            <Users className="size-6 text-primary" /> Clientes
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Tu base de clientes, su historial de compras y saldo pendiente.
+          </p>
+        </div>
+        <Link href={`/dashboard/assistant?q=${encodeURIComponent("¿Qué clientes necesitan atención?")}`}>
+          <Button variant="outline" className="gap-1.5">
+            <MessageCircleQuestion className="size-4" /> Preguntar a Panitas
+          </Button>
+        </Link>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <Input
-          placeholder="Buscar por nombre, teléfono o email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {metrics && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard icon={Users} iconClass="text-primary" value={String(total)} label="Total" />
+          <StatCard icon={UserPlus} iconClass="text-success" value={String(metrics.newThisMonth)} label="Nuevos este mes" />
+          <StatCard icon={UserX} iconClass="text-warning" value={String(metrics.inactive)} label={`Inactivos (${metrics.inactiveDays}d)`} />
+          <StatCard icon={DollarSign} iconClass="text-info" value={money(metrics.totalSpent)} label="Total gastado" />
+        </div>
+      )}
 
-      {/* Table */}
+      <SearchInput
+        value={search}
+        onChange={(v) => { setSearch(v); setPage(1) }}
+        placeholder="Buscar por nombre, teléfono, email o documento..."
+      />
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-slate-400">Cargando...</div>
+            <LoadingState message="Cargando clientes..." />
           ) : customers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="size-12 text-slate-300 mb-3" />
-              <p className="text-sm font-semibold text-slate-500">No hay clientes registrados</p>
-              <p className="text-xs text-slate-400 mt-1">Los clientes aparecerán automáticamente cuando reciban pedidos.</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No hay clientes registrados"
+              description="Los clientes aparecerán automáticamente cuando reciban pedidos desde el POS."
+            />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("name")}>
-                    Nombre <SortIcon col="name" />
-                  </TableHead>
+                  <SortableHead col="name" label="Nombre" sort={sort} order={order} onToggle={toggleSort} />
                   <TableHead>Contacto</TableHead>
-                  <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleSort("totalOrders")}>
-                    Órdenes <SortIcon col="totalOrders" />
-                  </TableHead>
-                  <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleSort("totalSpent")}>
-                    Total gastado <SortIcon col="totalSpent" />
-                  </TableHead>
-                  <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleSort("lastPurchaseAt")}>
-                    Última compra <SortIcon col="lastPurchaseAt" />
-                  </TableHead>
+                  <SortableHead col="totalOrders" label="Órdenes" align="right" sort={sort} order={order} onToggle={toggleSort} />
+                  <SortableHead col="totalSpent" label="Total gastado" align="right" sort={sort} order={order} onToggle={toggleSort} />
+                  <SortableHead col="lastPurchaseAt" label="Última compra" align="right" sort={sort} order={order} onToggle={toggleSort} />
                   <TableHead className="text-right">Acción</TableHead>
                 </TableRow>
               </TableHeader>
@@ -168,28 +209,28 @@ export default function CustomersPage() {
                   <TableRow key={c.id}>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-800">{c.name}</span>
+                        <span className="font-semibold text-foreground">{c.name}</span>
                         {c.documentId && (
-                          <span className="text-[10px] text-slate-400">{c.documentId}</span>
+                          <span className="text-[10px] text-muted-foreground">{c.documentId}</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-0.5">
-                        <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <Phone className="size-3 text-slate-400" /> {c.phone}
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Phone className="size-3 text-muted-foreground" /> {c.phone}
                         </span>
                         {c.email && (
-                          <span className="flex items-center gap-1 text-xs text-slate-600">
-                            <Mail className="size-3 text-slate-400" /> {c.email}
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Mail className="size-3 text-muted-foreground" /> {c.email}
                           </span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-bold">{c.totalOrders}</TableCell>
-                    <TableCell className="text-right font-bold">${c.totalSpent.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-xs text-slate-500">
-                      {c.lastPurchaseAt ? formatDate(c.lastPurchaseAt) : "—"}
+                    <TableCell className="text-right font-bold">{money(c.totalSpent)}</TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {dateOnly(c.lastPurchaseAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Link href={`/dashboard/customers/${c.id}`}>

@@ -16,12 +16,13 @@ export async function GET(req: Request) {
     const sort = searchParams.get("sort") || "name"
     const order = searchParams.get("order") || "asc"
 
-    const { customers, total } = await customerService.list(
-      { storeId: current.store.id, userId: current.userId },
-      { q, sort, order, skip, take }
-    )
+    const ctx = { storeId: current.store.id, userId: current.userId }
+    const [list, metrics] = await Promise.all([
+      customerService.list(ctx, { q, sort, order, skip, take }),
+      customerService.metrics(ctx),
+    ])
 
-    return NextResponse.json(paginatedResponse(customers, total, page, take))
+    return NextResponse.json({ ...paginatedResponse(list.customers, list.total, page, take), metrics })
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }

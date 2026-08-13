@@ -25,7 +25,7 @@ function getBottomNavItems(planType: string): BottomNavItem[] {
   }
   return [
     { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
-    { href: "/dashboard/products", label: "Productos", icon: Package },
+    { href: "/dashboard/products", label: "Inventario", icon: Package },
     { href: "/dashboard/assistant", label: "Panitas", icon: Bot, featured: true },
     { href: "/dashboard/customers", label: "Clientes", icon: Users },
     { href: "/dashboard/settings", label: "Más", icon: Settings },

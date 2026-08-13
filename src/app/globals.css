@@ -62,6 +62,16 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -83,7 +93,23 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ── v3 Light Theme (default, liquid glass) ── */
+/* ── FASE 9A · Panitas Design System · Shadow scale ──
+   Niveles canónicos de elevación. Úsalos en lugar de
+   shadow-sm/md/lg cuando sea posible: surface, card y popovers. */
+@theme {
+  --shadow-subtle: 0 1px 2px rgba(10, 10, 10, 0.04), 0 8px 24px -12px rgba(10, 10, 10, 0.08);
+  --shadow-medium: 0 2px 4px rgba(10, 10, 10, 0.05), 0 12px 32px -12px rgba(10, 10, 10, 0.12);
+  --shadow-elevated: 0 4px 8px rgba(10, 10, 10, 0.06), 0 20px 48px -16px rgba(10, 10, 10, 0.18);
+  --shadow-glow: 0 0 30px rgba(249, 115, 22, 0.12);
+}
+
+/* ── FASE 9A · Panitas Design System · v4 Light Theme ──
+   Primario: naranja Panitas (identidad / acciones).
+   Neutros: blanco / negro-gris oscuro.
+   Amarillo: SOLO acentos (recomendaciones, estados especiales).
+   Los tokens de FASE 4F/8G previos se conservan como referencia.
+   Toda la UI semántica (buttons, inputs, rings, sidebar, charts)
+   se re-ancla a la identidad naranja. */
 :root {
   --background: #FFFFFF;
   --foreground: #050505;
@@ -91,30 +117,37 @@
   --card-foreground: #050505;
   --popover: #FFFFFF;
   --popover-foreground: #050505;
-  --primary: #0066FF;
+  --primary: #F97316;
   --primary-foreground: #FFFFFF;
   --brand: #FFB92E;
-  --secondary: #F0F4FF;
-  --secondary-foreground: #050505;
+  --secondary: #FFF4EC;
+  --secondary-foreground: #7C2D12;
   --muted: #F5F5F5;
   --muted-foreground: #6B7280;
   --accent: #FFD600;
   --accent-foreground: #050505;
   --destructive: #EF4444;
+  --destructive-soft: #FEF2F2;
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --success-soft: #F0FDF4;
+  --warning: #F59E0B;
+  --warning-foreground: #FFFFFF;
+  --warning-soft: #FFFBEB;
+  --info: #0EA5E9;
+  --info-foreground: #FFFFFF;
+  --info-soft: #F0F9FF;
   --border: #E5E7EB;
   --input: #E5E7EB;
-  --ring: #0066FF;
-  --chart-1: #0066FF;
+  --ring: #F97316;
+  --chart-1: #F97316;
   --chart-2: #050505;
   --chart-3: #FFD600;
   --chart-4: #6B7280;
-  --chart-5: #F0F4FF;
+  --chart-5: #FFF4EC;
   --radius: 0.75rem;
 
-  /* ── FASE 4F · Panitas 2.0 Design System ──
-     Primario: naranja Panitas (identidad / acciones).
-     Neutros: blanco / negro-gris oscuro.
-     Amarillo: SOLO acentos (recomendaciones, estados especiales). */
+  /* ── FASE 4F · Panitas 2.0 Design System (identidad) ── */
   --brand-primary: #F97316;
   --brand-secondary: #FB923C;
   --brand-soft: #FFF4EC;
@@ -125,12 +158,12 @@
 
   --sidebar: #FFFFFF;
   --sidebar-foreground: #050505;
-  --sidebar-primary: #0066FF;
+  --sidebar-primary: #F97316;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0F4FF;
-  --sidebar-accent-foreground: #050505;
+  --sidebar-accent: #FFF4EC;
+  --sidebar-accent-foreground: #7C2D12;
   --sidebar-border: #E5E7EB;
-  --sidebar-ring: #0066FF;
+  --sidebar-ring: #F97316;
 
   /* v3 swatch */
   --swatch--light-base: #FFFFFF;
@@ -385,7 +418,7 @@
 @utility surface-card {
   background: var(--surface);
   border: 1px solid var(--line);
-  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 8px 24px -12px rgba(10, 10, 10, 0.08);
+  box-shadow: var(--shadow-subtle);
 }
 
 @utility surface-soft {
@@ -450,15 +483,15 @@
 }
 
 @utility glass-glow-accent {
-  box-shadow: 0 0 30px 0 rgba(0,102,255,0.08), inset 0 0 12px 0 rgba(255,255,255,0.8);
+  box-shadow: 0 0 30px 0 rgba(249, 115, 22, 0.08), inset 0 0 12px 0 rgba(255, 255, 255, 0.8);
 }
 
 @utility text-glow {
-  text-shadow: 0 0 20px rgba(0, 102, 255, 0.35);
+  text-shadow: 0 0 20px rgba(249, 115, 22, 0.35);
 }
 
 @utility glass-glow {
-  box-shadow: 0 0 30px 0 rgba(0, 102, 255, 0.12), inset 0 0 12px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 30px 0 rgba(249, 115, 22, 0.12), inset 0 0 12px 0 rgba(255, 255, 255, 0.2);
 }
 
 @utility scrollbar-none {
@@ -512,12 +545,6 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
   transition: transform 0.2s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  button:hover svg.lucide, a:hover svg.lucide, [role="button"]:hover svg.lucide, label:hover svg.lucide {
-    animation: icon-wobble 0.4s ease;
-  }
-}
-
 @keyframes icon-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -527,12 +554,6 @@ button svg.lucide, a svg.lucide, [role="button"] svg.lucide, label svg.lucide {
   0%, 100% { transform: translate3d(0, 0, 0); }
   40% { transform: translate3d(0, -6px, 0); }
   60% { transform: translate3d(0, -3px, 0); }
-}
-
-@keyframes icon-wobble {
-  0%, 100% { transform: rotate(0deg); }
-  30% { transform: rotate(-6deg); }
-  70% { transform: rotate(6deg); }
 }
 
 @keyframes icon-pulse {

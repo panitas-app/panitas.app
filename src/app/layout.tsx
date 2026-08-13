@@ -96,7 +96,7 @@ export default function RootLayout({
         <LocalBusinessSchema />
         <WebPageSchema title="Panitas | Software Administrativo para Negocios en Venezuela" description="Software administrativo en la nube para controlar inventario, vender online con POS, agendar citas y administrar clientes. Diseñado para negocios venezolanos. Prueba gratis 14 días." path="" />
       </head>
-      <body className="min-h-full flex flex-col font-body bg-white text-[#050505]">
+      <body className="min-h-full flex flex-col font-body bg-background text-foreground">
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TDP569Q9"
 height={0} width={0} style={{ display: "none", visibility: "hidden" }}></iframe></noscript>
         <SessionProvider>

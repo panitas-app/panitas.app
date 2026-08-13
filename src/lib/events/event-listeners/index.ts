@@ -20,6 +20,7 @@ import { registerInboxListener } from "./inbox.listener"
 import { registerCopilotListener, type CopilotEventRecord } from "./copilot.listener"
 import { registerCommunicationListener, type CommunicationEventRecord } from "./communication.listener"
 import { registerKnowledgeListener, type KnowledgeEventRecord, type KnowledgeListener, type KnowledgeListenerOptions, type KnowledgeListenerState } from "./knowledge.listener"
+import { registerAttentionListener } from "./attention.listener"
 import type { BusinessMemoryEngine } from "@/lib/business-memory"
 
 export {
@@ -93,6 +94,10 @@ export {
   type KnowledgeListenerOptions,
   type KnowledgeListenerState,
 } from "./knowledge.listener"
+export {
+  registerAttentionListener,
+  type AttentionListenerOptions,
+} from "./attention.listener"
 
 export interface EventListenersOptions {
   history?: EventHistoryStore
@@ -105,6 +110,8 @@ export interface EventListenersOptions {
   onCopilotEvent?: (record: CopilotEventRecord) => void
   onCommunicationEvent?: (record: CommunicationEventRecord) => void
   onKnowledgeEvent?: (record: KnowledgeEventRecord) => void
+  /** Re-sync de atención (FASE 8C): re-evalúa reglas sobre datos reales. */
+  attentionSync?: (storeId: string) => void | Promise<void>
 }
 
 export interface EventListenersBundle {
@@ -154,6 +161,9 @@ export function registerEventListeners(bus: EventBus, options: EventListenersOpt
     registerKnowledgeListener(bus, {
       onEvent: options.onKnowledgeEvent,
     }).register(),
+    registerAttentionListener(bus, {
+      sync: options.attentionSync,
+    }),
   ]
 
   return {

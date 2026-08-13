@@ -10,6 +10,7 @@
 import type { PrismaClient } from "@prisma/client"
 import type { InboxContext } from "@/lib/inbox"
 import type { MetaChannel } from "./config"
+import { isAllowedMetaMediaUrl, MEDIA_FETCH_TIMEOUT_MS } from "@/lib/platform/webhooks/ssrf"
 
 export const META_FALLBACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320">
   <rect width="480" height="320" fill="#f1f5f9"/>
@@ -62,10 +63,15 @@ export async function fetchMetaMedia(
   url: string,
   accessToken: string,
 ): Promise<{ bytes: Uint8Array<ArrayBuffer>; contentType: string } | null> {
+  // SSRF guard: solo hosts de Meta, sin redirects, con timeout.
+  if (!isAllowedMetaMediaUrl(url)) return null
   const attempts: Array<string | undefined> = [accessToken, undefined]
   for (const token of attempts) {
     try {
-      const res = await fetch(token ? `${url}?access_token=${encodeURIComponent(token)}` : url)
+      const res = await fetch(token ? `${url}?access_token=${encodeURIComponent(token)}` : url, {
+        redirect: "error",
+        signal: AbortSignal.timeout(MEDIA_FETCH_TIMEOUT_MS),
+      })
       if (!res.ok) continue
       const bytes = new Uint8Array(await res.arrayBuffer())
       const contentType = res.headers.get("content-type") || "application/octet-stream"

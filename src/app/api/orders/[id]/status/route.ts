@@ -4,138 +4,69 @@ import { requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
 import { sendEmail } from "@/lib/email"
 import { templateOrderShipped } from "@/lib/email-templates"
-import { createAuditEntry } from "@/lib/audit"
-import { eventService } from "@/events/event.service"
+import { OrderService } from "@/services/order.service"
+import { toServiceResponse } from "@/services/http"
+import type { StoreServiceContext } from "@/services/context"
+
+const orderService = new OrderService()
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const csrf = csrfGuard(req)
   if (csrf) return csrf
+
   try {
     const { store, userId } = await requireRole(["admin", "manager"])
     const { id } = await params
     const body = await req.json()
     const { status } = body
 
-    const validStatuses = ["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"]
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Estado inválido" }, { status: 400 })
+    const ctx: StoreServiceContext = {
+      storeId: store.id,
+      userId,
+      plan: store.plan,
+      storeName: store.name,
+      storeEmail: store.email,
     }
 
-    const existing = await prisma.order.findUnique({ where: { id }, select: { storeId: true, status: true } })
-    if (!existing || existing.storeId !== store.id) {
-      return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
-    }
-
-    // If cancelling, restore stock and update customer totals
-    if (status === "cancelled") {
-      const order = await prisma.order.findUnique({
-        where: { id },
-        select: { status: true, total: true, customerId: true, orderNumber: true, items: { select: { productId: true, quantity: true } } },
-      })
-      if (order && order.status !== "cancelled") {
-        for (const item of order.items) {
-          const restored = await prisma.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } },
-          })
-          await prisma.stockMovement.create({
-            data: {
-              type: "return",
-              quantity: item.quantity,
-              balance: restored.stock,
-              concept: `Cancelación #${order.orderNumber}`,
-              reference: id,
-              productId: item.productId,
-              storeId: store.id,
-            },
-          })
-        }
-        if (order.customerId) {
-          await prisma.customer.update({
-            where: { id: order.customerId },
-            data: {
-              totalSpent: { decrement: order.total },
-              totalOrders: { decrement: 1 },
-            },
-          })
-        }
-      }
-    }
-
-    // NOTE: update + include triggers interactive transactions in Neon HTTP — do them separately
-    await prisma.order.update({
-      where: { id },
-      data: { status },
-    })
-
-    const updated = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        items: { include: { product: { select: { name: true } } } },
-        payments: {
-          include: { paymentAccount: { select: { bankName: true, accountNumber: true, accountHolder: true } } },
-        },
-        store: { select: { name: true, whatsapp: true } },
-      },
-    })
+    // La cancelación atómica (stock, totales de cliente, crédito/cuotas, audit y
+    // eventos) vive en OrderService.updateStatus — una sola implementación para
+    // la UI y las herramientas del agente.
+    const updated = await orderService.updateStatus(ctx, id, status)
 
     if (!updated) {
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
     }
 
-    await createAuditEntry({ action: "order.status_changed", entity: "Order", entityId: id, metadata: { oldStatus: existing.status, newStatus: status }, storeId: store.id, userId })
-
-    // ─── Events: sale/order cancelled ───
-    if (status === "cancelled" && existing.status !== "cancelled") {
-      eventService.emit("sale.cancelled", {
-        orderId: id,
-        storeId: store.id,
-        orderNumber: updated.orderNumber,
-        total: updated.total,
-      })
-      eventService.emit("order.cancelled", {
-        orderId: id,
-        storeId: store.id,
-        orderNumber: updated.orderNumber,
-        total: updated.total,
-      })
-
-      if (updated.customerId) {
-        const customer = await prisma.customer.findUnique({
-          where: { id: updated.customerId },
-          select: { name: true, totalSpent: true, totalOrders: true },
-        })
-        if (customer) {
-          eventService.emit("customer.updated", {
-            customerId: updated.customerId,
-            storeId: store.id,
-            name: customer.name,
-            totalSpent: customer.totalSpent,
-            totalOrders: customer.totalOrders,
-          })
-        }
-      }
-    }
-
-    // Send "dispatched" email to customer when status changes to shipped
     if (status === "shipped" && updated.customerEmail) {
       sendEmail(
         updated.customerEmail,
-        `¡Tu pedido #${updated.orderNumber} ha sido despachado! — ${updated.store?.name || "Tu tienda"}`,
-        templateOrderShipped(updated.customerName, updated.orderNumber, updated.store?.name || "Tu tienda"),
+        `¡Tu pedido #${updated.orderNumber} ha sido despachado! — ${store.name || "Tu tienda"}`,
+        templateOrderShipped(updated.customerName, updated.orderNumber, store.name || "Tu tienda"),
         "order_shipped"
       ).catch(e => console.error("[shipped email error]", e))
     }
 
-    return NextResponse.json(updated)
+    // Respuesta con el mismo shape del detalle (GET /api/orders/[id]).
+    const [payments, storeInfo, digitalDeliveries] = await Promise.all([
+      prisma.orderPayment.findMany({
+        where: { orderId: id },
+        include: { paymentAccount: true },
+      }),
+      prisma.store.findUnique({
+        where: { id: store.id },
+        select: { name: true, whatsapp: true, email: true, phone: true },
+      }),
+      prisma.digitalDelivery.findMany({
+        where: { orderItem: { orderId: id } },
+        include: { orderItem: { select: { id: true, productName: true } } },
+      }),
+    ])
+
+    return NextResponse.json({ ...updated, payments, store: storeInfo, digitalDeliveries })
   } catch (error) {
     if (error instanceof Error && error.message.includes("No tienes")) {
       return NextResponse.json({ error: error.message }, { status: 403 })
     }
-    if (error instanceof Error && (error.message.includes("pendiente de pago") || error.message.includes("plan"))) {
-      return NextResponse.json({ error: error.message }, { status: 402 })
-    }
-    console.error("Error updating order status:", error)
-    return NextResponse.json({ error: "Error al actualizar el estado" }, { status: 500 })
+    return toServiceResponse(error)
   }
 }

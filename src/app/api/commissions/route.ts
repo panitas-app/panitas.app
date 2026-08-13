@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getCurrentStore, requireRole } from "@/lib/permissions"
 import { csrfGuard } from "@/lib/csrf"
 import { getPaginationParams, paginatedResponse } from "@/lib/pagination"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
 
 export async function GET(request: NextRequest) {
   const current = await getCurrentStore()
@@ -22,8 +23,8 @@ export async function GET(request: NextRequest) {
   if (status) where.status = status
   if (from || to) {
     where.createdAt = {}
-    if (from) where.createdAt.gte = new Date(from)
-    if (to) where.createdAt.lte = new Date(to)
+    if (from) where.createdAt.gte = startOfLocalDay(from)
+    if (to) where.createdAt.lte = endOfLocalDay(to)
   }
 
   const [items, total] = await Promise.all([

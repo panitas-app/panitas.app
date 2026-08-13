@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { WhatsAppProvider } from "@/lib/communication"
 import { readWhatsAppAppConfig } from "@/lib/whatsapp"
 import { ChannelConnectionService } from "@/lib/whatsapp/connection-service"
+import { isAllowedMetaMediaUrl, MEDIA_FETCH_TIMEOUT_MS } from "@/lib/platform/webhooks/ssrf"
 import { requireInboxStore } from "../../../../_helpers"
 
 export const runtime = "nodejs"
@@ -56,7 +57,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const media = await provider.downloadMedia(mediaId)
     if (!media.url) return fallbackResponse()
 
-    const graphRes = await fetch(`${media.url}?access_token=${encodeURIComponent(config.accessToken)}`)
+    // SSRF guard: solo hosts de Meta (graph/cdn), sin redirects, con timeout.
+    if (!isAllowedMetaMediaUrl(media.url)) return fallbackResponse()
+
+    const graphRes = await fetch(`${media.url}?access_token=${encodeURIComponent(config.accessToken)}`, {
+      redirect: "error",
+      signal: AbortSignal.timeout(MEDIA_FETCH_TIMEOUT_MS),
+    })
     if (!graphRes.ok) return fallbackResponse()
 
     const bytes = Buffer.from(await graphRes.arrayBuffer())

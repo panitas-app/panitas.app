@@ -42,10 +42,10 @@ function MonthlyGroupedBars({ points }: { points: BicMonthlyPoint[] }) {
     <div className="space-y-4">
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-emerald-500" /> Ingresos
+          <span className="size-2.5 rounded-sm bg-success" /> Ingresos
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-sm bg-rose-500" /> Gastos
+          <span className="size-2.5 rounded-sm bg-destructive" /> Gastos
         </span>
       </div>
       <div className="flex h-48 items-end gap-1.5 overflow-x-auto pb-1">
@@ -53,12 +53,12 @@ function MonthlyGroupedBars({ points }: { points: BicMonthlyPoint[] }) {
           <div key={p.month} className="group flex min-w-8 flex-1 flex-col items-center gap-1">
             <div className="flex h-36 w-full items-end justify-center gap-1">
               <div
-                className="w-1/2 max-w-5 rounded-t bg-emerald-500 transition-all"
+                className="w-1/2 max-w-5 rounded-t bg-success transition-all"
                 style={{ height: `${(p.revenue / maxVal) * 100}%` }}
                 title={`${p.label}: ingresos $${p.revenue.toFixed(2)}`}
               />
               <div
-                className="w-1/2 max-w-5 rounded-t bg-rose-500 transition-all"
+                className="w-1/2 max-w-5 rounded-t bg-destructive transition-all"
                 style={{ height: `${(p.expenses / maxVal) * 100}%` }}
                 title={`${p.label}: gastos $${p.expenses.toFixed(2)}`}
               />

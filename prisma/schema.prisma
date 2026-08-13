@@ -323,6 +323,10 @@ model Store {
   memories BusinessMemory[]
   recommendations Recommendation[]
 
+  // SMART NOTIFICATIONS & ATTENTION CENTER (FASE 8C)
+  attentionItems    AttentionItem[]
+  attentionSettings AttentionSettings?
+
   // Cobranza inteligente (FASE 6B)
   collectionSettings CollectionSettings?
   collectionTemplates CollectionTemplate[]
@@ -350,6 +354,13 @@ model Store {
   knowledgeCategories  KnowledgeCategory[]
   knowledgeTags        KnowledgeTag[]
   knowledgeHistory     KnowledgeHistory[]
+
+  // Platform — Public API + Webhooks + Extensions (FASE 8D)
+  apiKeys             ApiKey[]
+  apiIdempotencies    ApiIdempotency[]
+  webhookSubscriptions WebhookSubscription[]
+  webhookDeliveries   WebhookDelivery[]
+  extensions          Extension[]
 }
 
 model StoreVisit {
@@ -621,8 +632,8 @@ model OrderItem {
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   employeeId String?
   employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
@@ -759,6 +770,7 @@ model CashRegisterSession {
   totalCash      Float    @default(0)
   totalTransfer  Float    @default(0)
   totalPagoMovil Float    @default(0)
+  totalBinancePay Float   @default(0)
   totalDivisas   Float    @default(0)
   totalCard      Float    @default(0)
   totalCredit    Float    @default(0)
@@ -900,7 +912,7 @@ model SupplierInvoice {
   storeId    String
   store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
   payments SupplierPayment[]
 
@@ -925,7 +937,7 @@ model SupplierPayment {
   storeId    String
   store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
 
   invoiceId String?
   invoice   SupplierInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
@@ -2240,4 +2252,181 @@ model KnowledgeEmbedding {
   document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
+}
+
+// ─── SMART NOTIFICATIONS & ATTENTION CENTER (FASE 8C) ───────────────────────
+// Atención = situaciones que requieren acción (NO eventos ni "novedades").
+// Cada fila es UNA situación deduplicada por `dedupeKey` (type:entityId).
+// Los estados activos son new, acknowledged y snoozed; resolved y dismissed
+// cierran la situación y liberan el dedupeKey para una futura ocurrencia.
+// Las prioridades usan una sola escala (critical|high|medium|low); en v1
+// "severity" y "priority" son la misma escala (la prioridad es derivada de
+// datos reales por las reglas, nunca inventada por IA).
+model AttentionItem {
+  id             String   @id @default(cuid())
+  type           String   // inventory.out_of_stock, credit.overdue, ...
+  priority       String   @default("medium") // critical, high, medium, low
+  status         String   @default("new") // new, acknowledged, snoozed, resolved, dismissed
+  title          String
+  description    String
+  recommendation String?  // qué hacer, anclado en datos reales (NUNCA inventado)
+  source         String   @default("detector") // detector, event, manual
+  entityType     String   // product, order, installment, supplier, inbox_conversation, channel, ...
+  entityId       String
+  action         String?  // JSON { label, href, external? } — deep link
+  metadata       String?  // JSON serializado (datos extra de la situación)
+  dedupeKey      String   // `${type}:${entityId}`
+  createdBy      String?  // userId si source = manual
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  resolvedAt     DateTime?
+  snoozedUntil   DateTime?
+
+  storeId String
+  store   Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status, createdAt])
+  @@index([storeId, status, priority])
+  @@index([storeId, type, status])
+  @@index([storeId, dedupeKey])
+  @@index([dedupeKey])
+  @@index([entityType, entityId])
+}
+
+// Preferencias de atención por negocio: qué tipos generan items, prioridad
+// mínima y horario de silencio para notificaciones externas (canales futuros).
+model AttentionSettings {
+  id        String   @id @default(cuid())
+  enabledTypes  String @default("[]") // JSON array de AttentionType habilitados
+  minPriority   String @default("low") // no se crean items por debajo de esta prioridad
+  quietHoursStart String? // "22:00" (HH:mm local)
+  quietHoursEnd   String? // "08:00" (HH:mm local)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeId String @unique
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+}
+
+// ==========================================================================
+// PLATFORM — PUBLIC API + WEBHOOKS + EXTENSIONS (FASE 8D)
+// ==========================================================================
+
+// API Key para integraciones servidor-servidor (Public API v1).
+// Nunca se almacena el secreto en texto plano: solo hashedSecret (SHA-256).
+// El secreto completo se muestra UNA vez al crear; keyPrefix permite lookup.
+model ApiKey {
+  id           String    @id @default(cuid())
+  storeId      String
+  name         String
+  keyPrefix    String    // primeros caracteres del secreto (lookup, no sensible)
+  hashedSecret String    // SHA-256 hex del secreto completo
+  permissions  String    @default("[]") // JSON array "products:read", "orders:write", ...
+  status       String    @default("active") // active | revoked
+  lastUsedAt   DateTime?
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  createdBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([keyPrefix])
+  @@index([storeId, status])
+}
+
+// Idempotencia de la Public API: guarda la respuesta de operaciones sensibles
+// para devolver la misma respuesta si el request se repite (Idempotency-Key).
+model ApiIdempotency {
+  id           String   @id @default(cuid())
+  storeId      String
+  apiKeyId     String?
+  key          String   // Idempotency-Key del cliente
+  method       String
+  path         String
+  statusCode   Int
+  responseBody String   // JSON del body de respuesta
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, key])
+  @@index([storeId, key])
+  @@index([createdAt])
+}
+
+// Suscripción de webhook: endpoint externo + eventos + secreto HMAC.
+model WebhookSubscription {
+  id                  String   @id @default(cuid())
+  storeId             String
+  name                String
+  endpoint            String   // URL validada contra SSRF
+  events              String   @default("[]") // JSON array de event types
+  secret              String   // secreto HMAC-SHA256 para firmar payloads
+  status              String   @default("active") // active | paused | dead_letter
+  failureCount        Int      @default(0)
+  lastDeliveryAt      DateTime?
+  lastDeliveryStatus  String?
+  createdBy           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  store      Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([storeId])
+  @@index([storeId, status])
+}
+
+// Registro de cada entrega de webhook (deduplicación por eventId).
+model WebhookDelivery {
+  id             String   @id @default(cuid())
+  storeId        String
+  subscriptionId String
+  eventId        String   // id único del Business Event (dedupe)
+  eventType      String
+  status         String   @default("pending") // pending | success | failed | dead
+  attempts       Int      @default(0)
+  lastAttemptAt  DateTime?
+  nextRetryAt    DateTime?
+  responseStatus Int?
+  responseBody   String?
+  error          String?
+  latencyMs      Int?
+  payload        String?  // JSON del payload firmado enviado
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  store        Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, eventId])
+  @@index([storeId, createdAt])
+  @@index([storeId, status])
+  @@index([subscriptionId, createdAt])
+}
+
+// Modelo de extensión (abstracción conceptual; sin ejecución de código).
+// Tipos: webhook_integration | api_integration | channel_integration | automation_integration
+model Extension {
+  id            String   @id @default(cuid())
+  storeId       String
+  name          String
+  description   String?
+  type          String   @default("api_integration")
+  status        String   @default("draft") // draft | active | disabled | revoked
+  permissions   String   @default("[]") // JSON array "orders:read", ...
+  configuration String?  @default("{}") // JSON de configuración (sin secrets sensibles)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([storeId, status])
 }

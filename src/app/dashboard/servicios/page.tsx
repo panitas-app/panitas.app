@@ -413,7 +413,7 @@ export default function ServiciosPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-heading font-extrabold text-[#102A43]">
+          <h1 className="text-2xl font-heading font-extrabold text-foreground">
             Servicios
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -439,7 +439,7 @@ export default function ServiciosPage() {
           <div className="size-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <ImageIcon className="size-7 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-bold text-[#102A43] mb-1">
+          <h3 className="text-lg font-bold text-foreground mb-1">
             No hay servicios
           </h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-6">
@@ -493,7 +493,7 @@ export default function ServiciosPage() {
               </div>
 
               <div className="p-4">
-                <h3 className="font-bold text-[#102A43] text-sm leading-tight mb-2">
+                <h3 className="font-bold text-foreground text-sm leading-tight mb-2">
                   {s.name}
                 </h3>
 
@@ -504,7 +504,7 @@ export default function ServiciosPage() {
                 )}
 
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="flex items-center gap-1 font-semibold text-[#102A43]">
+                  <span className="flex items-center gap-1 font-semibold text-foreground">
                     <DollarSign className="size-3.5 text-muted-foreground" />
                     {s.price.toFixed(2)}
                   </span>

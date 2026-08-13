@@ -41,42 +41,66 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!session) return NextResponse.json({ error: "Caja no encontrada o ya cerrada" }, { status: 400 })
 
   if (body.action === "close") {
-    // Fetch all linked orders to calculate totals
-    const orders = await prisma.order.findMany({
-      where: { cashRegisterSessionId: id },
-      include: { payments: true, installments: true },
-    })
+    const closedAt = new Date()
+    try {
+      // Cierre atómico (FASE 8G): los totales se calculan y el cambio de estado se
+      // hace en la misma transacción. El `updateMany` condicional sobre `status:
+      // "open"` impide el doble cierre bajo concurrencia.
+      const updated = await prisma.$transaction(async (tx) => {
+        const orders = await tx.order.findMany({
+          where: { cashRegisterSessionId: id, status: { not: "cancelled" } },
+          include: { payments: true, installments: true },
+        })
 
-    let totalCash = 0; let totalTransfer = 0; let totalPagoMovil = 0
-    let totalCredit = 0
-    let totalSales = 0; const totalOrders = orders.length
+        let totalCash = 0; let totalTransfer = 0; let totalPagoMovil = 0
+        let totalBinancePay = 0; let totalCard = 0; let totalDivisas = 0
+        let totalCredit = 0
+        let totalSales = 0; const totalOrders = orders.length
 
-    for (const order of orders) {
-      totalSales += order.total
-      for (const pm of order.payments) {
-        switch (pm.method) {
-          case "cash": totalCash += pm.amount; break
-          case "bank_transfer": totalTransfer += pm.amount; break
-          case "pago_movil": totalPagoMovil += pm.amount; break
+        for (const order of orders) {
+          totalSales += order.total
+          for (const pm of order.payments) {
+            // Solo pagos verificados: una transferencia pendiente aún no es cobro.
+            if (pm.status !== "verified") continue
+            switch (pm.method) {
+              case "cash": totalCash += pm.amount; break
+              case "bank_transfer": totalTransfer += pm.amount; break
+              case "pago_movil": totalPagoMovil += pm.amount; break
+              case "binancepay": totalBinancePay += pm.amount; break
+              case "card": totalCard += pm.amount; break
+              case "divisas": totalDivisas += pm.amount; break
+            }
+          }
+          // Por cobrar = cuotas no pagadas (monto total menos lo ya abonado).
+          for (const inst of order.installments) {
+            if (inst.status === "paid") continue
+            totalCredit += inst.amount - (inst.paidAmount ?? 0)
+          }
         }
-      }
-      for (const inst of order.installments) {
-        if (inst.status === "pending") totalCredit += inst.amount
-      }
-    }
 
-    const updated = await prisma.cashRegisterSession.update({
-      where: { id },
-      data: {
-        status: "closed",
-        closedAt: new Date(),
-        closedBy: current.userId,
-        notes: body.notes || null,
-        totalCash, totalTransfer, totalPagoMovil, totalCredit,
-        totalSales, totalOrders,
-      },
-    })
-    return NextResponse.json(updated)
+        const flipped = await tx.cashRegisterSession.updateMany({
+          where: { id, storeId: current.store.id, status: "open" },
+          data: {
+            status: "closed",
+            closedAt,
+            closedBy: current.userId,
+            notes: body.notes || null,
+            totalCash, totalTransfer, totalPagoMovil, totalBinancePay, totalCard, totalDivisas,
+            totalCredit, totalSales, totalOrders,
+          },
+        })
+        if (flipped.count === 0) {
+          throw new Error("Caja ya cerrada")
+        }
+        return tx.cashRegisterSession.findUnique({ where: { id } })
+      })
+      return NextResponse.json(updated)
+    } catch (e: any) {
+      return NextResponse.json(
+        { error: e?.message === "Caja ya cerrada" ? "Caja ya cerrada" : "No se pudo cerrar la caja. Intenta nuevamente." },
+        { status: 400 }
+      )
+    }
   }
 
   return NextResponse.json({ error: "Acción no válida" }, { status: 400 })

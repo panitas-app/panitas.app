@@ -85,9 +85,9 @@ export function DrillCard({
   const [open, setOpen] = useState(false)
   const accents: Record<string, string> = {
     brand: "bg-brand-primary/10 text-brand-primary",
-    emerald: "bg-emerald-500/10 text-emerald-600",
-    rose: "bg-rose-500/10 text-rose-600",
-    amber: "bg-amber-500/10 text-amber-600",
+    emerald: "bg-success/10 text-success",
+    rose: "bg-destructive/10 text-destructive",
+    amber: "bg-warning/10 text-warning",
     primary: "bg-primary/10 text-primary",
   }
   return (
@@ -144,7 +144,7 @@ export function BicProgressBar({
 }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0
   const barClass =
-    tone === "success" ? "bg-emerald-500" : tone === "danger" ? "bg-rose-500" : "bg-primary"
+    tone === "success" ? "bg-success" : tone === "danger" ? "bg-destructive" : "bg-primary"
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
       <div className={cn("h-full rounded-full transition-all", barClass)} style={{ width: `${pct}%` }} />

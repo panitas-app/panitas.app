@@ -8,7 +8,10 @@ export async function GET() {
     storeInfo = await getCurrentStore()
     if (!storeInfo) throw new Error("No tienes acceso a esta tienda")
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 401 })
+    return NextResponse.json(
+      { error: e?.message?.includes("No tienes") ? "No tienes acceso a esta tienda" : "Error al cargar los datos. Intenta nuevamente." },
+      { status: 401 }
+    )
   }
 
   const products = await prisma.product.findMany({

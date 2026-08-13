@@ -36,8 +36,8 @@ export default async function EditProductPage({
     <div className="w-full flex flex-col items-center p-4 md:p-8 bg-slate-50/50">
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-slate-900">Editar Producto</h1>
-          <p className="text-sm text-slate-500">Actualiza los detalles y la configuración de tu producto</p>
+          <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">Editar Producto</h1>
+          <p className="text-sm text-muted-foreground">Actualiza los detalles y la configuración de tu producto</p>
         </div>
         <div className="text-left">
           <ProductForm product={product} categories={categories} />

@@ -86,7 +86,10 @@ export async function PUT(request: NextRequest) {
   try {
     storeInfo = await requireRole(["admin"])
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 403 })
+    return NextResponse.json(
+      { error: e?.message?.includes("No tienes") ? "No tienes permisos para esta acción" : "No se pudo actualizar la tienda. Intenta nuevamente." },
+      { status: 403 }
+    )
   }
 
   let body: any

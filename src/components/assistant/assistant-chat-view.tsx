@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { History, Lightbulb, LineChart, Package, Sparkles, TrendingUp } from "lucide-react"
+import { History, Sparkles } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { AssistantChat } from "@/hooks/use-assistant-chat"
@@ -9,13 +9,7 @@ import { ChatMessage } from "./chat-message"
 import { ChatThinking } from "./chat-thinking"
 import { ChatInput } from "./chat-input"
 import { ChatHistorySidebar } from "./chat-history-sidebar"
-
-const SUGGESTIONS = [
-  { icon: TrendingUp, label: "¿Cómo van mis ventas hoy?" },
-  { icon: Package, label: "¿Qué producto se agotará pronto?" },
-  { icon: LineChart, label: "¿Cómo está mi negocio?" },
-  { icon: Lightbulb, label: "¿Qué me recomiendas revisar?" },
-]
+import { AssistantSuggestions } from "./assistant-suggestions"
 
 /**
  * Vista de chat estilo ChatGPT (FASE 5B).
@@ -71,26 +65,7 @@ export function AssistantChatView({ chat }: { chat: AssistantChat }) {
                 {emptyState && !chat.loading && !chat.loadingSummary ? (
                   <div className="flex flex-col items-center gap-4 pt-8 text-center">
                     <p className="text-sm text-muted-foreground">Prueba preguntar algo como:</p>
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      {SUGGESTIONS.map((s, index) => {
-                        const Icon = s.icon
-                        return (
-                          <button
-                            key={s.label}
-                            type="button"
-                            onClick={() => chat.handleSend(s.label)}
-                            disabled={busy}
-                            className={cn(
-                              "inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/40 hover:text-foreground disabled:opacity-50",
-                              index === 0 && "border-primary/30",
-                            )}
-                          >
-                            <Icon className="size-4" />
-                            {s.label}
-                          </button>
-                        )
-                      })}
-                    </div>
+                    <AssistantSuggestions onSelect={chat.handleSend} disabled={busy} variant="panel" />
                   </div>
                 ) : null}
               </div>

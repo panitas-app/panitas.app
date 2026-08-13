@@ -174,6 +174,13 @@ export const EVENT_META: Record<string, EventMeta> = {
   "memory.created": { category: "assistant", aggregateType: "memory", description: "[legacy] Recuerdo creado." },
   "memory.updated": { category: "assistant", aggregateType: "memory", description: "[legacy] Recuerdo actualizado." },
   "memory.deleted": { category: "assistant", aggregateType: "memory", description: "[legacy] Recuerdo eliminado." },
+
+  // ── SMART NOTIFICATIONS & ATTENTION CENTER (FASE 8C) ─────────────────
+  "attention.item.created": { category: "system", aggregateType: "attention_item", description: "Se creó una situación que requiere atención." },
+  "attention.item.acknowledged": { category: "system", aggregateType: "attention_item", description: "El usuario reconoció una situación de atención." },
+  "attention.item.resolved": { category: "system", aggregateType: "attention_item", description: "Una situación de atención se resolvió." },
+  "attention.item.dismissed": { category: "system", aggregateType: "attention_item", description: "El usuario descartó una situación de atención." },
+  "attention.item.snoozed": { category: "system", aggregateType: "attention_item", description: "El usuario pospuso una situación de atención." },
 }
 
 export type BusinessEventName = keyof typeof EVENT_META

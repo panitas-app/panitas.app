@@ -1,5 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { startOfLocalDay, endOfLocalDay } from "@/lib/date-ranges"
+import { serviceError } from "@/services/errors"
 
 export type OrderFilters = {
   storeId: string
@@ -13,7 +15,7 @@ export type OrderFilters = {
 }
 
 export class OrderRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(private readonly db: PrismaClient | Prisma.TransactionClient = prisma) {}
 
   private buildWhere(filters: OrderFilters): Prisma.OrderWhereInput {
     const where: Prisma.OrderWhereInput = { storeId: filters.storeId }
@@ -28,8 +30,8 @@ export class OrderRepository {
     }
     if (filters.from || filters.to) {
       where.createdAt = {}
-      if (filters.from) where.createdAt.gte = new Date(filters.from)
-      if (filters.to) where.createdAt.lte = new Date(filters.to)
+      if (filters.from) where.createdAt.gte = startOfLocalDay(filters.from)
+      if (filters.to) where.createdAt.lte = endOfLocalDay(filters.to)
     }
     return where
   }
@@ -84,6 +86,10 @@ export class OrderRepository {
     return this.db.store.findUnique({ where: { id } })
   }
 
+  findCashRegisterSession(id: string) {
+    return this.db.cashRegisterSession.findUnique({ where: { id } })
+  }
+
   findCouponById(id: string) {
     return this.db.coupon.findUnique({ where: { id } })
   }
@@ -116,11 +122,25 @@ export class OrderRepository {
     return this.db.sellerCommission.create({ data })
   }
 
-  decrementStock(productId: string, quantity: number) {
-    return this.db.product.update({
-      where: { id: productId },
+  async decrementStock(productId: string, quantity: number) {
+    // Decremento atómico condicional: bajo concurrencia garantiza que el stock
+    // nunca baje de cero (update + check en un solo statement).
+    const { count } = await this.db.product.updateMany({
+      where: { id: productId, stock: { gte: quantity } },
       data: { stock: { decrement: quantity } },
     })
+    if (count === 0) {
+      const product = await this.db.product.findUnique({ where: { id: productId } })
+      throw serviceError(
+        product
+          ? `Stock insuficiente para "${product.name}". Disponible: ${product.stock}, solicitado: ${quantity}`
+          : "Producto no encontrado",
+        400
+      )
+    }
+    const updated = await this.db.product.findUnique({ where: { id: productId } })
+    if (!updated) throw serviceError("Producto no encontrado", 400)
+    return updated
   }
 
   incrementStock(productId: string, quantity: number) {

@@ -299,6 +299,24 @@ export class SupplierService {
 
   async remove(ctx: StoreServiceContext, id: string) {
     const supplier = await this.loadSupplier(ctx, id)
+
+    // FASE 8G: no se puede borrar un proveedor con cuentas por pagar abiertas:
+    // destruiría el historial de facturas/pagos vía cascada.
+    const openInvoices = await this.db.supplierInvoice.findMany({
+      where: { supplierId: id, status: { notIn: ["paid", "cancelled"] } },
+      select: { amount: true, paidAmount: true },
+    })
+    const openBalance = openInvoices.reduce(
+      (s, inv) => s + Math.max(0, inv.amount - (inv.paidAmount ?? 0)),
+      0
+    )
+    if (openBalance > 0.001) {
+      throw serviceError(
+        `No se puede eliminar: el proveedor tiene un saldo pendiente de $${openBalance.toFixed(2)}`,
+        400
+      )
+    }
+
     await this.db.supplier.delete({ where: { id } })
 
     await createAuditEntry({
@@ -414,37 +432,19 @@ export class SupplierService {
     }
 
     const paidAt = input.date ?? new Date()
-    let remaining = amount
     let applied = 0
-    for (const inv of open) {
-      if (remaining <= 0.001) break
-      const due = inv.amount - (inv.paidAmount ?? 0)
-      const apply = Math.min(due, remaining)
-      const newPaid = (inv.paidAmount ?? 0) + apply
-      remaining -= apply
-      applied += apply
 
-      const fullyPaid = newPaid >= inv.amount - 0.001
-      await this.db.supplierInvoice.update({
-        where: { id: inv.id },
-        data: {
-          paidAmount: newPaid,
-          status: fullyPaid ? "paid" : inv.status === "pending" ? "partial" : inv.status,
-        },
-      })
+    // FASE 8G: la cascada de facturas y la creación del pago son atómicas sobre la
+    // base real (un fallo a mitad de camino revierte las facturas ya abonadas).
+    // Con un `db` inyectado (tests) se ejecuta directo sobre el doble.
+    const isRealDb = this.db === prisma
+    if (isRealDb) {
+      applied = await prisma.$transaction((tx) =>
+        this.applyPayment(tx, ctx, supplier.id, input, paidAt, amount, open)
+      )
+    } else {
+      applied = await this.applyPayment(this.db, ctx, supplier.id, input, paidAt, amount, open)
     }
-
-    await this.db.supplierPayment.create({
-      data: {
-        storeId: ctx.storeId,
-        supplierId: supplier.id,
-        amount: applied,
-        date: paidAt,
-        paymentMethod: input.paymentMethod || "cash",
-        reference: (input.reference ?? "").trim().slice(0, 120),
-        notes: input.notes?.trim() ? input.notes.trim().slice(0, 1000) : null,
-      },
-    })
 
     const newBalance = Math.max(0, totalOutstanding - applied)
     const isPartial = newBalance > 0.001
@@ -488,6 +488,56 @@ export class SupplierService {
     })
 
     return this.getDetail(ctx, supplier.id)
+  }
+
+  /**
+   * Aplica el pago en cascada (oldest-first) sobre las facturas abiertas y crea
+   * el SupplierPayment. Recibe el client de transacción (base real) o el doble
+   * de prueba; devuelve el monto total efectivamente aplicado.
+   */
+  private async applyPayment(
+    db: PrismaClient | Prisma.TransactionClient,
+    ctx: StoreServiceContext,
+    supplierId: string,
+    input: SupplierPaymentInput,
+    paidAt: Date,
+    amount: number,
+    open: Array<{ id: string; amount: number; paidAmount: number | null; status: string }>
+  ): Promise<number> {
+    let remaining = amount
+    let applied = 0
+
+    for (const inv of open) {
+      if (remaining <= 0.001) break
+      const due = inv.amount - (inv.paidAmount ?? 0)
+      const apply = Math.min(due, remaining)
+      const newPaid = (inv.paidAmount ?? 0) + apply
+      remaining -= apply
+      applied += apply
+
+      const fullyPaid = newPaid >= inv.amount - 0.001
+      await db.supplierInvoice.update({
+        where: { id: inv.id },
+        data: {
+          paidAmount: newPaid,
+          status: fullyPaid ? "paid" : inv.status === "pending" ? "partial" : inv.status,
+        },
+      })
+    }
+
+    await db.supplierPayment.create({
+      data: {
+        storeId: ctx.storeId,
+        supplierId,
+        amount: applied,
+        date: paidAt,
+        paymentMethod: input.paymentMethod || "cash",
+        reference: (input.reference ?? "").trim().slice(0, 120),
+        notes: input.notes?.trim() ? input.notes.trim().slice(0, 1000) : null,
+      },
+    })
+
+    return applied
   }
 
   // ─── Internos ───────────────────────────────────────────────────────────

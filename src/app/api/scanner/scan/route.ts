@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { triggerSessionEvent } from "@/lib/pusher"
 import { rateLimit } from "@/lib/rate-limit"
+import { verifyScannerToken } from "@/lib/scanner/session-token"
 
 export async function POST(request: NextRequest) {
   const rl = await rateLimit("scanner-scan", 60, 60 * 1000)
@@ -16,13 +17,14 @@ export async function POST(request: NextRequest) {
   try { body = await request.json() } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }) }
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 })
 
-  const { sessionId, barcode } = body
-  if (typeof sessionId !== "string" || typeof barcode !== "string" || !barcode.trim()) {
-    return NextResponse.json({ error: "sessionId y barcode son requeridos" }, { status: 400 })
+  const { sessionId, token, barcode } = body
+  if (typeof sessionId !== "string" || typeof token !== "string" || typeof barcode !== "string" || !barcode.trim()) {
+    return NextResponse.json({ error: "sessionId, token y barcode son requeridos" }, { status: 400 })
   }
 
   const session = await prisma.scannerSession.findUnique({ where: { id: sessionId } })
   if (!session) return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
+  if (!verifyScannerToken(session.token, token)) return NextResponse.json({ error: "Token inválido" }, { status: 403 })
   if (session.status !== "connected") return NextResponse.json({ error: "Sesión no está conectada" }, { status: 400 })
   if (new Date() > session.expiresAt) {
     await prisma.scannerSession.update({ where: { id: sessionId }, data: { status: "expired" } })

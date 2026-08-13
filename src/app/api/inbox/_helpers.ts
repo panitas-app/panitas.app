@@ -21,6 +21,6 @@ export async function requireInboxStore(): Promise<{ ctx: InboxContext; store: S
 
 export function inboxErrorResponse(error: unknown, fallback: string): NextResponse {
   if (isServiceError(error)) return NextResponse.json({ error: error.message }, { status: error.status })
-  const message = error instanceof Error ? error.message : fallback
-  return NextResponse.json({ error: message }, { status: 500 })
+  console.error(`[inbox] ${fallback}:`, error)
+  return NextResponse.json({ error: fallback }, { status: 500 })
 }

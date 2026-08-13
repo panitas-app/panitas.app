@@ -5,7 +5,7 @@ import { CalendarClock, History, MessageCircle, ReceiptText } from "lucide-react
 import { Card, CardContent } from "@/components/ui/card"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CreditSummary, STATE_META, daysUntil, formatDate, money, whatsappLink } from "./credit-types"
+import { CreditSummary, STATE_META, buildReminderMessage, daysUntil, formatDate, money, whatsappLink } from "./credit-types"
 
 interface CreditCardProps {
   credit: CreditSummary
@@ -20,9 +20,7 @@ export function CreditCard({ credit, onPay, onReschedule }: CreditCardProps) {
   const nextDays = credit.nextDueDate ? daysUntil(credit.nextDueDate) : null
   const isOverdue = credit.state === "overdue"
 
-  const reminder = canPay
-    ? `Hola ${credit.customerName}, te recordamos que tienes un saldo pendiente de ${money(credit.pending)} en la orden #${credit.orderNumber}. Por favor contáctanos para ponerte al día. ¡Gracias!`
-    : `Hola ${credit.customerName}, gracias por tu pago en la orden #${credit.orderNumber}.`
+  const reminder = buildReminderMessage(credit, canPay)
 
   return (
     <Card className={cn("gap-0", meta.border)}>
@@ -87,9 +85,9 @@ export function CreditCard({ credit, onPay, onReschedule }: CreditCardProps) {
               <ReceiptText /> Registrar abono
             </Button>
           )}
-          {canPay && credit.state === "overdue" && (
+          {canPay && (
             <Button size="sm" variant="outline" onClick={() => onReschedule(credit)}>
-              <CalendarClock /> Recalcular
+              <CalendarClock /> Replanificar
             </Button>
           )}
           <Link

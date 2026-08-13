@@ -148,7 +148,7 @@ export function CustomerContext({ context, conversationId, onBack, onNoteAdded }
             </Section>
 
             {context.aiRecommendations.length > 0 && (
-              <Section title="Panitas IA — recomendaciones">
+              <Section title="Panitas — recomendaciones">
                 <div className="space-y-2">
                   {context.aiRecommendations.map((recommendation) => (
                     <RecommendationCard key={recommendation.id} recommendation={recommendation} />

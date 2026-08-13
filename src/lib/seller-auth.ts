@@ -7,9 +7,11 @@ const SELLER_SECRET = (() => {
   return secret
 })()
 const COOKIE_NAME = "seller_token"
+const SELLER_TOKEN_MAX_AGE_MS = 60 * 60 * 24 * 7 * 1000 // 7 días, igual que la cookie
 
 export function createSellerToken(sellerId: string, storeId: string): string {
-  const payload = `${sellerId}:${storeId}:${Date.now()}`
+  const expiresAt = Date.now() + SELLER_TOKEN_MAX_AGE_MS
+  const payload = `${sellerId}:${storeId}:${expiresAt}`
   const hmac = crypto.createHmac("sha256", SELLER_SECRET).update(payload).digest("hex")
   return Buffer.from(`${payload}:${hmac}`).toString("base64url")
 }
@@ -21,9 +23,13 @@ export function verifySellerToken(token: string): { sellerId: string; storeId: s
     if (sepIndex < 0) return null
     const hmac = decoded.slice(sepIndex + 1)
     const payload = decoded.slice(0, sepIndex)
-    const expected = crypto.createHmac("sha256", SELLER_SECRET).update(payload).digest("hex")
-    if (hmac !== expected) return null
+    const expected = crypto.createHmac("sha256", SELLER_SECRET).update(payload).digest()
+    const received = Buffer.from(hmac, "hex")
+    if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) return null
     const parts = payload.split(":")
+    if (parts.length < 3) return null
+    const expiresAt = Number(parts[2])
+    if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null
     return { sellerId: parts[0], storeId: parts[1] }
   } catch {
     return null
@@ -38,5 +44,6 @@ export async function getSellerFromCookies(): Promise<{ sellerId: string; storeI
 }
 
 export function setSellerCookie(token: string) {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${60 * 60 * 24 * 7}`
 }

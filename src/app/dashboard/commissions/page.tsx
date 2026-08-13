@@ -92,7 +92,7 @@ export default function CommissionsPage() {
   return (
     <div className="space-y-6 p-6">
       <div data-tour="comisiones-title">
-        <h1 className="text-2xl font-bold text-accent">Comisiones</h1>
+        <h1 className="text-2xl font-bold text-foreground">Comisiones</h1>
         <p className="text-sm text-muted-foreground">Gestiona las comisiones de vendedores</p>
       </div>
 

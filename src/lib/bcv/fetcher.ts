@@ -76,13 +76,11 @@ async function httpsGet(url: string, timeout = 15000): Promise<string> {
 
 async function fetchFromDolarApi(): Promise<BcvFetchResult | null> {
   try {
-    const res = await fetch("https://ve.dolarapi.com/v1/dolares/oficial", {
-      next: { revalidate: 3600 },
-      signal: AbortSignal.timeout(10000),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    const rate = parseFloat(data.promedio)
+    const data = (await fetchWithRetry("https://ve.dolarapi.com/v1/dolares/oficial")) as {
+      promedio?: number
+      fechaActualizacion?: string | null
+    }
+    const rate = parseFloat(String(data.promedio))
     if (!Number.isFinite(rate) || rate <= 0) return null
     return {
       rate,
@@ -95,13 +93,11 @@ async function fetchFromDolarApi(): Promise<BcvFetchResult | null> {
 
 async function fetchFromPyDolarVe(): Promise<BcvFetchResult | null> {
   try {
-    const res = await fetch("https://pydolarve.org/api/v1/dollar?page=bcv", {
-      next: { revalidate: 3600 },
-      signal: AbortSignal.timeout(10000),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    const rate = parseFloat(data.promedio)
+    const data = (await fetchWithRetry("https://pydolarve.org/api/v1/dollar?page=bcv")) as {
+      promedio?: number
+      fechaActualizacion?: string | null
+    }
+    const rate = parseFloat(String(data.promedio))
     if (!Number.isFinite(rate) || rate <= 0) return null
     return {
       rate,
@@ -110,4 +106,31 @@ async function fetchFromPyDolarVe(): Promise<BcvFetchResult | null> {
   } catch {
     return null
   }
+}
+
+/**
+ * GET con timeout + reintento único con backoff corto. Fuentes externas pueden
+ * fallar transitoriamente; un intento extra evita saltar al fallback sin razón.
+ */
+async function fetchWithRetry(url: string, attempt = 0): Promise<Record<string, unknown>> {
+  const res = await fetch(url, {
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10000),
+  })
+  if (!res.ok) {
+    if (attempt === 0) {
+      await new Promise((r) => setTimeout(r, 300))
+      return fetchWithRetry(url, 1)
+    }
+    throw new Error(`HTTP ${res.status}`)
+  }
+  const data = (await res.json()) as Record<string, unknown> | null
+  if (!data || data.promedio == null) {
+    if (attempt === 0) {
+      await new Promise((r) => setTimeout(r, 300))
+      return fetchWithRetry(url, 1)
+    }
+    throw new Error("Respuesta inválida")
+  }
+  return data
 }

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url, mime: detectedMime, size: file.size })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error desconocido"
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error("Upload error:", err)
+    return NextResponse.json({ error: "No se pudo subir el archivo. Intenta nuevamente." }, { status: 500 })
   }
 }

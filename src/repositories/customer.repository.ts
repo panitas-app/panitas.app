@@ -11,7 +11,7 @@ export type CustomerListFilters = {
 }
 
 export class CustomerRepository {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(private readonly db: PrismaClient | Prisma.TransactionClient = prisma) {}
 
   private buildWhere(filters: CustomerListFilters): Prisma.CustomerWhereInput {
     const where: Prisma.CustomerWhereInput = { storeId: filters.storeId }

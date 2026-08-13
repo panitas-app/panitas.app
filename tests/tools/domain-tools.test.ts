@@ -183,8 +183,8 @@ describe("Tool System: layering (no Prisma, no repositorios)", () => {
       expect(source, `${file} must not import @/lib/prisma`).not.toContain("@/lib/prisma")
       expect(source, `${file} must not import @/repositories`).not.toContain("@/repositories")
       // Las tools delegan en una capa de servicio (nunca en Prisma/repos).
-      expect(source, `${file} must import services, analytics, knowledge or recommendations`).toMatch(
-        /@\/services\/|@\/lib\/analytics|@\/lib\/knowledge|@\/lib\/recommendations/
+      expect(source, `${file} must import a service layer`).toMatch(
+        /@\/services\/|@\/lib\/analytics|@\/lib\/knowledge|@\/lib\/recommendations|@\/lib\/attention/
       )
     }
   })

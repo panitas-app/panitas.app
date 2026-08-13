@@ -67,7 +67,7 @@ export default function AutomationsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-heading font-extrabold text-[#102A43]">Automatizaciones</h1>
+        <h1 className="text-2xl font-heading font-extrabold text-foreground">Automatizaciones</h1>
         <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowLogs(!showLogs)}>
           <List className="size-3.5" /> {showLogs ? "Ocultar historial" : "Historial"}
         </Button>
@@ -89,7 +89,7 @@ export default function AutomationsPage() {
                     <Power className="size-3.5" />
                   </Button>
                 </div>
-                <CardTitle className="text-sm font-bold text-[#102A43] mt-2">{label}</CardTitle>
+                <CardTitle className="text-sm font-bold text-foreground mt-2">{label}</CardTitle>
                 <p className="text-xs text-muted-foreground">{desc}</p>
               </CardHeader>
               <CardContent className="pt-0">
@@ -113,7 +113,7 @@ export default function AutomationsPage() {
                 {logs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between px-6 py-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#102A43]">{log.automation.name}</p>
+                      <p className="text-sm font-semibold text-foreground">{log.automation.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {log.customer?.name ? `Cliente: ${log.customer.name} · ` : ""}
                         {new Date(log.triggeredAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

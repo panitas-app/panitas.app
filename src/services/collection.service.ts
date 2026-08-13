@@ -22,6 +22,7 @@ import { createAuditEntry } from "@/lib/audit"
 import { fireDomainEvent } from "@/lib/events"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
+import { buildWhatsAppUrl, suggestCategory, suggestLevel } from "@/lib/collection"
 
 export const COLLECTION_TEMPLATE_CATEGORIES = [
   "primer_recordatorio",
@@ -285,24 +286,6 @@ export class CollectionService {
     return this.listTemplates(ctx)
   }
 
-  /** Elimina una plantilla custom (las por defecto no se eliminan, se restauran). */
-  async deleteTemplate(ctx: StoreServiceContext, id: string): Promise<void> {
-    const existing = await this.db.collectionTemplate.findFirst({ where: { id, storeId: ctx.storeId } })
-    if (!existing) throw serviceError("Plantilla no encontrada", 404)
-    if (existing.isBuiltIn) {
-      // En lugar de borrarla, restauramos su contenido por defecto.
-      const builtIn = BUILT_IN_TEMPLATES.find((t) => t.category === existing.category && t.name === existing.name)
-      if (builtIn) {
-        await this.db.collectionTemplate.update({
-          where: { id: existing.id },
-          data: { body: builtIn.body, level: builtIn.level, isActive: true },
-        })
-        return
-      }
-    }
-    await this.db.collectionTemplate.delete({ where: { id: existing.id } })
-  }
-
   // ─── Configuración ──────────────────────────────────────────────────────
 
   async getSettings(ctx: StoreServiceContext): Promise<CollectionSettingsDTO> {
@@ -386,8 +369,8 @@ export class CollectionService {
       where: { storeId: ctx.storeId, orderId: order.id, status: { not: "pending" } },
     })
 
-    const category = input.category ? this.parseCategory(input.category) : this.suggestCategory(summary.overdueDays, attempts)
-    const suggestedLevel = input.level ? this.parseLevel(input.level) : this.suggestLevel(summary.overdueDays)
+    const category = input.category ? this.parseCategory(input.category) : suggestCategory(summary.overdueDays, attempts)
+    const suggestedLevel = input.level ? this.parseLevel(input.level) : suggestLevel(summary.overdueDays)
 
     if (
       category === "primer_recordatorio" || category === "segundo_recordatorio" || category === "ultimo_aviso"
@@ -461,7 +444,7 @@ export class CollectionService {
       dueDate: summary.nextDueDate ? summary.nextDueDate.toISOString() : null,
       pending: summary.pending,
       message,
-      whatsappUrl: `https://wa.me/${this.normalizePhone(order.customerPhone)}?text=${encodeURIComponent(message)}`,
+      whatsappUrl: buildWhatsAppUrl(order.customerPhone, message),
     }
   }
 
@@ -559,7 +542,7 @@ export class CollectionService {
         lastContact && lastContact.status !== "pending" ? Math.floor((Date.now() - lastContact.createdAt.getTime()) / 86400000) : null
       const attempts = order.collectionContacts.filter((c) => c.status !== "pending").length
 
-      const suggestedLevel = this.suggestLevel(summary.overdueDays)
+      const suggestedLevel = suggestLevel(summary.overdueDays)
       results.push({
         orderId: order.id,
         orderNumber: order.orderNumber,
@@ -572,7 +555,7 @@ export class CollectionService {
         daysSinceLastContact,
         attempts,
         suggestedLevel,
-        suggestedCategory: this.suggestCategory(summary.overdueDays, attempts),
+        suggestedCategory: suggestCategory(summary.overdueDays, attempts),
       })
     }
 
@@ -603,13 +586,6 @@ export class CollectionService {
       if (value === undefined || value === null) return match
       return String(value)
     })
-  }
-
-  /** Nivel de cobranza sugerido por días de atraso (N1 ≤2d, N2 3-10d, N3 >10d). */
-  suggestLevel(daysLate: number): CollectionLevel {
-    if (daysLate >= 11) return 3
-    if (daysLate >= 3) return 2
-    return 1
   }
 
   // ─── Internos ───────────────────────────────────────────────────────────
@@ -665,13 +641,6 @@ export class CollectionService {
     const builtIn = BUILT_IN_TEMPLATES.find((t) => t.category === category)
     if (builtIn) return { name: builtIn.name, body: builtIn.body }
     throw serviceError("No hay plantilla para esta categoría", 400)
-  }
-
-  private suggestCategory(daysLate: number, attempts: number): CollectionTemplateCategory {
-    if (attempts >= 2) return "ultimo_aviso"
-    if (daysLate >= 11) return "ultimo_aviso"
-    if (daysLate >= 3) return "segundo_recordatorio"
-    return "primer_recordatorio"
   }
 
   private async loadCredit(ctx: StoreServiceContext, orderId: string) {
@@ -828,12 +797,5 @@ export class CollectionService {
       throw serviceError(`Máximo ${MAX_PAYMENT_METHODS} métodos de pago`, 400)
     }
     return cleaned
-  }
-
-  private normalizePhone(phone: string): string {
-    const digits = phone.replace(/\D/g, "")
-    if (digits.length === 0) return ""
-    if (digits.startsWith("58")) return digits
-    return `58${digits}`
   }
 }

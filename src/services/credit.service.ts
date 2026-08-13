@@ -43,6 +43,7 @@ export interface CreditKpis {
 export interface CreditSummary {
   orderId: string
   orderNumber: string
+  customerId: string | null
   customerName: string
   customerPhone: string
   createdAt: string
@@ -60,6 +61,7 @@ export interface CreditSummary {
   nextAmount: number | null
   overdueDays: number
   lastPaymentAt: string | null
+  attempts: number
 }
 
 export interface CreditTimelineEntry {
@@ -96,6 +98,10 @@ export interface CreditDetail extends CreditSummary {
 export interface CreditListResult {
   kpis: CreditKpis
   credits: CreditSummary[]
+  total: number
+  page: number
+  totalPages: number
+  hasMore: boolean
 }
 
 type RegisterPaymentInput = {
@@ -123,8 +129,10 @@ export class CreditService {
 
   // ─── Consultas ──────────────────────────────────────────────────────────
 
-  async list(ctx: StoreServiceContext, opts: { status?: string; search?: string; limit?: number } = {}): Promise<CreditListResult> {
-    const { status = "all", search, limit = 100 } = opts
+  async list(ctx: StoreServiceContext, opts: { status?: string; search?: string; limit?: number; page?: number } = {}): Promise<CreditListResult> {
+    const { status = "all", search } = opts
+    const page = Math.max(1, opts.page ?? 1)
+    const limit = Math.max(1, opts.limit ?? 20)
     const storeId = ctx.storeId
 
     const where: Prisma.OrderWhereInput = { storeId, creditTerm: { not: null } }
@@ -137,24 +145,33 @@ export class CreditService {
       ]
     }
 
-    const fetchTake = status === "all" ? limit : Math.max(limit, 400)
+    // Se cargan todos los créditos de la tienda (sin ventana): el estado se
+    // deriva en memoria desde las cuotas y los KPIs deben ser exactos sobre
+    // toda la cartera, no sobre la página actual.
     const orders = await this.db.order.findMany({
       where,
-      include: { installments: { orderBy: { number: "asc" } } },
+      include: {
+        installments: { orderBy: { number: "asc" } },
+        _count: { select: { collectionContacts: { where: { status: { not: "pending" } } } } },
+      },
       orderBy: { createdAt: "desc" },
-      take: fetchTake,
     })
 
-    const credits = orders.map((o) => this.toSummary(o, o.installments))
+    const all = orders.map((o) => this.toSummary(o, o.installments, o._count?.collectionContacts ?? 0))
+    const filtered = status === "all" ? all : all.filter((c) => this.matchesStatus(c, status))
 
-    let filtered = credits
-    if (status !== "all") {
-      filtered = credits.filter((c) => this.matchesStatus(c, status))
+    const kpis = await this.computeKpis(ctx, all)
+
+    const start = (page - 1) * limit
+    const total = filtered.length
+    return {
+      kpis,
+      credits: filtered.slice(start, start + limit),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      hasMore: start + limit < total,
     }
-
-    const kpis = await this.computeKpis(ctx, credits)
-
-    return { kpis, credits: filtered.slice(0, limit) }
   }
 
   /** Créditos activos de un cliente concreto (para cobros puntuales del agente). */
@@ -183,7 +200,7 @@ export class CreditService {
       orderBy: { createdAt: "asc" },
     })
 
-    const summary = this.toSummary(order, installments)
+    const summary = this.toSummary(order, installments, contacts.filter((c) => c.status !== "pending").length)
     const timeline = await this.buildTimeline(ctx, order, installments, payments, contacts)
 
     return {
@@ -238,52 +255,15 @@ export class CreditService {
       throw serviceError(`El monto supera el saldo pendiente de $${pendingTotal.toFixed(2)}`, 400)
     }
 
-    let remaining = amount
     let applied = 0
-    for (const inst of installments) {
-      if (remaining <= 0.001) break
-      const alreadyPaid = inst.paidAmount ?? 0
-      const due = inst.amount - alreadyPaid
-      const apply = Math.min(due, remaining)
-      const newPaid = alreadyPaid + apply
-      remaining -= apply
-      applied += apply
-
-      const fullyPaid = newPaid >= inst.amount - 0.001
-      await this.db.installment.update({
-        where: { id: inst.id },
-        data: {
-          paidAmount: newPaid,
-          status: fullyPaid ? "paid" : inst.status === "paid" ? "paid" : inst.dueDate < paidAt ? "late" : "pending",
-          ...(fullyPaid && !inst.paidAt ? { paidAt } : {}),
-        },
-      })
-    }
-
-    await this.db.orderPayment.create({
-      data: {
-        orderId: order.id,
-        method: input.method || "cash",
-        amount: applied,
-        reference: input.reference || null,
-        notes: input.notes || null,
-        paymentAccountId: input.paymentAccountId || null,
-        paidAt,
-        status: "verified",
-      },
-    })
-
-    const remainingCount = await this.db.installment.count({
-      where: { orderId: order.id, status: { not: "paid" } },
-    })
-    let completed = false
-    if (remainingCount === 0) {
-      await this.db.order.update({
-        where: { id: order.id },
-        data: { creditStatus: "completed", paymentStatus: "paid" },
-      })
-      completed = true
-    }
+    const isRealDb = this.db === prisma
+    const result = isRealDb
+      ? await prisma.$transaction(async (tx) =>
+          this.applyRegisterPayment(tx, order, input, amount, paidAt, installments)
+        )
+      : await this.applyRegisterPayment(this.db, order, input, amount, paidAt, installments)
+    applied = result.applied
+    const { completed } = result
 
     await createAuditEntry({
       action: "credit.payment",
@@ -320,6 +300,100 @@ export class CreditService {
   }
 
   /**
+   * Aplica el abono en cascada (oldest-first) y crea el OrderPayment verificado.
+   * Se ejecuta con el client de transacción sobre la base real o con el doble
+   * inyectado en los tests; devuelve `applied`, `completed` y `remainingCount`.
+   */
+  private async applyRegisterPayment(
+    db: PrismaClient | Prisma.TransactionClient,
+    order: { id: string },
+    input: RegisterPaymentInput,
+    amount: number,
+    paidAt: Date,
+    installments: Array<{ id: string; amount: number; paidAmount: number | null; status: string; dueDate: Date; paidAt: Date | null }>
+  ): Promise<{ applied: number; completed: boolean; remainingCount: number }> {
+    let remaining = amount
+    let applied = 0
+
+    for (const inst of installments) {
+      if (remaining <= 0.001) break
+      const alreadyPaid = inst.paidAmount ?? 0
+      const due = inst.amount - alreadyPaid
+      const apply = Math.min(due, remaining)
+      const newPaid = alreadyPaid + apply
+      remaining -= apply
+      applied += apply
+
+      const fullyPaid = newPaid >= inst.amount - 0.001
+      await db.installment.update({
+        where: { id: inst.id },
+        data: {
+          paidAmount: newPaid,
+          status: fullyPaid ? "paid" : inst.status === "paid" ? "paid" : inst.dueDate < paidAt ? "late" : "pending",
+          ...(fullyPaid && !inst.paidAt ? { paidAt } : {}),
+        },
+      })
+    }
+
+    await db.orderPayment.create({
+      data: {
+        orderId: order.id,
+        method: input.method || "cash",
+        amount: applied,
+        reference: input.reference || null,
+        notes: input.notes || null,
+        paymentAccountId: input.paymentAccountId || null,
+        paidAt,
+        status: "verified",
+      },
+    })
+
+    const remainingCount = await db.installment.count({
+      where: { orderId: order.id, status: { not: "paid" } },
+    })
+    let completed = false
+    if (remainingCount === 0) {
+      await db.order.update({
+        where: { id: order.id },
+        data: { creditStatus: "completed", paymentStatus: "paid" },
+      })
+      completed = true
+    }
+
+    return { applied, completed, remainingCount }
+  }
+
+  /**
+   * Reemplaza el plan de cuotas del crédito: elimina las cuotas NO pagadas y crea
+   * las nuevas. Recibe el client de transacción (base real) o el doble de prueba.
+   */
+  private async applyReschedule(
+    db: PrismaClient | Prisma.TransactionClient,
+    order: { id: string },
+    count: number,
+    periodDays: number,
+    totalAmount: number,
+    start: Date,
+    each: number
+  ): Promise<void> {
+    await db.installment.deleteMany({
+      where: { orderId: order.id, status: { not: "paid" } },
+    })
+    for (let i = 0; i < count; i++) {
+      const d = new Date(start)
+      d.setDate(d.getDate() + i * periodDays)
+      await db.installment.create({
+        data: { orderId: order.id, number: i + 1, amount: each, dueDate: d, status: "pending" },
+      })
+    }
+
+    await db.order.update({
+      where: { id: order.id },
+      data: { totalCredito: totalAmount, creditStatus: "active" },
+    })
+  }
+
+  /**
    * Recalcula el plan de cuotas: reemplaza las cuotas existentes por un nuevo
    * esquema de `count` cuotas de `totalAmount / count` separadas por
    * `periodDays` desde `startDate`. El saldo pendiente (o `totalAmount` si se
@@ -352,19 +426,14 @@ export class CreditService {
     const start = input.startDate ?? new Date()
     const each = totalAmount / count
 
-    await this.db.installment.deleteMany({ where: { orderId: order.id } })
-    for (let i = 0; i < count; i++) {
-      const d = new Date(start)
-      d.setDate(d.getDate() + i * periodDays)
-      await this.db.installment.create({
-        data: { orderId: order.id, number: i + 1, amount: each, dueDate: d, status: "pending" },
-      })
+    // FASE 8G: reemplazo atómico del plan de cuotas sobre la base real. Solo se
+    // eliminan las cuotas NO pagadas; el historial ya pagado se preserva.
+    const isRealDb = this.db === prisma
+    if (isRealDb) {
+      await prisma.$transaction((tx) => this.applyReschedule(tx, order, count, periodDays, totalAmount, start, each))
+    } else {
+      await this.applyReschedule(this.db, order, count, periodDays, totalAmount, start, each)
     }
-
-    await this.db.order.update({
-      where: { id: order.id },
-      data: { totalCredito: totalAmount, creditStatus: "active" },
-    })
 
     await createAuditEntry({
       action: "credit.rescheduled",
@@ -453,6 +522,7 @@ export class CreditService {
     order: {
       id: string
       orderNumber: string
+      customerId: string | null
       customerName: string
       customerPhone: string
       createdAt: Date
@@ -468,7 +538,8 @@ export class CreditService {
       paidAt: Date | null
       dueDate: Date
       status: string
-    }>
+    }>,
+    attempts = 0
   ): CreditSummary {
     const totalCredito = order.totalCredito ?? order.total
     let paid = 0
@@ -520,6 +591,7 @@ export class CreditService {
     return {
       orderId: order.id,
       orderNumber: order.orderNumber,
+      customerId: order.customerId,
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       createdAt: order.createdAt.toISOString(),
@@ -537,6 +609,7 @@ export class CreditService {
       nextAmount: nextAmount,
       overdueDays,
       lastPaymentAt: lastPaymentAt ? lastPaymentAt.toISOString() : null,
+      attempts,
     }
   }
 

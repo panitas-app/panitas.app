@@ -93,13 +93,14 @@ export const SessionManager = {
    */
   async sendBarcode(
     sessionId: string,
+    token: string,
     barcode: string
   ): Promise<{ success: boolean; error?: string; status?: number }> {
     try {
       const res = await fetch("/api/scanner/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, barcode }),
+        body: JSON.stringify({ sessionId, token, barcode }),
       })
       
       if (!res.ok) {

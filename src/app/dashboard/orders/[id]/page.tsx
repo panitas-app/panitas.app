@@ -1,19 +1,28 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Fragment } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { motion } from "framer-motion"
 import { useBcvRate } from "@/lib/bcv-context"
+import { formatDate } from "@/lib/utils"
 import { DownloadPurchaseOrder } from "@/components/seller/purchase-order"
 import {
   CheckCircle,
   MessageCircle,
+  MessageCircleQuestion,
   ArrowLeft,
   Banknote,
   Calendar,
@@ -29,9 +38,12 @@ import {
   ShieldCheck,
   Clock,
   Box,
-  CircleCheckBig,
+  PackageCheck,
+  Check,
+  Ban,
   XCircle,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Payment {
   id: string
@@ -78,6 +90,7 @@ interface Order {
   total: number
   bcvRateAtOrder: number | null
   paymentStatus: string
+  creditTerm: string | null
   customerId: string | null
   customerName: string
   customerPhone: string
@@ -103,11 +116,32 @@ const shippingLabels: Record<string, string> = {
   delivery: "Delivery",
 }
 
-const statusOptions = [
-  { key: "pending", label: "Pendiente", icon: Clock, color: "bg-yellow-500" },
-  { key: "preparing", label: "Empaquetado", icon: Box, color: "bg-blue-500" },
-  { key: "shipped", label: "Despachado", icon: CircleCheckBig, color: "bg-green-500" },
+const TIMELINE = [
+  { key: "pending", label: "Pendiente", icon: Clock },
+  { key: "confirmed", label: "Confirmado", icon: CheckCircle },
+  { key: "preparing", label: "Preparando", icon: Box },
+  { key: "shipped", label: "Enviado", icon: Truck },
+  { key: "delivered", label: "Entregado", icon: PackageCheck },
 ]
+
+const statusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  confirmed: "Confirmado",
+  preparing: "Preparando",
+  shipped: "Enviado",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+}
+
+const paymentLabels: Record<string, string> = {
+  paid: "Pagado",
+  pending: "Pago pendiente",
+  credit: "Crédito",
+  partial: "Parcial",
+  cancelled: "Cancelado",
+  failed: "Fallido",
+  refunded: "Reembolsado",
+}
 
 function getWhatsAppMessage(shippingMethod: string, orderNumber: string, customerName: string): string {
   const base = `Hola ${customerName}, tu pedido *${orderNumber}* ha sido recibido y verificado con éxito.`
@@ -121,18 +155,70 @@ function getWhatsAppMessage(shippingMethod: string, orderNumber: string, custome
   return methodMessages[shippingMethod] || base
 }
 
-function formatDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat("es-VE", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso))
-  } catch {
-    return iso
+function OrderTimeline({
+  status,
+  updating,
+  onSelect,
+}: {
+  status: string
+  updating: boolean
+  onSelect: (status: string) => void
+}) {
+  const currentIndex = TIMELINE.findIndex((t) => t.key === status)
+
+  if (status === "cancelled") {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <Ban className="size-5 shrink-0" />
+        <span>Este pedido fue cancelado. El inventario fue restaurado.</span>
+      </div>
+    )
   }
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+      {TIMELINE.map((step, i) => {
+        const Icon = step.icon
+        const done = i < currentIndex
+        const isCurrent = i === currentIndex
+        return (
+          <Fragment key={step.key}>
+            <button
+              type="button"
+              onClick={() => onSelect(step.key)}
+              disabled={updating || done || isCurrent}
+              aria-current={isCurrent ? "step" : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-all sm:flex-1 sm:flex-col sm:gap-1.5 sm:px-2 sm:py-3 sm:text-center",
+                isCurrent
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                  : done
+                    ? "text-success hover:bg-success/5"
+                    : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-7 shrink-0 items-center justify-center rounded-full border-2",
+                  isCurrent
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : done
+                      ? "border-success bg-success/10 text-success"
+                      : "border-border bg-muted/50"
+                )}
+              >
+                {done ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
+              </span>
+              <span>{step.label}</span>
+            </button>
+            {i < TIMELINE.length - 1 && (
+              <div className="ml-[26px] h-4 w-0.5 bg-border sm:ml-0 sm:h-0.5 sm:w-6 sm:flex-1" aria-hidden="true" />
+            )}
+          </Fragment>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function OrderDetailPage() {
@@ -147,6 +233,7 @@ export default function OrderDetailPage() {
   const [verified, setVerified] = useState(false)
   const [notifying, setNotifying] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
   const [allAgencies, setAllAgencies] = useState<Array<{ empresa: string; estado: string; ciudad: string; agencia: string; direccion: string; telefono1: string; telefono2: string }>>([])
 
   const matchedAgency = useMemo(() => {
@@ -213,11 +300,12 @@ export default function OrderDetailPage() {
       }
       const updated = await res.json()
       setOrder(updated)
-      toast.success(newStatus === "cancelled" ? "Pedido cancelado y stock restaurado" : `Pedido marcado como "${statusOptions.find((s) => s.key === newStatus)?.label}"`)
+      toast.success(newStatus === "cancelled" ? "Pedido cancelado y stock restaurado" : `Pedido marcado como "${statusLabels[newStatus] || newStatus}"`)
     } catch (error: any) {
       toast.error(error.message || "Error al actualizar el estado")
     } finally {
       setUpdatingStatus(false)
+      setCancelOpen(false)
     }
   }
 
@@ -235,6 +323,8 @@ export default function OrderDetailPage() {
 
   const customerPhoneDigits = order.customerPhone.replace(/[^0-9]/g, "")
   const firstPendingPayment = order.payments.find((p) => p.status === "pending")
+  const statusLabel = statusLabels[order.status] || order.status
+  const paymentLabel = paymentLabels[order.paymentStatus] || order.paymentStatus
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 relative">
@@ -243,7 +333,7 @@ export default function OrderDetailPage() {
         href={`https://wa.me/${customerPhoneDigits}?text=${encodeURIComponent(`Hola ${order.customerName}, te escribo respecto a tu pedido ${order.orderNumber}`)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl shadow-green-500/40 hover:bg-green-600 active:scale-95 transition-all duration-200 safe-bottom"
+        className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-50 flex size-14 items-center justify-center rounded-full bg-success text-white shadow-xl shadow-success/40 hover:bg-success/90 active:scale-95 transition-all duration-200 safe-bottom"
       >
         <MessageCircle className="size-7" />
       </a>
@@ -251,7 +341,7 @@ export default function OrderDetailPage() {
       {/* Back button */}
       <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/orders")}>
         <ArrowLeft className="size-4" />
-        Volver a pedidos
+        Volver a ventas
       </Button>
 
       {/* Header */}
@@ -263,32 +353,56 @@ export default function OrderDetailPage() {
               {formatDate(order.createdAt)}
             </Badge>
           </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {statusLabel} · {paymentLabel}
+            {order.creditTerm && " · A crédito"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <DownloadPurchaseOrder order={order} />
           <Badge
-            variant={order.paymentStatus === "paid" ? "default" : order.paymentStatus === "pending" ? "secondary" : "destructive"}
+            variant={order.status === "cancelled" ? "destructive" : order.status === "delivered" ? "outline" : "default"}
+            className={order.status === "delivered" ? "border-transparent bg-success/10 text-success" : undefined}
           >
-            {order.paymentStatus === "paid" ? "Pagado" : order.paymentStatus === "pending" ? "Pendiente" : order.paymentStatus}
-          </Badge>
-          <Badge
-            variant={order.status === "confirmed" || order.status === "preparing" || order.status === "shipped" ? "default" : "secondary"}
-          >
-            {order.status === "pending" ? "Pendiente" : order.status === "preparing" ? "Empaquetado" : order.status === "shipped" ? "Despachado" : order.status === "confirmed" ? "Confirmado" : order.status}
+            {statusLabel}
           </Badge>
         </div>
       </div>
 
-      {/* Payment verification card */}
+      {/* Resumen */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-lg font-black text-accent">${order.total.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-lg font-black">${order.subtotal.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Subtotal</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-lg font-black">${order.shippingCost.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Envío</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-lg font-black text-success">{paymentLabel}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pago</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Payment verification */}
       {firstPendingPayment && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border-2 border-[#FFB92E]/30 bg-gradient-to-br from-[#FFB92E]/5 to-[#FFB92E]/10 p-6 shadow-sm"
-        >
+        <div className="rounded-2xl border-2 border-warning/30 bg-gradient-to-br from-warning/5 to-warning/10 p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex size-12 items-center justify-center rounded-full bg-[#FFB92E]/20">
-              <ShieldCheck className="size-6 text-[#FFB92E]" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-warning/20">
+              <ShieldCheck className="size-6 text-warning" />
             </div>
             <div>
               <h2 className="text-lg font-bold">Verificar pago</h2>
@@ -297,7 +411,7 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 mb-5">
-            <div className="rounded-xl bg-white/60 p-4 space-y-2">
+            <div className="rounded-xl bg-card/60 p-4 space-y-2">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Datos de la transferencia</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
@@ -334,7 +448,7 @@ export default function OrderDetailPage() {
               )}
             </div>
 
-            <div className="rounded-xl bg-white/60 p-4 space-y-2">
+            <div className="rounded-xl bg-card/60 p-4 space-y-2">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Datos del cliente</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
@@ -381,7 +495,7 @@ export default function OrderDetailPage() {
 
           <Button
             size="lg"
-            className="w-full gap-2 h-13 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/30"
+            className="w-full gap-2 h-13 text-base font-bold bg-success hover:bg-success/90"
             disabled={verifying}
             onClick={() => handleVerifyPayment(firstPendingPayment.id)}
           >
@@ -397,31 +511,27 @@ export default function OrderDetailPage() {
               </>
             )}
           </Button>
-        </motion.div>
+        </div>
       )}
 
-      {/* WhatsApp notification section */}
+      {/* WhatsApp notification */}
       {(verified || order.paymentStatus === "paid") && !order.clientNotified && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-sm"
-        >
+        <div className="rounded-2xl border-2 border-success/30 bg-success/5 p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex size-12 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="size-6 text-green-600" />
+            <div className="flex size-12 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle className="size-6 text-success" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-green-800">Pago verificado</h2>
-              <p className="text-xs text-green-600">El pago del pedido {order.orderNumber} ha sido verificado</p>
+              <h2 className="text-lg font-bold">Pago verificado</h2>
+              <p className="text-xs text-muted-foreground">El pago del pedido {order.orderNumber} ha sido verificado</p>
             </div>
           </div>
 
-          <Separator className="mb-4 bg-green-200" />
+          <Separator className="mb-4" />
 
-          <div className="text-sm text-green-700 mb-4 space-y-1">
+          <div className="text-sm mb-4 space-y-1">
             <p>Notifica al cliente sobre el estado de su pedido:</p>
-            <p className="text-xs text-green-600 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               {order.shippingMethod === "pickup_agency" && "El mensaje incluirá que recibirá la guía de envío próximamente."}
               {order.shippingMethod === "delivery" && "El mensaje incluirá coordinar hora y día de la entrega."}
               {order.shippingMethod === "pickup_store" && "El mensaje incluirá coordinar hora y día del retiro."}
@@ -431,7 +541,7 @@ export default function OrderDetailPage() {
           <div className="space-y-3">
             <Button
               size="lg"
-              className="w-full gap-2 h-13 text-base font-bold bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/30"
+              className="w-full gap-2 h-13 text-base font-bold bg-success hover:bg-success/90"
               onClick={() => {
                 const url = `https://wa.me/${customerPhoneDigits}?text=${encodeURIComponent(getWhatsAppMessage(order.shippingMethod, order.orderNumber, order.customerName))}`
                 window.open(url, "_blank", "noopener,noreferrer")
@@ -470,64 +580,36 @@ export default function OrderDetailPage() {
               Ya notifiqué al cliente
             </Button>
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Already notified message */}
+      {/* Already notified */}
       {order.clientNotified && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-xl border border-green-200 bg-green-50 p-4 text-center"
-        >
-          <div className="flex items-center justify-center gap-2 text-sm text-green-700">
-            <CheckCircle className="size-4 text-green-500" />
+        <div className="rounded-xl border border-success/30 bg-success/5 p-4 text-center">
+          <div className="flex items-center justify-center gap-2 text-sm text-success">
+            <CheckCircle className="size-4" />
             <span>Cliente notificado correctamente</span>
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Order status actions */}
+      {/* Timeline / status actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Estado del pedido</CardTitle>
+          <CardTitle className="text-sm">Progreso del pedido</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {statusOptions.map((opt) => {
-              const Icon = opt.icon
-              const isActive = order.status === opt.key
-              return (
-                <Button
-                  key={opt.key}
-                  variant={isActive ? "default" : "outline"}
-                  size="sm"
-                  className={`gap-2 rounded-full transition-all ${
-                    isActive ? `${opt.color} text-white border-0` : ""
-                  }`}
-                  disabled={updatingStatus || isActive}
-                  onClick={() => handleUpdateStatus(opt.key)}
-                >
-                  <Icon className="size-3.5" />
-                  {opt.label}
-                </Button>
-              )
-            })}
-          </div>
+        <CardContent className="space-y-4">
+          <OrderTimeline status={order.status} updating={updatingStatus} onSelect={handleUpdateStatus} />
           {order.status !== "cancelled" && order.status !== "delivered" && (
             <>
-              <Separator className="my-3" />
+              <Separator />
               <div className="flex justify-end">
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
                   disabled={updatingStatus}
-                  onClick={() => {
-                    if (confirm("¿Estás seguro de cancelar este pedido? Se restaurará el inventario.")) {
-                      handleUpdateStatus("cancelled")
-                    }
-                  }}
+                  onClick={() => setCancelOpen(true)}
                 >
                   <XCircle className="size-3.5" />
                   Cancelar pedido
@@ -542,13 +624,19 @@ export default function OrderDetailPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Información del Pedido</CardTitle>
+            <CardTitle className="text-sm">Información del pedido</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
               <span>${order.subtotal.toFixed(2)}</span>
             </div>
+            {order.discount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Descuento</span>
+                <span className="text-destructive">-${order.discount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Envío</span>
               <span>${order.shippingCost.toFixed(2)}</span>
@@ -678,7 +766,7 @@ export default function OrderDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Digital Deliveries */}
+      {/* Digital deliveries */}
       {order.digitalDeliveries && order.digitalDeliveries.length > 0 && (
         <Card>
           <CardHeader>
@@ -716,6 +804,37 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <div className="flex justify-center">
+        <Link
+          href={`/dashboard/assistant?q=${encodeURIComponent(`¿Cuál es el estado del pedido ${order.orderNumber}?`)}`}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground hover:text-primary hover:border-primary/40 transition-colors"
+        >
+          <MessageCircleQuestion className="size-4 text-primary" />
+          Preguntar a Panitas
+        </Link>
+      </div>
+
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar pedido {order.orderNumber}</DialogTitle>
+            <DialogDescription>
+              Se restaurará el inventario de los productos y se quitará del total vendido del cliente. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>Volver</Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleUpdateStatus("cancelled")}
+              disabled={updatingStatus}
+            >
+              {updatingStatus ? "Cancelando..." : "Sí, cancelar pedido"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

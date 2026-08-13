@@ -81,28 +81,28 @@ export function KpiGrid({ indicators }: KpiGridProps) {
         label="Flujo neto"
         value={money(netFlow)}
         sub={netFlow >= 0 ? "ingresos − gastos" : "gastos > ingresos"}
-        accent={cn(netFlow >= 0 && "bg-emerald-500/10 text-emerald-500", netFlow < 0 && "bg-red-500/10 text-red-500")}
+        accent={cn(netFlow >= 0 && "bg-success/10 text-success", netFlow < 0 && "bg-destructive/10 text-destructive")}
       />
       <KpiCard
         icon={HandCoins}
         label="Por cobrar"
         value={money(totalPending)}
         sub={overdueCredits > 0 ? `${overdueCredits} crédito(s) vencido(s) por ${money(overdueCreditAmount)}` : "créditos al día"}
-        accent="bg-emerald-500/10 text-emerald-500"
+        accent="bg-success/10 text-success"
       />
       <KpiCard
         icon={Banknote}
         label="Por pagar"
         value={money(totalPayable)}
         sub={overdueSupplierInvoices > 0 ? `${overdueSupplierInvoices} factura(s) vencida(s) por ${money(overdueSupplierAmount)}` : "proveedores al día"}
-        accent="bg-sky-500/10 text-sky-500"
+        accent="bg-info/10 text-info"
       />
       <KpiCard
         icon={ReceiptText}
         label="Cuentas vencidas"
         value={String(overdueCredits + overdueSupplierInvoices)}
         sub={`${money(overdueCreditAmount + overdueSupplierAmount)} por cobrar y pagar`}
-        accent="bg-red-500/10 text-red-500"
+        accent="bg-destructive/10 text-destructive"
       />
     </div>
   )

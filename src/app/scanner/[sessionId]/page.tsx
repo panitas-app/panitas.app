@@ -107,7 +107,7 @@ function ScannerPage() {
     playBeep("found")
 
     logDiag(`[SCANNER] Enviando código a Panitas: ${code}`)
-    const res = await SessionManager.sendBarcode(sessionId, code)
+    const res = await SessionManager.sendBarcode(sessionId, token, code)
     if (res.success) {
       setScanCount((c) => c + 1)
       setSendConfirmed(true)

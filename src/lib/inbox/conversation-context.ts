@@ -3,7 +3,7 @@
  *
  * Columna 3 del Centro de Conversaciones: información del CRM, últimas
  * compras, productos favoritos, créditos pendientes, últimas interacciones,
- * notas y recomendaciones de Panitas IA. Las recomendaciones son 100% basadas
+ * notas y recomendaciones de Panitas. Las recomendaciones son 100% basadas
  * en datos reales del negocio (nunca inventadas).
  */
 import { prisma as defaultPrisma } from "@/lib/prisma"

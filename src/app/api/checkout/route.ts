@@ -177,17 +177,13 @@ export async function POST(request: NextRequest) {
     for (const item of itemsData) {
       const product = productMap.get(item.productId)
       if (product?.productType === "digital") continue
-      const prod = await prisma.product.findUnique({
-        where: { id: item.productId },
-        select: { name: true, stock: true },
-      })
-      if (!prod || prod.stock < item.quantity) {
-        return jsonError(`Stock insuficiente para "${item.productName}" debido a una compra concurrente.`, 400)
-      }
-      await prisma.product.update({
-        where: { id: item.productId },
+      const { count } = await prisma.product.updateMany({
+        where: { id: item.productId, storeId, stock: { gte: item.quantity } },
         data: { stock: { decrement: item.quantity } },
       })
+      if (count === 0) {
+        return jsonError(`Stock insuficiente para "${item.productName}" debido a una compra concurrente.`, 400)
+      }
     }
 
     // 3. Increment coupon usage

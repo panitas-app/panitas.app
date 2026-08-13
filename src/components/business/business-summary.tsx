@@ -16,6 +16,7 @@ export function BusinessSummaryView({
   summary,
   currency = "Bs",
   maxInsights,
+  hideInsights,
   actions,
   className,
 }: {
@@ -23,6 +24,8 @@ export function BusinessSummaryView({
   currency?: string
   /** Máximo de hallazgos visibles (para el protagonismo del monitor en el BIC). */
   maxInsights?: number
+  /** Oculta "Puntos para revisar" cuando los hallazgos ya se muestran en tarjetas inteligentes (FASE 9B). */
+  hideInsights?: boolean
   /** Acciones extra que se renderizan al final (ej. "Ver detalles"/"Preguntar a Panitas"). */
   actions?: ReactNode
   className?: string
@@ -44,10 +47,12 @@ export function BusinessSummaryView({
         ))}
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-foreground">Puntos para revisar</h3>
-        <InsightList insights={summary.insights} limit={maxInsights} />
-      </div>
+      {!hideInsights ? (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Puntos para revisar</h3>
+          <InsightList insights={summary.insights} limit={maxInsights} />
+        </div>
+      ) : null}
 
       {summary.recommendations.length > 0 ? (
         <div className="space-y-2 rounded-2xl border border-border/60 bg-card/70 p-4">
