@@ -98,7 +98,8 @@ export async function POST(req: Request) {
     phog.flush().catch(e => console.error("[posthog flush error]", e))
 
     return NextResponse.json({ success: true })
-  } catch {
+  } catch (err) {
+    console.error("[register error]", err)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
