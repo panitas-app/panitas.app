@@ -1,5 +1,5 @@
 {
-  "buildCommand": "prisma migrate deploy && npm run build",
+  "buildCommand": "node scripts/prisma-deploy-prod.js && npm run build",
   "crons": [
     {
       "path": "/api/cron/update-bcv",
