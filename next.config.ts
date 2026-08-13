@@ -19,7 +19,6 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
