@@ -71,3 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
 }
+
+// Vercel invoca crons via GET (vercel/docs cron-jobs). Alias al handler POST.
+export const GET = POST
+
