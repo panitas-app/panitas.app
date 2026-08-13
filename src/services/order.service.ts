@@ -563,7 +563,7 @@ export class OrderService {
         bcvRateAtOrder: latestRate?.rate || null,
         currency: body.currency || "USD",
         customerName: body.customerName as string,
-        customerPhone: customerPhone as string,
+        customerPhone: (customerPhone || "") as string,
         customerEmail: body.customerEmail || null,
         customerAddress: body.customerAddress || null,
         customerCity: body.customerCity || null,
