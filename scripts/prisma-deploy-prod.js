@@ -66,6 +66,25 @@ function attempt() {
     }
     const combined = res.out + res.err;
     const migrationMatch = combined.match(/Migration name:\s*([^\s]+)/);
+    const failedMatch = combined.match(/The `([^`]+)` migration started at[^]*?failed/);
+    const isP3009 = combined.includes("P3009");
+
+    if (isP3009 && failedMatch) {
+      const name = failedMatch[1];
+      if (!known.includes(name)) {
+        console.error("prisma migrate deploy: migracion desconocida en P3009: " + name);
+        process.exit(1);
+      }
+      console.log(`prisma migrate deploy: limpiando registro fallido de "${name}" (--rolled-back)`);
+      try {
+        run(`npx prisma migrate resolve --rolled-back "${name}"`);
+      } catch (e) {
+        console.error("prisma migrate resolve --rolled-back fallo para " + name);
+        process.exit(1);
+      }
+      continue;
+    }
+
     const isDrift =
       combined.includes("P3018") ||
       combined.includes("already exists") ||
@@ -74,7 +93,6 @@ function attempt() {
       combined.includes("42710") ||
       combined.includes("duplicate column") ||
       combined.includes("duplicate table") ||
-      combined.includes("already exists") ||
       combined.includes("relation \"");
 
     if (!migrationMatch || !isDrift) {
