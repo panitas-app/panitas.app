@@ -66,7 +66,11 @@ export default function AdminUsersPage() {
   useEffect(() => { fetchData() }, [fetchData])
 
   function isActive(u: UserItem): boolean {
-    return (u.store?.planStatus === "activo" || u.negocio?.planEstado === "activo") && !u.suspendedAt
+    if (u.suspendedAt) return false
+    const planActivo = u.store?.planStatus === "activo" || u.negocio?.planEstado === "activo"
+    if (!planActivo) return false
+    if (u.negocio?.planVencimiento && new Date(u.negocio.planVencimiento).getTime() <= Date.now()) return false
+    return true
   }
 
   async function handleToggle() {
@@ -109,7 +113,11 @@ export default function AdminUsersPage() {
 
     const planStatus = u.store?.planStatus || u.negocio?.planEstado || null
     const hasPendingSub = u.store?.subscriptions?.some(s => s.status === "pending") ?? false
+    const vencido = u.negocio?.planVencimiento
+      ? new Date(u.negocio.planVencimiento).getTime() <= Date.now()
+      : false
 
+    if (planStatus === "activo" && vencido) return { label: "Vencido", color: "bg-red-100 text-red-700" }
     if (planStatus === "activo") return { label: "Activo", color: "bg-green-100 text-green-700" }
     if (hasPendingSub) return { label: "Suscripción Pendiente", color: "bg-amber-100 text-amber-700" }
 
