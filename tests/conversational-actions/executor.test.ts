@@ -170,6 +170,30 @@ describe("executeAction", () => {
     expect(res.reply).toContain("cancelado")
   })
 
+  it("buscar_producto extrae productos del shape {products, total} que devuelve productService.list", async () => {
+    const deps = makeDeps()
+    deps.toolExecutor.execute = vi.fn().mockResolvedValue(
+      toolOk({ products: [{ id: "p1", name: "cocacola", price: 2, stock: 20 }], total: 1 })
+    )
+    const res = await run(deps, "buscar_producto", { termino: "pan" })
+    expect(res.reply).toBe("Encontré 1 producto(s).")
+    expect(res.rich?.kind).toBe("table")
+  })
+
+  it("buscar_producto no devuelve resultados cuando la tool responde array vacío", async () => {
+    const deps = makeDeps()
+    deps.toolExecutor.execute = vi.fn().mockResolvedValue(toolOk({ products: [], total: 0 }))
+    const res = await run(deps, "buscar_producto", { termino: "pan" })
+    expect(res.reply).toBe("No encontré productos para esa búsqueda.")
+  })
+
+  it("buscar_producto soporta tool que responde array directo", async () => {
+    const deps = makeDeps()
+    deps.toolExecutor.execute = vi.fn().mockResolvedValue(toolOk([{ id: "p1", name: "cocacola", price: 2, stock: 20 }]))
+    const res = await run(deps, "buscar_producto", { termino: "pan" })
+    expect(res.reply).toBe("Encontré 1 producto(s).")
+  })
+
   it("traduce el fallo de una tool a ActionExecutionError", async () => {
     const deps = makeDeps({
       toolExecutor: { execute: vi.fn().mockResolvedValue(toolFail("No tienes permiso")) },

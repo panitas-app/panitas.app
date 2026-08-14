@@ -382,8 +382,12 @@ export async function executeAction(deps: ExecutorDeps, input: ExecutorInput): P
     }
 
     case "buscar_producto": {
-      const products = await runTool(deps, ctx, runtime, "inventory.searchProduct", { q: known.termino, take: 10 })
-      const list = Array.isArray(products) ? products : []
+      const result = await runTool(deps, ctx, runtime, "inventory.searchProduct", { q: known.termino, take: 10 })
+      const list = Array.isArray(result)
+        ? result
+        : Array.isArray((result as { products?: unknown[] })?.products)
+          ? (result as { products: unknown[] }).products
+          : []
       return {
         data: { title: "Búsqueda de productos", payload: list },
         rich: list.length > 0 ? productsTable(list) : { kind: "card", title: "Sin resultados", blocks: [{ kind: "text", text: "No encontré productos para esa búsqueda." }] },
