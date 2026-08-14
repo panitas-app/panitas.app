@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { AuthError } from "next-auth"
 import { signIn } from "@/lib/auth"
+import { getPostHogClient } from "@/lib/posthog-server"
 import { rateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
@@ -33,6 +34,10 @@ export async function POST(req: Request) {
         password,
         redirect: false,
       })
+
+      const posthog = getPostHogClient()
+      posthog.capture({ distinctId: trimmedEmail, event: "user_logged_in" })
+      await posthog.flush()
 
       return NextResponse.json({ success: true })
     } catch (err) {

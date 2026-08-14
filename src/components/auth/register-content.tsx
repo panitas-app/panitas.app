@@ -93,6 +93,7 @@ export default function RegisterContent({ session, plan: selectedPlan, paymentMo
       }
       toast.success("Cuenta creada. Iniciando sesión...")
       posthog.capture("user_registered", { plan: selectedPlan || "none", method: "email" })
+      posthog.identify(email, { plan: selectedPlan || "none" })
       const signInResult = await signIn("credentials", {
         email,
         password,
