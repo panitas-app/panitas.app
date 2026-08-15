@@ -43,9 +43,19 @@ export const salesTools: AgentTool[] = [
       required: ["items"],
     },
     async execute(ctx, input) {
+      const payments = Array.isArray(input.payments) && input.payments.length > 0
+        ? input.payments.map((p) => {
+          const method = typeof p?.method === "string" ? p.method : "efectivo"
+          return {
+            method,
+            amount: typeof p?.amount === "number" ? p.amount : 0,
+            status: typeof p?.status === "string" ? p.status : method === "credit" ? "pending" : "verified",
+          }
+        })
+        : undefined
       const order = await orderService.create(
         { userId: ctx.userId, storeId: ctx.storeId, plan: ctx.plan, storeName: "", storeEmail: null },
-        { ...input, source: "pos" }
+        { ...input, source: "pos", payments }
       )
       const anyOrder = order as unknown as { id: string; orderNumber: string }
       return { ok: true, data: { id: anyOrder.id, orderNumber: anyOrder.orderNumber } }

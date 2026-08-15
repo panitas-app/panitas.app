@@ -176,11 +176,18 @@ export class TaskPlanner {
         break
       case "inventory":
       default:
-        if (this.hasTool("inventory.searchProduct")) {
+        if (intent.entities.producto && this.hasTool("inventory.searchProduct")) {
           steps.push(
             this.step("step-1", "inventory.searchProduct", "inventory", { q, take: 10 }, {
               parallel: true,
               rationale: `Búsqueda en inventario de: ${q}`,
+            })
+          )
+        } else if (this.hasTool("inventory.getProducts")) {
+          steps.push(
+            this.step("step-1", "inventory.getProducts", "inventory", { take: 50 }, {
+              parallel: true,
+              rationale: "Listado general de productos del inventario.",
             })
           )
         }

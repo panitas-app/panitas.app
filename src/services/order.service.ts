@@ -547,7 +547,7 @@ export class OrderService {
       if (cuotasCount > 0) {
         paymentStatus = downPayment > 0 ? "partial" : "credit"
       } else if (paymentsInput && paymentsInput.length > 0) {
-        const allVerified = paymentsInput.every((p) => p.status === "verified" || p.method !== "credit")
+        const allVerified = paymentsInput.every((p) => p.status === "verified")
         paymentStatus = allVerified ? "paid" : "pending"
       }
 
@@ -609,12 +609,12 @@ export class OrderService {
             bankOrigin: p.bankOrigin || null,
             paidAt: p.paidAt
               ? new Date(p.paidAt)
-              : (p.status || (p.method === "credit" ? "verified" : "pending")) === "verified"
+              : p.status === "verified"
                 ? new Date()
                 : null,
             receiptImage: p.receiptImage || null,
             paymentAccountId: p.paymentAccountId || null,
-            status: p.status || (p.method === "credit" ? "verified" : "pending"),
+            status: p.status === "verified" ? "verified" : "pending",
           })
         }
       }

@@ -16,16 +16,14 @@ export class SalesRepository {
       storeId,
       createdAt:
         from || to ? { gte: from, lte: to ?? undefined } : undefined,
+      status: { not: "cancelled" },
     }
     const [revenue, count, products] = await Promise.all([
       this.db.order.aggregate({
-        where: {
-          ...where,
-          paymentStatus: { in: ["paid", "verified"] },
-        },
+        where,
         _sum: { total: true },
       }),
-      this.db.order.count({ where: { ...where, status: { not: "cancelled" } } }),
+      this.db.order.count({ where }),
       this.db.orderItem.aggregate({
         where: { order: where },
         _sum: { quantity: true },
