@@ -10,7 +10,7 @@ const runtime = {
   negocioId: null,
   plan: "business",
   role: "admin",
-  permissions: ["report.read"],
+  permissions: ["report.read", "credit.pay"],
 }
 
 function credit(over: Partial<CreditSummary>): CreditSummary {

@@ -77,6 +77,51 @@ export class TaskPlanner {
     }
   }
 
+  /** Primer número real del mensaje (cantidad/precio). Nunca devuelve fabricaciones. */
+  private extractNumber(message: string): number | null {
+    const match = message.match(/(\d+(?:[.,]\d+)?)/)
+    if (!match) return null
+    const n = parseFloat(match[1].replace(",", "."))
+    return Number.isFinite(n) ? n : null
+  }
+
+  /** Teléfono real del mensaje (solo dígitos válidos). */
+  private extractPhone(message: string): string | null {
+    const match = message.match(/\+?[\d][\d\s()-]{6,16}[\d]/)
+    if (!match) return null
+    const digits = match[0].replace(/\D/g, "")
+    if (digits.length < 7 || digits.length > 15) return null
+    return digits
+  }
+
+  /** Precio real del mensaje (patrones: "a 25", "en 25", "$25", "25 bs"). */
+  private extractPrice(message: string): number | null {
+    const patterns = [
+      /\$\s*(\d+(?:[.,]\d+)?)/,
+      /\b(?:a|en)\s+(\d+(?:[.,]\d+)?)\b/,
+      /(\d+(?:[.,]\d+)?)\s*(?:bs\.?|bolivares|pesos|dolares|usd)\b/i,
+    ]
+    for (const pattern of patterns) {
+      const match = message.match(pattern)
+      if (match) {
+        const n = parseFloat(match[1].replace(",", "."))
+        if (Number.isFinite(n)) return n
+      }
+    }
+    return null
+  }
+
+  /** Nombre real del producto en el mensaje (nunca placeholders). */
+  private extractProductName(message: string): string | null {
+    const match = message.match(/(?:producto|articulo)\s+(?:llamado\s+|de\s+|nombrado\s+)?([a-záéíóúñü0-9\s-]{2,40})/i)
+    if (!match) return null
+    const name = match[1]
+      .replace(/\s+(?:a|en|por|con)\s+\$?\s*\d[\d.,]*.*$/i, "")
+      .replace(/[¿?!.,;:]+$/g, "")
+      .trim()
+    return name.length >= 2 ? name : null
+  }
+
   /** Decide el plan para una intención. */
   plan(intent: IntentClassification): ExecutionPlan {
     const steps: PlannedStep[] = []
@@ -311,11 +356,17 @@ export class TaskPlanner {
     }
 
     if (normalized.includes("cliente")) {
-      if (this.hasTool("customers.create")) {
+      // Regla 2: nunca usar placeholders. Sin teléfono real NO se planifica la
+      // creación (se pide el dato); con teléfono se registra con datos reales.
+      const phone = this.extractPhone(normalized)
+      if (phone && this.hasTool("customers.create")) {
+        const input: Record<string, unknown> = { phone }
+        const name = intent.entities.cliente ?? intent.entities.producto
+        if (typeof name === "string" && name.trim()) input.name = name
         steps.push(
-          this.step("step-1", "customers.create", "customers", { phone: "pendiente" }, {
+          this.step("step-1", "customers.create", "customers", input, {
             parallel: true,
-            rationale: "Creación de un cliente: requiere el teléfono.",
+            rationale: "Creación de un cliente con los datos proporcionados por el usuario.",
           })
         )
       }
@@ -327,13 +378,16 @@ export class TaskPlanner {
         const type = normalized.includes("agregar") || normalized.includes("subir") || normalized.includes("aumentar") || normalized.includes("reponer")
           ? "increase"
           : "adjustment"
+        const quantity = intent.entities.cantidad ? parseFloat(intent.entities.cantidad) : this.extractNumber(normalized)
+        // Regla 2: sin cantidad real no se planifica (la cantidad 0 no existe).
+        if (quantity === null || !Number.isFinite(quantity) || quantity <= 0) return steps
         steps.push(
-          this.step("step-1", "inventory.updateStock", "inventory", { type, quantity: 0, concept: "ajuste desde asistente" }, {
+          this.step("step-1", "inventory.updateStock", "inventory", { type, quantity }, {
             parallel: true,
             requiresConfirmation: type !== "increase",
             rationale: type === "increase"
-              ? "Incremento de stock."
-              : "Ajuste de stock (posible reducción): requiere confirmación explícita.",
+              ? `Incremento de stock en ${quantity} unidades.`
+              : `Ajuste de stock a ${quantity} unidades (posible reducción): requiere confirmación explícita.`,
           })
         )
       }
@@ -342,12 +396,20 @@ export class TaskPlanner {
 
     if (normalized.includes("producto") || normalized.includes("articulo")) {
       if (this.hasTool("products.create")) {
-        steps.push(
-          this.step("step-1", "products.create", "products", { name: "pendiente", price: 0 }, {
-            parallel: true,
-            rationale: "Creación de un producto: requiere nombre y precio.",
-          })
-        )
+        // Regla 2: nunca crear con name "pendiente" ni price 0. Sin nombre y
+        // precio reales NO se planifica (se piden los datos al usuario).
+        const name = (typeof intent.entities.producto === "string" && intent.entities.producto.trim())
+          ? intent.entities.producto
+          : this.extractProductName(normalized)
+        const price = this.extractPrice(normalized)
+        if (name && price !== null && price > 0) {
+          steps.push(
+            this.step("step-1", "products.create", "products", { name: name.trim(), price }, {
+              parallel: true,
+              rationale: "Creación de un producto con nombre y precio proporcionados.",
+            })
+          )
+        }
       }
       return steps
     }
@@ -370,13 +432,17 @@ export class TaskPlanner {
       }
     } else if (normalized.includes("stock") || normalized.includes("inventario")) {
       if (this.hasTool("inventory.updateStock")) {
-        steps.push(
-          this.step("step-1", "inventory.updateStock", "inventory", { type: "adjustment", quantity: 0, concept: "cambio de configuración" }, {
-            parallel: true,
-            requiresConfirmation: true,
-            rationale: "Cambio de stock como configuración crítica: requiere confirmación.",
-          })
-        )
+        const quantity = intent.entities.cantidad ? parseFloat(intent.entities.cantidad) : this.extractNumber(normalized)
+        // Regla 2: sin cantidad real no se planifica.
+        if (quantity !== null && Number.isFinite(quantity) && quantity > 0) {
+          steps.push(
+            this.step("step-1", "inventory.updateStock", "inventory", { type: "adjustment", quantity }, {
+              parallel: true,
+              requiresConfirmation: true,
+              rationale: "Cambio de stock como configuración crítica: requiere confirmación.",
+            })
+          )
+        }
       }
     } else if (normalized.includes("producto")) {
       if (this.hasTool("products.update")) {

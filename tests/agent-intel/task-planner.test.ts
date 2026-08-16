@@ -86,14 +86,37 @@ describe("TaskPlanner", () => {
     const plan = planner.plan(classify("agregar 10 unidades de abrazadera al stock"))
     expect(plan.steps[0].tool).toBe("inventory.updateStock")
     expect(plan.steps[0].input.type).toBe("increase")
+    expect(plan.steps[0].input.quantity).toBe(10)
     expect(plan.steps[0].requiresConfirmation).toBe(false)
     expect(plan.requiresConfirmation).toBe(false)
   })
 
-  it("ajuste de stock requiere confirmación", () => {
+  it("NO planifica ajuste de stock sin cantidad real (Regla 2: sin placeholders)", () => {
     const plan = planner.plan(classify("ajustar el stock de abrazadera"))
-    expect(plan.steps[0].input.type).toBe("adjustment")
-    expect(plan.steps[0].requiresConfirmation).toBe(true)
+    expect(plan.steps).toHaveLength(0)
+  })
+
+  it("NO planifica crear cliente sin teléfono real (Regla 2)", () => {
+    const plan = planner.plan(classify("crea un cliente nuevo"))
+    expect(plan.steps).toHaveLength(0)
+  })
+
+  it("planifica crear cliente solo con teléfono real", () => {
+    const plan = planner.plan(classify("crea al cliente Juan con telefono 04141234567"))
+    expect(plan.steps[0].tool).toBe("customers.create")
+    expect(plan.steps[0].input.phone).toBe("04141234567")
+    expect(plan.steps[0].input.phone).not.toBe("pendiente")
+  })
+
+  it("NO planifica crear producto sin nombre y precio reales (Regla 2)", () => {
+    const plan = planner.plan(classify("crea el producto abrazadera"))
+    expect(plan.steps).toHaveLength(0)
+  })
+
+  it("planifica crear producto con nombre y precio reales", () => {
+    const plan = planner.plan(classify("crea el producto abrazadera a 25"))
+    expect(plan.steps[0].tool).toBe("products.create")
+    expect(plan.steps[0].input).toMatchObject({ name: "abrazadera", price: 25 })
   })
 
   it("deduplica dominios en el plan", () => {

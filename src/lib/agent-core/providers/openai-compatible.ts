@@ -11,6 +11,7 @@ import type {
   ProviderCallOptions,
   ProviderMessage,
   ProviderResponse,
+  ProviderToolCall,
   StructuredOutputSchema,
 } from "./types"
 import {
@@ -37,8 +38,30 @@ export interface OpenAICompatibleProviderConfig {
 
 interface ChatCompletionResponse {
   model?: string
-  choices?: Array<{ message?: { content?: unknown } }>
+  choices?: Array<{
+    message?: {
+      content?: unknown
+      tool_calls?: Array<{ id?: string; type?: string; function?: { name?: string; arguments?: string } }>
+    }
+  }>
   usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+}
+
+function toWireMessage(message: ProviderMessage): Record<string, unknown> {
+  const base: Record<string, unknown> = { role: message.role, content: message.content }
+  // FASE 3E: assistant con tool_calls (se continúa el loop con los resultados).
+  if (message.toolCalls && message.toolCalls.length > 0) {
+    base.tool_calls = message.toolCalls.map((call) => ({
+      id: call.id,
+      type: "function",
+      function: { name: call.name, arguments: call.arguments },
+    }))
+  }
+  // FASE 3E: resultado de una herramienta (rol tool).
+  if (message.toolCallId) {
+    base.tool_call_id = message.toolCallId
+  }
+  return base
 }
 
 export class OpenAICompatibleProvider implements LLMProvider {
@@ -51,11 +74,13 @@ export class OpenAICompatibleProvider implements LLMProvider {
   async chat(messages: ProviderMessage[], options: ProviderCallOptions = {}): Promise<ProviderResponse> {
     const body: Record<string, unknown> = {
       model: options.model ?? this.config.defaultModel,
-      messages,
+      messages: messages.map(toWireMessage),
       stream: false,
     }
     if (options.temperature !== undefined) body.temperature = options.temperature
     if (options.maxTokens !== undefined) body.max_tokens = options.maxTokens
+    if (options.tools !== undefined) body.tools = options.tools
+    if (options.toolChoice !== undefined) body.tool_choice = options.toolChoice
     return this.request(body, options)
   }
 
@@ -125,7 +150,28 @@ export class OpenAICompatibleProvider implements LLMProvider {
     }
 
     const data = (await res.json().catch(() => null)) as ChatCompletionResponse | null
-    const content = data?.choices?.[0]?.message?.content
+    const rawMessage = data?.choices?.[0]?.message
+    const content = rawMessage?.content
+    const toolCalls = parseToolCalls(rawMessage?.tool_calls)
+
+    // FASE 3E: si el modelo pidió herramientas y no dio contenido, la respuesta
+    // es válida (el loop agéntico continúa ejecutando las llamadas).
+    if (toolCalls.length > 0) {
+      return {
+        provider: this.id,
+        model: data?.model ?? (body.model as string),
+        content: typeof content === "string" ? content : "",
+        usage: data?.usage
+          ? {
+              promptTokens: data.usage.prompt_tokens,
+              completionTokens: data.usage.completion_tokens,
+              totalTokens: data.usage.total_tokens,
+            }
+          : undefined,
+        toolCalls,
+      }
+    }
+
     if (typeof content !== "string" || content.length === 0) {
       throw new ProviderInvalidResponseError(`${this.config.displayName} no devolvió contenido`, { provider: this.id })
     }
@@ -163,4 +209,20 @@ export class OpenAICompatibleProvider implements LLMProvider {
       throw new ProviderInvalidResponseError(`${this.config.displayName} no devolvió JSON válido`, { provider: this.id })
     }
   }
+}
+
+function parseToolCalls(raw: unknown): ProviderToolCall[] {
+  if (!Array.isArray(raw)) return []
+  const calls: ProviderToolCall[] = []
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue
+    const record = entry as { id?: unknown; function?: { name?: unknown; arguments?: unknown } }
+    if (typeof record.function?.name !== "string") continue
+    calls.push({
+      id: typeof record.id === "string" ? record.id : `call_${Math.random().toString(36).slice(2, 10)}`,
+      name: record.function.name,
+      arguments: typeof record.function.arguments === "string" ? record.function.arguments : "",
+    })
+  }
+  return calls
 }

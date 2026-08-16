@@ -627,7 +627,8 @@ model OrderItem {
   quantity  Int
   price     Float
   subtotal  Float
-  productName String? // frozen product name at order time
+  type      String @default("PRODUCT") // PRODUCT | CUSTOM (concepto adicional, sin inventario)
+  productName String? // frozen product name at order time (descripción si type=CUSTOM)
 
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)

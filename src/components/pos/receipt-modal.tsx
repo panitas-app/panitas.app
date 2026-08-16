@@ -58,12 +58,34 @@ export function ReceiptModal({
 
               <hr className="border-dashed" />
 
-              {(lastOrder.items || []).map((item: any, i: number) => (
-                <div key={i} className="flex justify-between">
-                  <span className="flex-1">{item.productName || item.product?.name} x{item.quantity}</span>
-                  <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
+              {(() => {
+                const items = lastOrder.items || []
+                const productLines = items.filter((it: any) => it.type !== "CUSTOM")
+                const conceptLines = items.filter((it: any) => it.type === "CUSTOM")
+                return (
+                  <>
+                    {productLines.map((item: any, i: number) => (
+                      <div key={`p-${i}`} className="flex justify-between">
+                        <span className="flex-1">{item.productName || item.product?.name} x{item.quantity}</span>
+                        <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {conceptLines.length > 0 && (
+                      <>
+                        <div className="text-center border-t border-dashed pt-1 mt-1">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Conceptos adicionales</p>
+                        </div>
+                        {conceptLines.map((item: any, i: number) => (
+                          <div key={`c-${i}`} className="flex justify-between">
+                            <span className="flex-1">{item.productName || item.name} x{item.quantity}</span>
+                            <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )
+              })()}
 
               {lastOrder.customerAddress && (
                 <div className="text-muted-foreground text-[10px] mt-1">

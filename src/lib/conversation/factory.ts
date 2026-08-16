@@ -5,8 +5,8 @@
  * el Memory System (FASE 3D) y el Business Context Builder. Único punto de wiring;
  * los tests inyectan dependencias mockeadas directamente.
  */
-import { createDefaultAgentCore } from "@/lib/agent-core"
-import { createIntelligenceLayer } from "@/lib/agent-intel"
+import { createDefaultAgentCore, createAgentAiProvider, AgenticToolRunner } from "@/lib/agent-core"
+import { createIntelligenceLayer, ConfirmationSystem } from "@/lib/agent-intel"
 import { buildToolRegistry, ToolExecutor } from "@/lib/agent/tools"
 import { ConversationService } from "@/services/conversation.service"
 import { MemoryManager } from "@/lib/agent/memory"
@@ -43,8 +43,19 @@ export function createConversationEngine(): ConversationEngine {
     memory,
   })
 
+  // FASE 3E: mismo AIProvider para el Agent Core y para el Tool Calling Nativo.
+  const provider = createAgentAiProvider()
+  const registry = buildToolRegistry()
+  const executor = new ToolExecutor({ registry })
+  const agentic = new AgenticToolRunner({
+    provider,
+    registry,
+    executor,
+    confirmation: new ConfirmationSystem(),
+  })
+
   return new ConversationEngine({
-    agent: createDefaultAgentCore(),
+    agent: createDefaultAgentCore({ provider }),
     conversations: new ConversationService(),
     memory,
     context,
@@ -52,5 +63,6 @@ export function createConversationEngine(): ConversationEngine {
     conversational: new ConversationManager(),
     actions: createActionsEngine(),
     businessMemory: createBusinessMemoryEngine(),
+    agentic,
   })
 }

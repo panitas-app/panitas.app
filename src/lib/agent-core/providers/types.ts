@@ -8,14 +8,45 @@
  */
 import type { AgentTaskType, UsageInfo } from "../types"
 
-export type ProviderRole = "system" | "user" | "assistant"
+export type ProviderRole = "system" | "user" | "assistant" | "tool"
+
+/** Llamada a herramienta emitida nativamente por el modelo (function calling). */
+export interface ProviderToolCall {
+  /** Id de la llamada (debe usarse en la respuesta `role: "tool"`). */
+  id: string
+  name: string
+  /** Argumentos crudos en JSON (se parsean en la capa agéntica). */
+  arguments: string
+}
 
 export interface ProviderMessage {
   role: ProviderRole
   content: string
+  /** FASE 3E: tool_calls del assistant (rol assistant, para continuar el loop). */
+  toolCalls?: ProviderToolCall[]
+  /** FASE 3E: id de la llamada que responde (rol tool). */
+  toolCallId?: string
 }
 
 export type ProviderUsage = UsageInfo
+
+/** Definición de función nativa (OpenAI-compatible `tools`). */
+export interface ProviderToolFunction {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+}
+
+export interface ProviderToolDefinition {
+  type: "function"
+  function: ProviderToolFunction
+}
+
+export type ProviderToolChoice =
+  | "auto"
+  | "none"
+  | "required"
+  | { type: "function"; function: { name: string } }
 
 export interface ProviderCallOptions {
   model?: string
@@ -25,6 +56,10 @@ export interface ProviderCallOptions {
   retries?: number
   signal?: AbortSignal
   metadata?: Record<string, unknown>
+  /** FASE 3E: herramientas nativas disponibles para el modelo. */
+  tools?: ProviderToolDefinition[]
+  /** FASE 3E: política de selección de herramientas (default "auto"). */
+  toolChoice?: ProviderToolChoice
 }
 
 /** Esquema para salida estructurada (JSON). */
@@ -40,6 +75,8 @@ export interface ProviderResponse {
   model: string
   content: string
   usage?: ProviderUsage
+  /** FASE 3E: llamadas a herramientas solicitadas por el modelo (si aplica). */
+  toolCalls?: ProviderToolCall[]
 }
 
 /** Contrato de un adaptador de proveedor LLM (p.ej. OpenRouter). */

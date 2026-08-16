@@ -169,6 +169,213 @@ describe("OrderService.create", () => {
     expect(deps.repo.decrementStock).toHaveBeenCalledTimes(1)
     expect(deps.repo.recordStockMovement).toHaveBeenCalledTimes(1)
   })
+
+  it("keeps the legacy product flow unchanged (items default to type PRODUCT)", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await service.create(ctx, { items: [{ productId: "p1", quantity: 2 }] })
+    expect(deps.repo.createItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productId: "p1",
+        type: "PRODUCT",
+        quantity: 2,
+        price: 25,
+        subtotal: 50,
+        productName: "Producto A",
+      })
+    )
+    expect(deps.repo.decrementStock).toHaveBeenCalledWith("p1", 2)
+  })
+})
+
+describe("OrderService.create — conceptos adicionales (CUSTOM)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const customItem = {
+    type: "CUSTOM",
+    productName: "Mano de obra",
+    quantity: 1,
+    price: 20,
+  }
+
+  it("crea una venta con solo conceptos: no busca productos, no descuenta stock", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    const order = await service.create(ctx, {
+      source: "pos",
+      items: [customItem],
+      customerPhone: "04121234567",
+      customerName: "Juan",
+      payments: [{ method: "cash", amount: 20, status: "verified" }],
+    })
+
+    expect(deps.productRepo.findByIds).not.toHaveBeenCalled()
+    expect(deps.repo.decrementStock).not.toHaveBeenCalled()
+    expect(deps.repo.recordStockMovement).not.toHaveBeenCalled()
+
+    const createData = deps.repo.create.mock.calls[0][0]
+    expect(createData.subtotal).toBe(20)
+    expect(createData.total).toBe(20)
+    expect(order).toHaveProperty("id", "o1")
+  })
+
+  it("persiste el concepto con type, descripción, cantidad, precio y subtotal", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await service.create(ctx, { items: [customItem] })
+    expect(deps.repo.createItem).toHaveBeenCalledTimes(1)
+    expect(deps.repo.createItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "CUSTOM",
+        productId: null,
+        productName: "Mano de obra",
+        quantity: 1,
+        price: 20,
+        subtotal: 20,
+      })
+    )
+  })
+
+  it("mezcla productos y conceptos: total correcto y solo el producto descuenta stock", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await service.create(ctx, {
+      source: "pos",
+      items: [
+        { productId: "p1", quantity: 2, price: 20 },
+        customItem,
+      ],
+      customerPhone: "04121234567",
+      customerName: "Juan",
+      payments: [{ method: "cash", amount: 60, status: "verified" }],
+    })
+
+    const createData = deps.repo.create.mock.calls[0][0]
+    expect(createData.subtotal).toBe(60)
+    expect(createData.total).toBe(60)
+
+    expect(deps.repo.createItem).toHaveBeenCalledTimes(2)
+    expect(deps.repo.decrementStock).toHaveBeenCalledTimes(1)
+    expect(deps.repo.decrementStock).toHaveBeenCalledWith("p1", 2)
+    expect(deps.repo.recordStockMovement).toHaveBeenCalledTimes(1)
+    expect(deps.repo.recordStockMovement).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "sale", quantity: -2, productId: "p1" })
+    )
+  })
+
+  it("rechaza un concepto sin descripción", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "CUSTOM", quantity: 1, price: 20 }] })
+    ).rejects.toMatchObject({ message: "La descripción del concepto es obligatoria", status: 400 })
+  })
+
+  it("rechaza una descripción que solo tiene espacios", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "CUSTOM", productName: "   ", quantity: 1, price: 20 }] })
+    ).rejects.toMatchObject({ message: "La descripción del concepto es obligatoria", status: 400 })
+  })
+
+  it("rechaza una descripción mayor a 200 caracteres", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "CUSTOM", productName: "x".repeat(201), quantity: 1, price: 20 }] })
+    ).rejects.toMatchObject({ message: /no puede superar 200 caracteres/, status: 400 })
+  })
+
+  it("rechaza cantidades inválidas (0, negativa, decimal, NaN)", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    for (const quantity of [0, -1, 1.5, "abc", undefined]) {
+      await expect(
+        service.create(ctx, { items: [{ type: "CUSTOM", productName: "Concepto", quantity, price: 20 }] })
+      ).rejects.toMatchObject({ message: /Cantidad inválida/, status: 400 })
+    }
+  })
+
+  it("rechaza precios inválidos (negativo, NaN, ausente)", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    for (const price of [-1, Number.NaN, undefined]) {
+      await expect(
+        service.create(ctx, { items: [{ type: "CUSTOM", productName: "Concepto", quantity: 1, price }] })
+      ).rejects.toMatchObject({ message: /Precio inválido/, status: 400 })
+    }
+  })
+
+  it("rechaza un concepto con productId", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "CUSTOM", productId: "p1", productName: "Mano de obra", quantity: 1, price: 20 }] })
+    ).rejects.toMatchObject({ message: "Un concepto adicional no puede tener productId", status: 400 })
+  })
+
+  it("rechaza un tipo de ítem desconocido", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "OTRO", productId: "p1", quantity: 1 }] })
+    ).rejects.toMatchObject({ message: "Tipo de ítem inválido: OTRO", status: 400 })
+  })
+
+  it("permite un precio de 0 (concepto gratis)", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    const order = await service.create(ctx, { items: [{ type: "CUSTOM", productName: "Cortesía", quantity: 2, price: 0 }] })
+    const createData = deps.repo.create.mock.calls[0][0]
+    expect(createData.subtotal).toBe(0)
+    expect(createData.total).toBe(0)
+    expect(order).toHaveProperty("id", "o1")
+  })
+
+  it("rechaza un ítem de producto sin productId (ni siquiera consulta productos)", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ productName: "Manzana", quantity: 1, price: 3 }] })
+    ).rejects.toMatchObject({ message: /debe incluir productId/, status: 400 })
+    expect(deps.productRepo.findByIds).not.toHaveBeenCalled()
+    expect(deps.repo.create).not.toHaveBeenCalled()
+  })
+
+  it("rechaza un ítem con type PRODUCT pero sin productId", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await expect(
+      service.create(ctx, { items: [{ type: "PRODUCT", productName: "Manzana", quantity: 1, price: 3 }] })
+    ).rejects.toMatchObject({ message: /debe incluir productId/, status: 400 })
+  })
+
+  it("vuelve a calcular el total de mezcla con concepto y usa el precio del servidor", async () => {
+    const deps = makeDeps()
+    const service = serviceWith(deps)
+    await service.create(ctx, {
+      source: "pos",
+      items: [
+        { productId: "p1", quantity: 1, price: 1 },
+        { type: "CUSTOM", productName: "Envío", quantity: 1, price: 4 },
+      ],
+      customerPhone: "04121234567",
+      payments: [{ method: "cash", amount: 29, status: "verified" }],
+    })
+    const createData = deps.repo.create.mock.calls[0][0]
+    expect(createData.subtotal).toBe(29)
+    expect(createData.total).toBe(29)
+    expect(deps.repo.decrementStock).toHaveBeenCalledWith("p1", 1)
+    expect(deps.repo.createItem).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "PRODUCT", productId: "p1", price: 25 })
+    )
+    expect(deps.repo.createItem).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "CUSTOM", productId: null, productName: "Envío", price: 4 })
+    )
+  })
 })
 
 describe("OrderService.creditOutstanding (FASE 4B)", () => {

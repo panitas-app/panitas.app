@@ -23,12 +23,18 @@ export interface Category {
 
 export interface CartItem {
   productId: string
+  type: "PRODUCT" | "CUSTOM"
+  lineId?: string
   name: string
   price: number
   quantity: number
   stock: number
   wholesale?: boolean
   originalPrice?: number
+}
+
+export function cartLineKey(item: CartItem): string {
+  return item.lineId || item.productId
 }
 
 export interface CustomerInfo {

@@ -82,3 +82,11 @@ export { OpenRouterProvider, createOpenRouterProvider } from "./providers/openro
 export type { OpenRouterConfig } from "./providers/openrouter"
 export { NvidiaNimProvider, createNvidiaNimProvider } from "./providers/nvidia"
 export type { NvidiaNimConfig } from "./providers/nvidia"
+
+// FASE 3E — Tool Calling Nativo
+export { AgenticToolRunner, nativeStepId, shortHash } from "./tool-calling"
+export type { AgenticToolRunnerDeps } from "./tool-calling"
+export { toProviderTools, toJsonSchema } from "./tool-calling"
+export { buildAgenticSystemPrompt, AGENTIC_BASE_RULES, formatToday } from "./tool-calling"
+export type { AgenticPromptInput } from "./tool-calling"
+export type { AgenticRunInput, AgenticRunResult, AgenticRunStatus } from "./tool-calling"

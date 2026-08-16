@@ -18,7 +18,10 @@ import { PaymentModal } from "@/components/pos/payment-modal"
 import { ReceiptModal } from "@/components/pos/receipt-modal"
 import { DailyReportModal } from "@/components/pos/daily-report-modal"
 import { ScannerModal } from "@/components/pos/scanner-modal"
+import { ConceptModal } from "@/components/pos/concept-modal"
 import type { CartItem, Category, CustomerInfo, CustomerResult, PaymentSplit, Product, ScannerStatus, TodaySale } from "@/components/pos/types"
+import { cartLineKey } from "@/components/pos/types"
+import type { ConceptFormData } from "@/components/pos/concept-modal"
 
 export default function POSPage() {
   const { rate: bcvRate, showBolivares } = useBcvRate()
@@ -33,6 +36,9 @@ export default function POSPage() {
   // Cart
   const [cart, setCart] = useState<CartItem[]>([])
   const [cartDiscount, setCartDiscount] = useState(0)
+  const [conceptModalOpen, setConceptModalOpen] = useState(false)
+  const [editingConcept, setEditingConcept] = useState<ConceptFormData | null>(null)
+  const [editingConceptLineId, setEditingConceptLineId] = useState<string | null>(null)
 
   // Customer
   const [customer, setCustomer] = useState<CustomerInfo | null>(null)
@@ -205,18 +211,50 @@ export default function POSPage() {
         )
       }
       const { price, wholesale } = calcWholesalePrice(product, 1)
-      return [...prev, { productId: product.id, name: product.name, price, quantity: 1, stock: product.stock, wholesale, originalPrice: wholesale ? product.price : undefined }]
+      return [...prev, { productId: product.id, type: "PRODUCT", name: product.name, price, quantity: 1, stock: product.stock, wholesale, originalPrice: wholesale ? product.price : undefined }]
     })
   }
 
-  function updateQuantity(productId: string, delta: number) {
+  function openAddConcept() {
+    setEditingConcept(null)
+    setEditingConceptLineId(null)
+    setConceptModalOpen(true)
+  }
+
+  function openEditConcept(item: CartItem) {
+    setEditingConcept({ description: item.name, quantity: item.quantity, price: item.price })
+    setEditingConceptLineId(cartLineKey(item))
+    setConceptModalOpen(true)
+  }
+
+  function handleConceptSave(data: ConceptFormData) {
+    if (editingConceptLineId) {
+      setCart((prev) => prev.map((item) =>
+        cartLineKey(item) === editingConceptLineId
+          ? { ...item, name: data.description, quantity: data.quantity, price: data.price }
+          : item
+      ))
+    } else {
+      const lineId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      setCart((prev) => [
+        ...prev,
+        { productId: "", type: "CUSTOM", lineId, name: data.description, price: data.price, quantity: data.quantity, stock: 0 },
+      ])
+    }
+    setConceptModalOpen(false)
+    setEditingConcept(null)
+    setEditingConceptLineId(null)
+  }
+
+  function updateQuantity(key: string, delta: number) {
     setCart((prev) =>
       prev.map((item) => {
-        if (item.productId !== productId) return item
+        if (cartLineKey(item) !== key) return item
         const newQty = item.quantity + delta
         if (newQty <= 0) return null
+        if (item.type === "CUSTOM") return { ...item, quantity: newQty }
         if (newQty > item.stock) { toast.error("Stock insuficiente"); return item }
-        const product = products.find(p => p.id === productId)
+        const product = products.find(p => p.id === item.productId)
         if (product) {
           const { price, wholesale } = calcWholesalePrice(product, newQty)
           return { ...item, quantity: newQty, price, wholesale, originalPrice: wholesale ? product.price : undefined }
@@ -226,17 +264,26 @@ export default function POSPage() {
     )
   }
 
-  function removeFromCart(productId: string) {
-    setCart((prev) => prev.filter((item) => item.productId !== productId))
+  function removeFromCart(key: string) {
+    setCart((prev) => prev.filter((item) => cartLineKey(item) !== key))
   }
 
-  function setLinePrice(productId: string, newPrice: number) {
-    const product = products.find(p => p.id === productId)
+  function setLinePrice(key: string, newPrice: number) {
+    if (!Number.isFinite(newPrice) || newPrice < 0) return
+    const line = cart.find((item) => cartLineKey(item) === key)
+    if (!line) return
+    if (line.type === "CUSTOM") {
+      setCart((prev) => prev.map((item) =>
+        cartLineKey(item) === key ? { ...item, price: newPrice } : item
+      ))
+      return
+    }
+    const product = products.find(p => p.id === line.productId)
     if (!product) return
     const minPrice = Math.max(product.costPrice || 0, product.price * 0.5)
     const clamped = Math.max(minPrice, Math.min(newPrice, product.price))
     setCart((prev) => prev.map((item) =>
-      item.productId === productId ? { ...item, price: clamped, wholesale: false } : item
+      cartLineKey(item) === key ? { ...item, price: clamped, wholesale: false } : item
     ))
   }
 
@@ -345,12 +392,21 @@ export default function POSPage() {
         shippingAddress: saleType === "shipping" ? shippingAddress : null,
         creditTerm: isCredit ? `cuotas_${cuotasCount}_15d` : null,
         downPayment: isCredit ? (parseFloat(downPayment) || 0) : 0,
-        items: cart.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          useWholesale: item.wholesale,
-        })),
+        items: cart.map((item) =>
+          item.type === "CUSTOM"
+            ? {
+                type: "CUSTOM",
+                productName: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              }
+            : {
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+                useWholesale: item.wholesale,
+              }
+        ),
         payments: isCredit
           ? (parseFloat(downPayment) > 0
             ? [{ method: "cash", amount: parseFloat(downPayment), status: "verified" }]
@@ -600,6 +656,9 @@ export default function POSPage() {
   function resetSaleState() {
     setCart([])
     setCartDiscount(0)
+    setConceptModalOpen(false)
+    setEditingConcept(null)
+    setEditingConceptLineId(null)
     setCouponDiscount(0)
     setCouponId(null)
     setCouponCode("")
@@ -715,6 +774,8 @@ export default function POSPage() {
           onCouponCodeChange={setCouponCode}
           onApplyCoupon={applyCoupon}
           onCartDiscountChange={setCartDiscount}
+          onAddConcept={openAddConcept}
+          onEditConcept={openEditConcept}
         />
 
         {/* Customer */}
@@ -845,6 +906,15 @@ export default function POSPage() {
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
         onNewSale={handleNewSale}
+      />
+
+      {/* ─── CONCEPT MODAL ─── */}
+      <ConceptModal
+        open={conceptModalOpen}
+        onOpenChange={setConceptModalOpen}
+        editing={!!editingConcept}
+        initial={editingConcept || { description: "", quantity: 1, price: 0 }}
+        onSave={handleConceptSave}
       />
 
       {/* Daily Report Dialog */}

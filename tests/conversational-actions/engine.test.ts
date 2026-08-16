@@ -24,6 +24,10 @@ const runtime = {
     "order.cancel",
     "report.read",
     "analytics.read",
+    "expense.create",
+    "expense.update",
+    "supplier.pay",
+    "credit.pay",
   ],
 }
 

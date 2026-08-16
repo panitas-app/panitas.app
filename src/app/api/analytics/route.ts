@@ -138,11 +138,13 @@ export async function GET() {
     for (const p of products) productMap[p.id] = p.name
   }
 
-  const topProducts = productAgg.map((p) => ({
-    name: productMap[p.productId ?? ""] || "Producto eliminado",
-    qty: p._sum.quantity || 0,
-    revenue: p._sum.subtotal || 0,
-  }))
+  const topProducts = productAgg
+    .filter((p) => p.productId !== null)
+    .map((p) => ({
+      name: productMap[p.productId ?? ""] || "Producto eliminado",
+      qty: p._sum.quantity || 0,
+      revenue: p._sum.subtotal || 0,
+    }))
 
   const statusCountMap: Record<string, number> = {}
   for (const s of statusCounts) statusCountMap[s.status] = s._count.id

@@ -25,6 +25,8 @@ import { PanitasAgent } from "./agent-core"
 export interface DefaultAgentCoreOptions {
   config?: AgentCoreConfig
   metrics?: ProviderMetrics
+  /** FASE 3E: instancia de AIProvider compartida (para tool calling nativo). */
+  provider?: AIProvider
 }
 
 /**
@@ -76,7 +78,7 @@ export function createDefaultAgentCore(options: DefaultAgentCoreOptions = {}): P
 
   const router = new ModelRouter(config.models)
 
-  const provider = new AIProviderManager({
+  const provider = options.provider ?? new AIProviderManager({
     providers: buildProviders(config),
     router,
     metrics,

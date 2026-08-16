@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BadgePercent, Minus, Percent, Plus, ShoppingCart, Trash2, X } from "lucide-react"
+import { BadgePercent, Minus, Pencil, Percent, Plus, ShoppingCart, Tags, Trash2, X } from "lucide-react"
 import type { CartItem } from "./types"
+import { cartLineKey } from "./types"
 
 interface PosCartProps {
   cart: CartItem[]
@@ -13,13 +14,15 @@ interface PosCartProps {
   couponDiscount: number
   cartDiscount: number
   applyingCoupon: boolean
-  onUpdateQuantity: (productId: string, delta: number) => void
-  onRemoveItem: (productId: string) => void
+  onUpdateQuantity: (key: string, delta: number) => void
+  onRemoveItem: (key: string) => void
   onClearCart: () => void
-  onSetLinePrice: (productId: string, price: number) => void
+  onSetLinePrice: (key: string, price: number) => void
   onCouponCodeChange: (value: string) => void
   onApplyCoupon: () => void
   onCartDiscountChange: (value: number) => void
+  onAddConcept: () => void
+  onEditConcept: (item: CartItem) => void
 }
 
 export function PosCart({
@@ -37,6 +40,8 @@ export function PosCart({
   onCouponCodeChange,
   onApplyCoupon,
   onCartDiscountChange,
+  onAddConcept,
+  onEditConcept,
 }: PosCartProps) {
   return (
     <>
@@ -55,26 +60,55 @@ export function PosCart({
         </div>
       </div>
 
+      {/* Add concept button */}
+      {cart.length >= 0 && (
+        <div className="px-4 py-2 border-b border-border shrink-0">
+          <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={onAddConcept}>
+            <Tags className="size-3.5" />
+            Agregar concepto
+          </Button>
+        </div>
+      )}
+
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1.5">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <StoreIcon />
             <p className="text-sm mt-3">Carrito vacío</p>
-            <p className="text-xs mt-1">Selecciona productos de la izquierda</p>
+            <p className="text-xs mt-1">Selecciona productos de la izquierda o agrega un concepto</p>
           </div>
         ) : (
           cart.map((item) => {
             const lineTotal = item.price * item.quantity
+            const key = cartLineKey(item)
             return (
-              <div key={item.productId} className="flex items-start gap-2 rounded-lg border border-border p-2 bg-card">
+              <div key={key} className="flex items-start gap-2 rounded-lg border border-border p-2 bg-card">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">{item.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    {item.type === "CUSTOM" && (
+                      <span className="text-[9px] font-bold text-primary border border-primary/40 rounded px-1 py-px uppercase leading-none">
+                        Concepto
+                      </span>
+                    )}
+                    <p className="text-xs font-semibold truncate">{item.name}</p>
+                  </div>
                   <div className="flex items-center gap-1 mt-0.5">
                     {item.wholesale ? (
                       <span className="text-[10px] text-amber-600 font-bold">$ MAYOR</span>
                     ) : (
                       <span className="text-[10px] text-muted-foreground">${item.price.toFixed(2)} c/u</span>
+                    )}
+                    {item.type === "CUSTOM" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-5 text-muted-foreground hover:text-primary shrink-0"
+                        onClick={() => onEditConcept(item)}
+                        title="Editar concepto"
+                      >
+                        <Pencil className="size-3" />
+                      </Button>
                     )}
                   </div>
                   <div className="flex items-center gap-1 mt-1">
@@ -82,25 +116,26 @@ export function PosCart({
                     <Input
                       type="number"
                       step="0.01"
+                      min={0}
                       value={item.price}
-                      onChange={(e) => onSetLinePrice(item.productId, parseFloat(e.target.value) || 0)}
+                      onChange={(e) => onSetLinePrice(key, parseFloat(e.target.value) || 0)}
                       className="h-6 w-20 text-xs px-1 py-0"
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="outline" size="icon" className="size-6" onClick={() => onUpdateQuantity(item.productId, -1)}>
+                  <Button variant="outline" size="icon" className="size-6" onClick={() => onUpdateQuantity(key, -1)}>
                     <Minus className="size-3" />
                   </Button>
                   <span className="text-sm font-bold w-7 text-center">{item.quantity}</span>
-                  <Button variant="outline" size="icon" className="size-6" onClick={() => onUpdateQuantity(item.productId, 1)}>
+                  <Button variant="outline" size="icon" className="size-6" onClick={() => onUpdateQuantity(key, 1)}>
                     <Plus className="size-3" />
                   </Button>
                 </div>
                 <div className="text-right shrink-0 w-16">
                   <p className="text-xs font-bold">${lineTotal.toFixed(2)}</p>
                 </div>
-                <Button variant="ghost" size="icon" className="size-6 text-red-400 shrink-0" onClick={() => onRemoveItem(item.productId)}>
+                <Button variant="ghost" size="icon" className="size-6 text-red-400 shrink-0" onClick={() => onRemoveItem(key)}>
                   <X className="size-3" />
                 </Button>
               </div>

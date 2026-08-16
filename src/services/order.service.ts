@@ -27,7 +27,8 @@ export type OrderListOptions = {
 export const VALID_ORDER_STATUSES: readonly string[] = ["pending", "confirmed", "preparing", "shipped", "delivered", "cancelled"]
 
 type OrderItemInput = {
-  productId: string
+  productId: string | null
+  type: "PRODUCT" | "CUSTOM"
   quantity: number
   price: number
   subtotal: number
@@ -49,7 +50,9 @@ type OrderCreateInput = {
   source?: string
   storeId?: string
   items?: Array<{
-    productId: string
+    type?: "PRODUCT" | "CUSTOM"
+    productId?: string
+    productName?: string
     quantity: string | number
     price?: string | number
     useWholesale?: boolean
@@ -375,9 +378,25 @@ export class OrderService {
         }
       }
 
+      // ─── Items: split real products (inventory) from custom concepts ───
+      const rawItems = body.items ?? []
+      for (const i of rawItems) {
+        if (i.type !== undefined && i.type !== "PRODUCT" && i.type !== "CUSTOM") {
+          throw serviceError(`Tipo de ítem inválido: ${i.type}`, 400)
+        }
+      }
+      const productItems = rawItems.filter((i) => i.type !== "CUSTOM")
+      const customItems = rawItems.filter((i) => i.type === "CUSTOM")
+
+      for (const item of productItems) {
+        if (!item.productId) {
+          throw serviceError("Cada ítem de producto debe incluir productId", 400)
+        }
+      }
+
       // ─── Products: fetch real prices from DB ───
-      const productIds = body.items!.map((i) => i.productId)
-      const products = await productRepo.findByIds(productIds, storeId)
+      const productIds = productItems.map((i) => i.productId!)
+      const products = productIds.length > 0 ? await productRepo.findByIds(productIds, storeId) : []
       const productMap = new Map(products.map((p) => [p.id, p]))
 
       // Check missing
@@ -387,9 +406,9 @@ export class OrderService {
       }
 
       // Check stock & build items with server-validated prices
-      const itemsData: OrderItemInput[] = []
-      for (const item of body.items!) {
-        const product = productMap.get(item.productId)!
+      const productItemsData: OrderItemInput[] = []
+      for (const item of productItems) {
+        const product = productMap.get(item.productId!)!
         const qty = parseInt(String(item.quantity))
         if (product.stock < qty) {
           throw serviceError(
@@ -439,14 +458,53 @@ export class OrderService {
           }
         }
 
-        itemsData.push({
+        productItemsData.push({
           productId: product.id,
+          type: "PRODUCT",
           quantity: qty,
           price: unitPrice,
           subtotal: qty * unitPrice,
           productName: product.name,
         })
       }
+
+      // ─── Custom concepts: no product, no inventory. Validated server-side ───
+      const customItemsData: OrderItemInput[] = []
+      for (const item of customItems) {
+        if (item.productId) {
+          throw serviceError("Un concepto adicional no puede tener productId", 400)
+        }
+        const description = String(item.productName ?? "").trim()
+        if (!description) {
+          throw serviceError("La descripción del concepto es obligatoria", 400)
+        }
+        if (description.length > 200) {
+          throw serviceError("La descripción del concepto no puede superar 200 caracteres", 400)
+        }
+        const qty = Number(item.quantity)
+        if (!Number.isInteger(qty) || qty < 1) {
+          throw serviceError(`Cantidad inválida para el concepto "${description}"`, 400)
+        }
+        const unitPrice = Number(item.price)
+        if (
+          item.price === undefined ||
+          item.price === null ||
+          !Number.isFinite(unitPrice) ||
+          unitPrice < 0
+        ) {
+          throw serviceError(`Precio inválido para el concepto "${description}"`, 400)
+        }
+        customItemsData.push({
+          productId: null,
+          type: "CUSTOM",
+          quantity: qty,
+          price: unitPrice,
+          subtotal: qty * unitPrice,
+          productName: description,
+        })
+      }
+
+      const itemsData: OrderItemInput[] = [...productItemsData, ...customItemsData]
 
       // ─── Calculate totals server-side ───
       const subtotal = itemsData.reduce((sum, i) => sum + i.subtotal, 0)
@@ -595,6 +653,7 @@ export class OrderService {
           price: item.price,
           subtotal: item.subtotal,
           productName: item.productName,
+          type: item.type,
         })
       }
 
@@ -632,29 +691,29 @@ export class OrderService {
         }
       }
 
-      // ─── Decrement stock + stock movements + low stock alerts ───
-      for (const item of itemsData) {
-        const updated = await repo.decrementStock(item.productId, item.quantity)
+      // ─── Decrement stock + stock movements + low stock alerts (products only) ───
+      for (const item of productItemsData) {
+        const updated = await repo.decrementStock(item.productId!, item.quantity)
         await repo.recordStockMovement({
           type: "sale",
           quantity: -item.quantity,
           balance: updated.stock,
           concept: `Venta #${order.orderNumber}`,
           reference: order.id,
-          productId: item.productId,
+          productId: item.productId!,
           storeId,
         })
         fireDomainEvent({
           type: "product.stock.changed",
           data: {
-            productId: item.productId,
+            productId: item.productId!,
             name: item.productName,
             oldStock: updated.stock + item.quantity,
             newStock: updated.stock,
             delta: -item.quantity,
             reason: "sale",
           },
-          aggregateId: item.productId,
+          aggregateId: item.productId!,
           aggregateType: "Product",
           tenantId: storeId,
           actorId: ctx.userId,

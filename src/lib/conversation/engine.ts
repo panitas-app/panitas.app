@@ -23,6 +23,7 @@ import { ConversationService } from "@/services/conversation.service"
 import { permissionsForRole } from "@/lib/agent/permissions/agent.roles"
 import type { PanitasAgent } from "@/lib/agent-core"
 import type { AgentRequest, Message, ResolvedToolCall, UsageInfo } from "@/lib/agent-core/types"
+import type { AgenticToolRunner } from "@/lib/agent-core"
 import type { IntelligenceLayer } from "@/lib/agent-intel"
 import type { ConfirmationRequest, StepExecutionResult } from "@/lib/agent-intel/types"
 import { buildConversationalHistory } from "./context-builder"
@@ -33,6 +34,11 @@ import type { ConversationManager } from "@/lib/conversations"
 import type { ConversationalActionsEngine } from "@/lib/conversational-actions"
 import type { BusinessMemoryEngine } from "@/lib/business-memory"
 import { fireDomainEvent } from "@/lib/events"
+
+/** Ventana de validez de una confirmación nativa (FASE 3E): fuera de ella se vuelve a pedir. */
+const NATIVE_CONFIRMATION_TTL_MS = 30 * 60 * 1000
+/** Clave en `knownParams` (FASE 5C) que persiste la solicitud de confirmación nativa. */
+const NATIVE_CONFIRMATION_KEY = "__nativeConfirmation"
 
 export type ChatTurnInput = {
   conversationId?: string
@@ -75,6 +81,8 @@ export type ConversationEngineDeps = {
   actions?: ConversationalActionsEngine
   /** FASE 5G: Memoria estable del negocio opcional (terminología/preferencias/reglas/uso). */
   businessMemory?: BusinessMemoryEngine
+  /** FASE 3E: Tool Calling Nativo opcional (intérprete primario LLM → tools → confirmación). */
+  agentic?: AgenticToolRunner
 }
 
 function toResolvedToolCalls(results: StepExecutionResult[]): ResolvedToolCall[] {
@@ -219,6 +227,124 @@ export class ConversationEngine {
         intent: layerIntent,
         ...actionOutcome,
       })
+    }
+
+    // FASE 3E — Tool Calling Nativo: intérprete PRIMARIO. El LLM decide las tools
+    // nativamente; el backend conserva permisos + validación + confirmación. Si
+    // falla (provider/errores internos), se cae a las capas deterministas (5D→4A→3A).
+    if (this.deps.agentic) {
+      // Expiración de la confirmación: los stepIds recibidos solo valen si la
+      // solicitud se emitió en esta conversación y sigue dentro de la ventana.
+      let effectiveConfirmedStepIds = input.confirmedStepIds
+      try {
+        const pendingRaw = prepared?.context?.knownParams?.[NATIVE_CONFIRMATION_KEY]
+        if (pendingRaw) {
+          const pending = JSON.parse(pendingRaw) as { requestedAt?: string }
+          const requestedAt = pending?.requestedAt ? Date.parse(pending.requestedAt) : NaN
+          if (Number.isNaN(requestedAt) || Date.now() - requestedAt > NATIVE_CONFIRMATION_TTL_MS) {
+            effectiveConfirmedStepIds = undefined
+          }
+        }
+      } catch {
+        effectiveConfirmedStepIds = undefined
+      }
+
+      try {
+        const native = await this.deps.agentic.run({
+          request,
+          toolContext: {
+            userId: ctx.userId,
+            storeId: ctx.storeId,
+            negocioId: ctx.negocioId ?? null,
+            plan: ctx.plan ?? "business",
+            role: ctx.role ?? "admin",
+            permissions: request.permissions,
+          },
+          confirmedStepIds: effectiveConfirmedStepIds,
+        })
+
+        if (native.status === "completed" || native.status === "confirmation_required") {
+          layerIntent = "native.agentic"
+
+          const status = native.status === "confirmation_required" ? "confirmation_required" : "completed"
+          const confirmationToolCalls: ResolvedToolCall[] =
+            native.confirmation?.actions.map((action) => ({
+              name: action.tool,
+              input: {},
+              ok: false,
+              error: "awaiting_confirmation",
+            })) ?? native.toolCalls
+
+          await this.deps.conversations.saveMessage(ctx, conversation.id, {
+            role: "assistant",
+            content: native.reply,
+            toolCalls: confirmationToolCalls,
+            metadata: {
+              provider: native.provider,
+              model: native.model,
+              intent: layerIntent,
+              ...(native.usage ? { usage: native.usage } : {}),
+              ...(native.status === "confirmation_required" ? { confirmationRequired: true } : {}),
+            },
+          })
+
+          // FASE 3D: extrae y guarda los hechos del turno (best-effort, nunca bloquea).
+          if (this.deps.memory) {
+            const turn: MemoryTurn = {
+              userId: ctx.userId,
+              storeId: ctx.storeId,
+              negocioId: ctx.negocioId ?? undefined,
+              message: input.message,
+              reply: native.reply,
+              toolCalls: confirmationToolCalls,
+            }
+            void this.deps.memory
+              .saveTurn(memoryCtx, turn)
+              .catch((error: unknown) => console.error("[conversation] saveTurn falló", error))
+          }
+          this.learnFromTurn(ctx, input.message, layerIntent, layerDomains)
+
+          await finalize(
+            native.reply,
+            confirmationToolCalls,
+            native.status === "completed" || Boolean(input.confirmedStepIds?.length),
+            native.status === "confirmation_required"
+              ? {
+                  actionId: "native",
+                  knownParams: {
+                    [NATIVE_CONFIRMATION_KEY]: JSON.stringify({
+                      stepIds: native.confirmation?.actions.map((a) => a.stepId) ?? [],
+                      requestedAt: native.confirmation?.requestedAt ?? new Date().toISOString(),
+                    }),
+                  },
+                  contextStatus: "awaiting_confirmation",
+                }
+              : {},
+          )
+
+          return {
+            conversationId: conversation.id,
+            message: userMessage,
+            response: {
+              reply: native.reply,
+              provider: native.provider,
+              model: native.model,
+              toolCalls: confirmationToolCalls,
+              usage: native.usage,
+              ok: true,
+            },
+            metadata: {
+              status,
+              intent: layerIntent,
+            },
+            ...(native.confirmation ? { confirmation: native.confirmation } : {}),
+          }
+        }
+        // native.status === "error": caída a las capas deterministas.
+      } catch (error) {
+        // Caída a las capas deterministas (5D → 4A → 3A).
+        console.error("[conversation] tool calling nativo falló, usando intérprete determinista", error)
+      }
     }
 
     // FASE 5D — Conversational Actions: orquesta tools 3B + services 1B de forma

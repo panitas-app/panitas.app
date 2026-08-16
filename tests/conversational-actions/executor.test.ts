@@ -9,7 +9,7 @@ const runtime = {
   negocioId: null,
   plan: "business",
   role: "admin",
-  permissions: ["product.create", "product.update", "product.delete", "inventory.write", "inventory.read", "sales.create", "customer.write", "order.read", "order.cancel", "report.read", "analytics.read"],
+  permissions: ["product.create", "product.update", "product.delete", "inventory.write", "inventory.read", "sales.create", "customer.write", "order.read", "order.cancel", "report.read", "analytics.read", "expense.create", "expense.update", "supplier.pay", "credit.pay"],
 }
 
 function toolOk(data: unknown = {}) {
@@ -140,6 +140,19 @@ describe("executeAction", () => {
     const res = await run(deps, "registrar_gasto", { descripcion: "luz", monto: "80", categoria: "servicios" })
     expect(deps.expenseService.create).toHaveBeenCalledWith(ctx, expect.objectContaining({ description: "luz", amount: 80, category: "servicios" }))
     expect(res.reply).toContain("$80.00")
+  })
+
+  it("rechaza registrar_gasto sin permiso expense.create sin tocar BD", async () => {
+    const deps = makeDeps()
+    const restricted = { ...runtime, permissions: ["report.read"] }
+    await expect(executeAction(deps, { actionId: "registrar_gasto", known: { descripcion: "luz", monto: "80" }, message: "", ctx, runtime: restricted })).rejects.toThrow(ActionExecutionError)
+    expect(deps.expenseService.create).not.toHaveBeenCalled()
+  })
+
+  it("rechaza registrar_abono sin permiso credit.pay", async () => {
+    const deps = makeDeps()
+    const restricted = { ...runtime, permissions: ["report.read"] }
+    await expect(executeAction(deps, { actionId: "registrar_abono", known: { cliente: "maria", monto: "20" }, message: "", ctx, runtime: restricted })).rejects.toThrow(ActionExecutionError)
   })
 
   it("registra una compra a proveedor con vendor", async () => {

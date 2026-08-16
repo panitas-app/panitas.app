@@ -22,6 +22,8 @@ import type { FinancialEngine } from "@/lib/financial-intelligence"
 import { periodRange } from "@/lib/financial-intelligence"
 import type { ToolExecutor } from "@/lib/agent/tools"
 import type { ToolExecutionContext } from "@/lib/agent/tools/types"
+import { hasPermission } from "@/lib/agent/permissions"
+import type { AgentPermission } from "@/lib/agent/permissions"
 import type { ActionResultData, ActionRuntimeContext, KnownParams, RichBlock } from "./types"
 import { extractPaymentMethod, extractDiscount } from "./params"
 import { money, productCard, productsTable, saleSummary, expenseCard, expensesTable, expensesSummary, customerCard, customersTable, customerHistory, ordersTable, orderCard, salesSummary, salesOverviewSummary, kpiBlock, chartBlock, monitorBlock, creditsSummary, creditCard, creditsList, creditsTable, collectionRecommendationsList, suppliersSummary, suppliersList, suppliersTable, supplierCard, financialHealthBlocks, financialReviewBlocks, financialCobrarVsPagarBlocks, financialTopDebtorsBlock, financialTopPayablesBlock, financialGastosBlocks } from "./rich"
@@ -300,9 +302,28 @@ async function resolveSupplier(deps: ExecutorDeps, ctx: StoreServiceContext, ref
   return chosen
 }
 
+/**
+ * Acciones de escritura que NO pasan por el ToolExecutor (llaman services 1B
+ * directamente): exigen el permiso correspondiente ANTES de tocar la BD.
+ */
+const ACTION_REQUIRED_PERMISSIONS: Partial<Record<string, AgentPermission>> = {
+  registrar_venta: "sales.create",
+  registrar_credito: "sales.create",
+  registrar_gasto: "expense.create",
+  editar_gasto: "expense.update",
+  registrar_compra_proveedor: "expense.create",
+  registrar_pago_proveedor: "supplier.pay",
+  registrar_abono: "credit.pay",
+}
+
 /** Ejecuta una acción con sus parámetros. */
 export async function executeAction(deps: ExecutorDeps, input: ExecutorInput): Promise<ExecutionResult> {
   const { actionId, known, ctx, runtime } = input
+
+  const requiredPermission = ACTION_REQUIRED_PERMISSIONS[actionId]
+  if (requiredPermission && !hasPermission((runtime.permissions as AgentPermission[]) ?? [], requiredPermission)) {
+    throw new ActionExecutionError("No tienes permisos para realizar esta acción.")
+  }
 
   switch (actionId) {
     // ─── Inventario / Productos ───────────────────────────────────────────
