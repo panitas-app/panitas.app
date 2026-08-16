@@ -25,6 +25,13 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function makeCategoryRepo(overrides: Record<string, unknown> = {}) {
+  return {
+    findById: vi.fn().mockResolvedValue({ id: "cat-1", storeId: "store-1" }),
+    ...overrides,
+  }
+}
+
 describe("ProductService.create", () => {
   beforeEach(() => vi.clearAllMocks())
 
@@ -74,6 +81,64 @@ describe("ProductService.create", () => {
     expect(createAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({ action: "product.created", entityId: "p1" })
     )
+  })
+})
+
+describe("ProductService — categoría válida (fix FK 11B)", () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("rechaza create con categoryId inexistente (400 limpio, sin FK error) y no crea el producto", async () => {
+    const repo = makeRepo()
+    const categoryRepo = makeCategoryRepo({ findById: vi.fn().mockResolvedValue(null) })
+    const service = new ProductService(repo as never, categoryRepo as never)
+
+    await expect(service.create(ctx, { name: "Zapatos", price: 25, categoryId: "cat-inventada" })).rejects.toMatchObject({
+      message: "La categoría no existe o no pertenece a este negocio",
+      status: 400,
+    })
+    expect(repo.create).not.toHaveBeenCalled()
+  })
+
+  it("permite create con categoryId real de la tienda", async () => {
+    const repo = makeRepo()
+    const service = new ProductService(repo as never, makeCategoryRepo() as never)
+
+    const result = await service.create(ctx, { name: "Zapatos", price: 25, categoryId: "cat-1", stock: 20 })
+    expect(repo.create).toHaveBeenCalledTimes(1)
+    expect(repo.create.mock.calls[0][0].categoryId).toBe("cat-1")
+    expect(result).toEqual({ id: "p1", storeId: "store-1", category: null })
+  })
+
+  it("rechaza update hacia categoría inexistente", async () => {
+    const repo = makeRepo()
+    const categoryRepo = makeCategoryRepo({ findById: vi.fn().mockResolvedValue(null) })
+    const service = new ProductService(repo as never, categoryRepo as never)
+
+    await expect(service.update(ctx, "p1", { categoryId: "cat-inexistente" })).rejects.toMatchObject({
+      message: "La categoría no existe o no pertenece a este negocio",
+      status: 400,
+    })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("permite update con categoryId real y limpiar categoría (null)", async () => {
+    const repo = makeRepo()
+    const service = new ProductService(repo as never, makeCategoryRepo() as never)
+
+    await service.update(ctx, "p1", { categoryId: "cat-1" })
+    expect(repo.update.mock.calls[0][1].categoryId).toBe("cat-1")
+
+    await service.update(ctx, "p1", { categoryId: null })
+    expect(repo.update.mock.calls[1][1].categoryId).toBeNull()
+  })
+
+  it("no valida la categoría cuando no se envía categoryId (sin consultas extra)", async () => {
+    const repo = makeRepo()
+    const categoryRepo = makeCategoryRepo()
+    const service = new ProductService(repo as never, categoryRepo as never)
+
+    await service.create(ctx, { name: "Zapatos", price: 25 })
+    expect(categoryRepo.findById).not.toHaveBeenCalled()
   })
 })
 

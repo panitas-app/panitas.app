@@ -5,6 +5,7 @@
  * las tools solo dependen de la capa de servicios / analytics.
  */
 import type { ProductService } from "@/services/product.service"
+import type { CategoryService } from "@/services/category.service"
 import type { InventoryService } from "@/services/inventory.service"
 import type { SalesService } from "@/services/sales.service"
 import type { CustomerService } from "@/services/customer.service"
@@ -16,6 +17,7 @@ import type { AttentionService } from "@/lib/attention"
 
 export interface ToolDeps {
   productService?: ProductService
+  categoryService?: CategoryService
   inventoryService?: InventoryService
   salesService?: SalesService
   customerService?: CustomerService

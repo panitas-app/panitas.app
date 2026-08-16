@@ -3,6 +3,7 @@ export type { ServiceContext, StoreServiceContext, NegocioServiceContext } from 
 export { toServiceResponse, createdResponse, jsonSuccess } from "@/services/http"
 export { ProductService, generateSku } from "@/services/product.service"
 export type { ProductListOptions } from "@/services/product.service"
+export { CategoryService } from "@/services/category.service"
 export { InventoryService } from "@/services/inventory.service"
 export type { StockMovementListOptions, InventoryOverviewOptions } from "@/services/inventory.service"
 export { CustomerService } from "@/services/customer.service"

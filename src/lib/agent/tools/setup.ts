@@ -7,6 +7,7 @@
 import { ToolRegistry } from "./registry"
 import { createInventoryTools } from "./domains"
 import { createProductTools } from "./domains"
+import { createCategoryTools } from "./domains"
 import { createSalesTools } from "./domains"
 import { createCustomerTools } from "./domains"
 import { createOrderTools } from "./domains"
@@ -22,6 +23,7 @@ export function buildToolRegistry(deps: ToolDeps = {}): ToolRegistry {
   registry.registerAll([
     ...createInventoryTools(deps),
     ...createProductTools(deps),
+    ...createCategoryTools(deps),
     ...createSalesTools(deps),
     ...createCustomerTools(deps),
     ...createOrderTools(deps),

@@ -15,6 +15,7 @@ import type { AgentPermission } from "@/lib/agent/permissions"
 export type ToolDomain =
   | "inventory"
   | "products"
+  | "categories"
   | "sales"
   | "customers"
   | "orders"

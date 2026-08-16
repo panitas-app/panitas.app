@@ -14,6 +14,7 @@ import {
   LIMITS,
 } from "@/lib/validate"
 import { ProductRepository } from "@/repositories/product.repository"
+import { CategoryRepository } from "@/repositories/category.repository"
 import { serviceError } from "@/services/errors"
 import type { StoreServiceContext } from "@/services/context"
 
@@ -39,7 +40,17 @@ export type ProductListOptions = {
 }
 
 export class ProductService {
-  constructor(private readonly repo = new ProductRepository()) {}
+  constructor(
+    private readonly repo = new ProductRepository(),
+    private readonly categoryRepo = new CategoryRepository()
+  ) {}
+
+  /** Valida que la categoría exista y pertenezca al negocio (evita FK errors silenciosos). */
+  private async validateCategory(storeId: string, categoryId: string | null | undefined): Promise<void> {
+    if (!categoryId) return
+    const category = await this.categoryRepo.findById(storeId, categoryId)
+    if (!category) throw serviceError("La categoría no existe o no pertenece a este negocio", 400)
+  }
 
   list(ctx: StoreServiceContext, options: ProductListOptions) {
     return this.repo.list({ storeId: ctx.storeId, ...options })
@@ -165,6 +176,9 @@ export class ProductService {
       }
     }
 
+    const categoryId = typeof body.categoryId === "string" ? body.categoryId.slice(0, 64) : null
+    await this.validateCategory(ctx.storeId, categoryId)
+
     const product = await this.repo.create({
       name,
       description: description || null,
@@ -177,7 +191,7 @@ export class ProductService {
       productType,
       images: JSON.stringify(images || []),
       isActive: body.isActive !== false,
-      categoryId: typeof body.categoryId === "string" ? body.categoryId.slice(0, 64) : null,
+      categoryId,
       isWholesale: productType === "physical" ? isWholesale : false,
       wholesaleLabel: productType === "physical" ? wholesaleLabel : null,
       wholesalePrice: productType === "physical" ? wholesalePrice : null,
@@ -291,7 +305,9 @@ export class ProductService {
     }
     if (body.isActive !== undefined) data.isActive = safeBool(body.isActive)
     if (body.categoryId !== undefined) {
-      data.categoryId = typeof body.categoryId === "string" ? (body.categoryId as string).slice(0, 64) : null
+      const categoryId = typeof body.categoryId === "string" ? (body.categoryId as string).slice(0, 64) : null
+      await this.validateCategory(ctx.storeId, categoryId)
+      data.categoryId = categoryId
     }
 
     if (body.productType !== undefined) {

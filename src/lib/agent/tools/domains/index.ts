@@ -3,6 +3,7 @@
  */
 export { createInventoryTools } from "./inventory"
 export { createProductTools } from "./products"
+export { createCategoryTools } from "./categories"
 export { createSalesTools } from "./sales"
 export { createCustomerTools } from "./customers"
 export { createOrderTools } from "./orders"
